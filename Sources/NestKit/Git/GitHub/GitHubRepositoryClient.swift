@@ -12,11 +12,18 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
         var urlRequest = URLRequest(url: assetURL)
         urlRequest.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         urlRequest.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
-        let (data, _) = try await urlSession.data(for: urlRequest)
+        let (data, urlResponse) = try await urlSession.data(for: urlRequest)
+        if (urlResponse as? HTTPURLResponse)?.statusCode == 404 {
+            throw GitHubRepositoryClientError(errorDescription: "Not found for \(repositoryURL) (\(tag))")
+        }
         let response = try JSONDecoder().decode(GitHubAssetResponse.self, from: data)
         let assets = response.assets.map { asset in
             Asset(fileName: asset.name, url: asset.browserDownloadURL)
         }
         return AssetInformation(tagName: response.tagName, assets: assets)
     }
+}
+
+struct GitHubRepositoryClientError: LocalizedError {
+    let errorDescription: String?
 }
