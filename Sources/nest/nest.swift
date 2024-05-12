@@ -6,7 +6,11 @@ import Logging
 struct Nest: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "nest",
-        subcommands: [InstallCommand.self]
+        subcommands: [
+            InstallCommand.self,
+            UninstallCommand.self,
+            ListCommand.self
+        ]
     )
 }
 

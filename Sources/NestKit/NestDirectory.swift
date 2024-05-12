@@ -18,6 +18,10 @@ extension NestDirectory {
         rootDirectory.appending(component: "artifacts")
     }
 
+    public var infoJSON: URL {
+        rootDirectory.appending(component: "info.json")
+    }
+
     public func repository(gitURL: GitURL) -> URL {
         let scheme: String?
         let host: String?
@@ -51,10 +55,22 @@ extension NestDirectory {
     }
 
     public func binaryDirectory(of binary: ExecutableBinary) -> URL {
-        self.binaryDirectory(
+        binaryDirectory(
             gitURL: binary.gitURL,
             version: binary.version,
             manufacturer: binary.manufacturer
         )
+    }
+
+    public func binaryPath(of binary: ExecutableBinary) -> URL {
+        binaryDirectory(of: binary).appending(path: binary.commandName)
+    }
+
+    public func symbolicPath(name: String) -> URL {
+        bin.appending(path: name)
+    }
+
+    func relativePath(_ url: URL) -> String {
+        url.absoluteString.replacingOccurrences(of: rootDirectory.absoluteString, with: "")
     }
 }
