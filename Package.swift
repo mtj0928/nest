@@ -6,6 +6,7 @@ let package = Package(
     platforms: [.macOS(.v13)],
     products: [
         .executable(name: "nest", targets: ["nest"]),
+        .library(name: "NestCLI", targets: ["NestCLI"]),
         .library(name: "NestKit", targets: ["NestKit"])
     ],
     dependencies: [
@@ -18,7 +19,10 @@ let package = Package(
     targets: [
         .executableTarget(name: "nest", dependencies: [
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            .product(name: "Logging", package: "swift-log"),
+            "NestCLI"
+        ]),
+
+        .target(name: "NestCLI", dependencies: [
             "NestKit"
         ]),
 

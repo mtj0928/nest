@@ -1,19 +1,5 @@
 import Foundation
 
-public struct ArtifactBundleRootDirectory {
-    public let info: ArtifactBundleInfo
-    public let rootDirectory: URL
-
-    public init(at path: URL) throws {
-        let infoPath = path.appending(path: "info.json")
-        let data = try Data(contentsOf: infoPath)
-        let info = try JSONDecoder().decode(ArtifactBundleInfo.self, from: data)
-
-        self.info = info
-        self.rootDirectory = path
-    }
-}
-
 public struct ArtifactBundleInfo: Codable, Hashable {
     public var schemaVersion: String
     public var artifacts: [String: Artifact]
