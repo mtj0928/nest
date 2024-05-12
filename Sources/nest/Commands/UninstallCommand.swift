@@ -13,6 +13,9 @@ struct UninstallCommand: AsyncParsableCommand {
     @Argument(help: "A command name you want to uninstall.")
     var commandName: String
 
+    @Argument(help: "A version you want to uninstall")
+    var version: String?
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
@@ -20,7 +23,7 @@ struct UninstallCommand: AsyncParsableCommand {
         LoggingSystem.bootstrap()
         Configuration.default.logger.logLevel = verbose ? .trace : .info
 
-        try nestFileManager.uninstall(command: commandName)
+        try nestFileManager.uninstall(command: commandName, version: version)
     }
 }
 
