@@ -13,10 +13,16 @@ struct InstallCommand: AsyncParsableCommand {
     var repositoryURL: GitURL
 
     @Argument
-    var tag: String = "latest"
+    var version: GitVersion = .latestRelease
 
-    func run() async throws {
+    @Flag(name: .shortAndLong)
+    var verbose: Bool = false
+
+    mutating func run() async throws {
         LoggingSystem.bootstrap()
+        if verbose {
+            logger.logLevel = .trace
+        }
 
         let executableBinaries = try await fetchOrBuildExecutableBinary()
         for binary in executableBinaries {
@@ -32,17 +38,14 @@ struct InstallCommand: AsyncParsableCommand {
                 return try await fetchArtifactBundle(for: url)
             } catch InstallError.noCandidates {
                 logger.info("🪹 No artifact bundles in the repository.")
-                logger.info("⚙️ Start to build the repository.")
-                // TODO: Need to clone and build the repository.
-                return []
+                return try await buildBinary(gitURL: repositoryURL)
             } catch {
                 logger.error(error)
-                // TODO: Need to clone and build the repository as a fallback
-                return []
+                return try await buildBinary(gitURL: repositoryURL)
             }
         case .ssh(_):
             logger.info("Specify a https url if you want to download an artifact bundle.")
-            return []
+            return try await buildBinary(gitURL: repositoryURL)
         }
     }
 
@@ -50,9 +53,8 @@ struct InstallCommand: AsyncParsableCommand {
         let repositoryClient = GitRepositoryClientBuilder.build(url: repositoryURL, configuration: configuration)
 
         // Fetch asset information from the remove repository
-        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, tag: tag)
+        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
         let assets = assetInfo.assets
-        let tagName = assetInfo.tagName
 
         // Choose an asset which may be an artifact bundle.
         guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(from: assets) else {
@@ -65,29 +67,72 @@ struct InstallCommand: AsyncParsableCommand {
         try fileManager.removeItemIfExists(at: repositoryDirectory)
 
         // Download the artifact bundle
-        logger.info("🌐 Downloading the artifact bundle of \(url.lastPathComponent).")
+        logger.info("🌐 Downloading the artifact bundle of \(url.lastPathComponent)...")
         try await zipFileDownloader.download(url: selectedAsset.url, to: repositoryDirectory)
         logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
-        let triple = try await TripleDetector().detect()
+        let triple = try await TripleDetector(logger: logger).detect()
         logger.debug("The current triple is \(triple)")
 
         return try fileManager.child(extension: "artifactbundle", at: repositoryDirectory)
             .compactMap { artifactBundlePath in try ArtifactBundleRootDirectory(at: artifactBundlePath) }
             .flatMap { bundle in bundle.binaries(of: triple) }
-            .map { binaryInfo in ExecutableBinary(gitURL: repositoryURL, version: tagName, binaryInfo: binaryInfo) }
+            .map { binaryInfo in ExecutableBinary(gitURL: repositoryURL, binaryInfo: binaryInfo) }
+    }
+
+    private func buildBinary(gitURL: GitURL) async throws -> [ExecutableBinary] {
+        let repositoryDirectory = workingDirectory.appending(component: gitURL.repositoryName)
+        try fileManager.removeItemIfExists(at: repositoryDirectory)
+
+        let tagOrVersion = try await resolveTagOrVersion()
+        logger.info("🔄 Cloning \(gitURL.repositoryName)...")
+
+        try await GitCommand(logger: logger).clone(repositoryURL: gitURL, tag: tagOrVersion, to: repositoryDirectory)
+        let branch = try await GitCommand(currentDirectoryURL: repositoryDirectory, logger: logger).currentBranch()
+
+        logger.info("🔨 Building \(gitURL.repositoryName) for \(tagOrVersion ?? branch)...")
+
+        let swiftCommand = SwiftCommand(currentDirectoryURL: repositoryDirectory, logger: logger)
+        try await swiftCommand.buildForRelease()
+
+        return try await swiftCommand.description()
+            .executableNames
+            .map { executableName in
+                let binaryPath = repositoryDirectory.appending(components: ".build", "release", executableName)
+                return ExecutableBinary(
+                    commandName: executableName,
+                    binaryPath: binaryPath,
+                    gitURL: gitURL,
+                    version: tagOrVersion ?? branch,
+                    manufacturer: .localBuild
+                )
+            }
+    }
+
+    private func resolveTagOrVersion() async throws -> String? {
+        switch (version, repositoryURL) {
+        case (.latestRelease, .url(let url)):
+            let repositoryClient = GitRepositoryClientBuilder.build(url: repositoryURL, configuration: configuration)
+            return try await repositoryClient.fetchAssets(repositoryURL: url, version: .latestRelease).tagName
+
+        case (.latestRelease, .ssh):
+            return nil
+
+        case (.tag(let tagName), _):
+            return tagName
+        }
     }
 }
 
 extension ExecutableBinary {
-    init(gitURL: GitURL, version: String, binaryInfo: BinaryInfo) {
+    init(gitURL: GitURL, binaryInfo: BinaryInfo) {
         self.init(
             commandName: binaryInfo.commandName,
             binaryPath: binaryInfo.binaryPath,
             gitURL: gitURL,
-            version: version,
-            artifactBundleFileName: binaryInfo.artifactBundleName
+            version: binaryInfo.version,
+            manufacturer: .artifactBundle(fileName: binaryInfo.artifactBundleName)
         )
     }
 }
@@ -95,7 +140,18 @@ extension ExecutableBinary {
 struct BinaryInfo {
     var commandName: String
     var binaryPath: URL
+    var version: String
     var artifactBundleName: String
+}
+
+extension GitVersion: ExpressibleByArgument {
+    public init?(argument: String) {
+        self = .tag(argument)
+    }
+
+    public var defaultValueDescription: String {
+        description
+    }
 }
 
 extension ArtifactBundleRootDirectory {
@@ -107,7 +163,12 @@ extension ArtifactBundleRootDirectory {
                 .map { variantPath in rootDirectory.appending(path: variantPath) }
                 .map { binaryPath in
                     let fileName = rootDirectory.fileNameWithoutPathExtension
-                    return BinaryInfo(commandName: name, binaryPath: binaryPath, artifactBundleName: fileName)
+                    return BinaryInfo(
+                        commandName: name,
+                        binaryPath: binaryPath, 
+                        version: artifact.version,
+                        artifactBundleName: fileName
+                    )
                 }
         }
     }
@@ -131,10 +192,16 @@ extension GitURL: ExpressibleByArgument {
 }
 
 extension AsyncParsableCommand {
-    var configuration: Configuration { Configuration.default }
+    var configuration: Configuration {
+        get { Configuration.default }
+        set { Configuration.default = newValue }
+    }
     var urlSession: URLSession { configuration.urlSession }
     var fileManager: FileManager { configuration.fileManager }
-    var logger: Logger { configuration.logger }
+    var logger: Logger {
+        get { configuration.logger }
+        set { configuration.logger = newValue }
+    }
     var zipFileDownloader: ZipFileDownloader { ZipFileDownloader(urlSession: urlSession, fileManager: fileManager) }
     var workingDirectory: URL { fileManager.temporaryDirectory.appending(path: "nest") }
     var nestDirectory: NestDirectory {

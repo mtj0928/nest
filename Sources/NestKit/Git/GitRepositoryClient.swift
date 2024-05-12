@@ -1,7 +1,7 @@
 import Foundation
 
 public protocol GitRepositoryClient: Sendable {
-    func fetchAssets(repositoryURL: URL, tag: String) async throws -> AssetInformation
+    func fetchAssets(repositoryURL: URL, version: GitVersion) async throws -> AssetInformation
 }
 
 public struct AssetInformation: Sendable {

@@ -1,7 +1,7 @@
 import Foundation
 
 enum GitHubURLBuilder {
-    static func assetURL(_ url: URL, tag: String) throws -> URL {
+    static func assetURL(_ url: URL, version: GitVersion) throws -> URL {
         guard url.pathComponents.count >= 3 else {
             throw InvalidURLError(url: url)
         }
@@ -11,7 +11,13 @@ enum GitHubURLBuilder {
         guard let baseURL = baseAPIURL(from: url) else {
             throw InvalidURLError(url: url)
         }
-        return baseURL.appending(components: "repos", owner, repository, "releases", tag)
+
+        switch version {
+        case .latestRelease:
+            return baseURL.appending(components: "repos", owner, repository, "releases", "latest")
+        case .tag(let string):
+            return baseURL.appending(components: "repos", owner, repository, "releases", "tags", string)
+        }
     }
 
     private static func baseAPIURL(from url: URL) -> URL? {

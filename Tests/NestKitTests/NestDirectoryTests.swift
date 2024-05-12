@@ -11,6 +11,6 @@ struct NestDirectoryTests {
         #expect(nestDirectory.bin.relativeString == ".nest/bin")
         #expect(nestDirectory.artifacts.relativeString == ".nest/artifacts")
 
-        #expect(nestDirectory.repository(gitURL: .url(URL(string: "https://github.com/xxx/yyy")!)).relativePath == ".nest/artifacts/xxx_yyy")
+        #expect(nestDirectory.repository(gitURL: .url(URL(string: "https://github.com/xxx/yyy")!)).relativePath == ".nest/artifacts/xxx_yyy_github.com_https")
     }
 }

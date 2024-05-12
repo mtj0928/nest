@@ -9,22 +9,6 @@ public struct NestDirectory: Sendable {
     }
 }
 
-public struct ExecutableBinary {
-    public var commandName: String
-    public var binaryPath: URL
-    public var gitURL: GitURL
-    public var version: String
-    public var artifactBundleFileName: String
-
-    public init(commandName: String, binaryPath: URL, gitURL: GitURL, version: String, artifactBundleFileName: String) {
-        self.commandName = commandName
-        self.binaryPath = binaryPath
-        self.gitURL = gitURL
-        self.version = version
-        self.artifactBundleFileName = artifactBundleFileName
-    }
-}
-
 extension NestDirectory {
     public var bin: URL {
         rootDirectory.appending(component: "bin")
@@ -35,30 +19,42 @@ extension NestDirectory {
     }
 
     public func repository(gitURL: GitURL) -> URL {
-        let path = switch gitURL {
-        case .url(let url): 
-            url.pathComponents.dropFirst().joined(separator: "_")
-        case .ssh(let sshURL): 
-            [sshURL.user, sshURL.host, sshURL.path.replacingOccurrences(of: "/", with: "_")]
-                .joined(separator: "_")
+        let scheme: String?
+        let host: String?
+        let pathComponents: [String]
+
+        switch gitURL {
+        case .url(let url):
+            scheme = url.scheme
+            host = url.host()
+            pathComponents = Array(url.pathComponents.dropFirst())
+        case .ssh(let sshURL):
+            scheme = sshURL.user
+            host = sshURL.host
+            pathComponents = sshURL.path.split(separator: "/").compactMap { String($0) }
         }
 
-        return artifacts.appending(path: path)
+        let components = pathComponents + [host, scheme].compactMap { $0 }
+        return artifacts.appending(path: components.joined(separator: "_"))
     }
 
     public func version(gitURL: GitURL, version: String) -> URL {
         repository(gitURL: gitURL).appending(path: version)
     }
 
-    public func binaryDirectory(gitURL: GitURL, version: String, artifactBundleName: String) -> URL {
-        self.version(gitURL: gitURL, version: version).appending(path: artifactBundleName)
+    public func binaryDirectory(gitURL: GitURL, version: String, manufacturer: ExecutableManufacturer) -> URL {
+        let directoryName = switch manufacturer {
+        case .artifactBundle(let fileName): fileName
+        case .localBuild: "local_build"
+        }
+        return self.version(gitURL: gitURL, version: version).appending(path: directoryName)
     }
 
     public func binaryDirectory(of binary: ExecutableBinary) -> URL {
         self.binaryDirectory(
             gitURL: binary.gitURL,
             version: binary.version,
-            artifactBundleName: binary.artifactBundleFileName
+            manufacturer: binary.manufacturer
         )
     }
 }

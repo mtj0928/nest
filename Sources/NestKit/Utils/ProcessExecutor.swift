@@ -1,31 +1,40 @@
 import Foundation
+import Logging
 
 struct ProcessExecutor {
     let currentDirectoryURL: URL?
+    let logger: Logger
 
-    init(currentDirectory: URL? = nil) {
+    init(currentDirectory: URL? = nil, logger: Logger) {
         self.currentDirectoryURL = currentDirectory
-    }
-
-    func execute(command: String, _ arguments: String...) -> AsyncThrowingStream<StreamElement, any Error> {
-        _execute(command: command, arguments.map { $0 })
+        self.logger = logger
     }
 
     func executeAndWait(command: String, _ arguments: String...) async throws -> String {
-        var result = ""
-        for try await element in _execute(command: command, arguments.map { $0 }) {
-            switch element {
-            case .output(let string): result += string
-            case .error: break
-            }
-        }
-        return result
+        try await executeAndWait(command: command, arguments)
     }
 
-    private func _execute(command: String, _ arguments: [String]) -> AsyncThrowingStream<StreamElement, any Error> {
-        return AsyncThrowingStream { continuous in
+    func executeAndWait(command: String, _ arguments: [String]) async throws -> String {
+        let elements = try await _execute(command: command, arguments.map { $0 })
+        return elements.compactMap { element in
+            switch element {
+            case .output(let string): string
+            case .error: nil
+            }
+        }.joined()
+    }
+
+    func which(_ command: String) async throws -> String {
+        try await executeAndWait(command: "/usr/bin/which", command)
+    }
+
+    private func _execute(command: String, _ arguments: [String]) async throws -> [StreamElement] {
+        logger.debug("$ \(command) \(arguments.joined(separator: " "))")
+        return try await withCheckedThrowingContinuation { continuous in
             let executableURL = URL(fileURLWithPath: command)
             do {
+                let results = ThreadSafe<[StreamElement]>(value: [])
+
                 let process = Process()
                 process.currentDirectoryURL = currentDirectoryURL
                 process.executableURL = executableURL
@@ -33,6 +42,7 @@ struct ProcessExecutor {
 
                 let outputPipe = Pipe()
                 process.standardOutput = outputPipe
+
                 outputPipe.fileHandleForReading.readabilityHandler = { fileHandle in
                     let availableData = fileHandle.availableData
                     guard availableData.count != 0,
@@ -41,7 +51,8 @@ struct ProcessExecutor {
                     else {
                         return
                     }
-                    continuous.yield(.output(string))
+                    logger.debug("\(string)")
+                    results.value += [.output(string)]
                 }
 
                 let errorPipe = Pipe()
@@ -54,19 +65,24 @@ struct ProcessExecutor {
                     else {
                         return
                     }
-                    continuous.yield(.error(string))
+                    logger.debug("\(string)", metadata: .color(.red))
+                    results.value += [.error(string)]
                 }
 
                 try process.run()
                 process.waitUntilExit()
-                let result = process.terminationReason == .exit && process.terminationStatus == 0
-                if result {
-                    continuous.finish()
-                } else {
-                    continuous.finish(throwing: ProcessExecutorError.failed)
+
+                // [Workaround] Sometimes, this code is executes before all events of `readabilityHandler` are addressed.
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    let result = process.terminationReason == .exit && process.terminationStatus == 0
+                    if result {
+                        continuous.resume(returning: results.value)
+                    } else {
+                        continuous.resume(throwing: ProcessExecutorError.failed)
+                    }
                 }
             } catch {
-                continuous.finish(throwing: error)
+                continuous.resume(throwing: error)
             }
         }
     }

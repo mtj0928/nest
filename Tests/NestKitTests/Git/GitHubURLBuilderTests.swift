@@ -6,18 +6,23 @@ struct GitHubURLBuilderTests {
     @Test(arguments:[
         (
             urlString: "https://github.com/owner/repo",
-            tag: "latest",
+            tag: GitVersion.latestRelease,
             expect: "https://api.github.com/repos/owner/repo/releases/latest"
         ),
         (
+            urlString: "https://github.com/owner/repo",
+            tag: .tag("1.2.3"),
+            expect: "https://api.github.com/repos/owner/repo/releases/tags/1.2.3"
+        ),
+        (
             urlString: "https://matsuji.net/owner/repo",
-            tag: "latest",
+            tag: .latestRelease,
             expect: "https://matsuji.net/api/v3/repos/owner/repo/releases/latest"
         ),
     ])
-    func testReleaseURL(parameter: (urlString: String, tag: String, expect: String)) throws {
+    func testReleaseURL(parameter: (urlString: String, version: GitVersion, expect: String)) throws {
         let url = try #require(URL(string: parameter.urlString))
-        let assetURL = try GitHubURLBuilder.assetURL(url, tag: parameter.tag)
+        let assetURL = try GitHubURLBuilder.assetURL(url, version: parameter.version)
         #expect(assetURL == URL(string: parameter.expect))
     }
 }

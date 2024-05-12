@@ -32,6 +32,22 @@ public enum GitURL: Sendable, Hashable {
 
         return nil
     }
+
+    public var repositoryName: String {
+        switch self {
+        case .url(let url): url.fileNameWithoutPathExtension
+        case .ssh(let sshURL):
+            String(sshURL.path.split(separator: "/").last ?? "")
+                .replacingOccurrences(of: ".git", with: "")
+        }
+    }
+
+    public var stringURL: String {
+        switch self {
+        case .url(let url): url.absoluteString
+        case .ssh(let sshURL): sshURL.stringURL
+        }
+    }
 }
 
 public struct SSHURL: Sendable, Hashable {
@@ -56,5 +72,9 @@ public struct SSHURL: Sendable, Hashable {
         let path = String(match.output.path)
 
         self.init(user: user, host: host, path: path)
+    }
+
+    var stringURL: String {
+        "\(user)@\(host)/\(path)"
     }
 }

@@ -79,6 +79,14 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "realm/SwiftLint"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "https://github.com/mtj0928/SlideGen"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "0.2.0"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
