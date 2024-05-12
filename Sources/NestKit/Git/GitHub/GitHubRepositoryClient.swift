@@ -17,7 +17,7 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
         urlRequest.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
         let (data, urlResponse) = try await urlSession.data(for: urlRequest)
         if (urlResponse as? HTTPURLResponse)?.statusCode == 404 {
-            throw GitHubRepositoryClientError(errorDescription: "Not found for \(repositoryURL) (\(version))")
+            throw GitRepositoryClientError.notFound
         }
         let response = try JSONDecoder().decode(GitHubAssetResponse.self, from: data)
         let assets = response.assets.map { asset in
@@ -25,8 +25,4 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
         }
         return AssetInformation(tagName: response.tagName, assets: assets)
     }
-}
-
-struct GitHubRepositoryClientError: LocalizedError {
-    let errorDescription: String?
 }

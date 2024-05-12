@@ -39,6 +39,9 @@ struct InstallCommand: AsyncParsableCommand {
             } catch InstallError.noCandidates {
                 logger.info("🪹 No artifact bundles in the repository.")
                 return try await buildBinary(gitURL: repositoryURL)
+            } catch GitRepositoryClientError.notFound {
+                logger.info("🪹 No releases in the repository.")
+                return try await buildBinary(gitURL: repositoryURL)
             } catch {
                 logger.error(error)
                 return try await buildBinary(gitURL: repositoryURL)
@@ -114,7 +117,7 @@ struct InstallCommand: AsyncParsableCommand {
         switch (version, repositoryURL) {
         case (.latestRelease, .url(let url)):
             let repositoryClient = GitRepositoryClientBuilder.build(url: repositoryURL, configuration: configuration)
-            return try await repositoryClient.fetchAssets(repositoryURL: url, version: .latestRelease).tagName
+            return try? await repositoryClient.fetchAssets(repositoryURL: url, version: .latestRelease).tagName
 
         case (.latestRelease, .ssh):
             return nil

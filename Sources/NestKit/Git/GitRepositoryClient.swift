@@ -23,3 +23,16 @@ public struct Asset: Sendable {
         self.url = url
     }
 }
+
+// MARK: - Errors
+
+public enum GitRepositoryClientError: LocalizedError, Hashable, Sendable {
+    case notFound
+
+    public var errorDescription: String? {
+        switch self {
+        case .notFound: "Not found for the repository."
+        }
+    }
+}
+
