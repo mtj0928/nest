@@ -32,13 +32,7 @@ public struct NestFileManager: Sendable {
             }
             try? fileManager.removeItem(atPath: directory.rootDirectory.path() + command.binaryPath)
         }
-
-        try nestInfoRepository.updateInfo { info in
-            info.commands[name] = info.commands[name]?.filter { $0.version != version }
-            if info.commands[name]?.isEmpty ?? false {
-                info.commands.removeValue(forKey: name)
-            }
-        }
+        try nestInfoRepository.remove(command: name, version: version)
     }
 
     public func list() -> [String: [NestInfo.Command]] {
@@ -50,12 +44,12 @@ public struct NestFileManager: Sendable {
         try fileManager.removeItemIfExists(at: binaryPath)
         try fileManager.moveItem(at: binary.binaryPath, to: binaryPath)
 
-        try nestInfoRepository.updateInfo { info in
-            var commands = info.commands[binary.commandName, default: []]
-            commands = commands.filter { $0.binaryPath != directory.relativePath(binaryPath)  }
-            commands.append(.init(binaryPath: directory.relativePath(binaryPath), isLinked: false, version: binary.version))
-            info.commands[binary.commandName] = commands
-        }
+        let command = NestInfo.Command(
+            binaryPath: directory.relativePath(binaryPath),
+            isLinked: false,
+            version: binary.version
+        )
+        try nestInfoRepository.add(name: binary.commandName, command: command)
     }
 
     private func link(_ binary: ExecutableBinary) throws {
@@ -67,60 +61,12 @@ public struct NestFileManager: Sendable {
         let binaryPath = directory.binaryPath(of: binary)
         try fileManager.createSymbolicLink(at: symbolicURL, withDestinationURL: binaryPath)
 
-        try nestInfoRepository.updateInfo { info in
-            info.commands[binary.commandName] = info.commands[binary.commandName]?.map { command in
-                var command = command
-                command.isLinked = command.binaryPath == directory.relativePath(binaryPath)
-                return command
-            }
-        }
+        try nestInfoRepository.link(name: binary.commandName, binaryPath: directory.relativePath(binaryPath))
     }
 }
 
 extension NestFileManager {
     var nestInfoRepository: NestInfoRepository {
         NestInfoRepository(directory: directory, fileManager: fileManager)
-    }
-}
-
-struct NestInfoRepository {
-    private let directory: NestDirectory
-    private let fileManager: FileManager
-
-    init(directory: NestDirectory, fileManager: FileManager) {
-        self.directory = directory
-        self.fileManager = fileManager
-    }
-
-    func updateInfo(_ updater: (inout NestInfo) -> Void) throws {
-        var infoJSON: NestInfo
-        if fileManager.fileExists(atPath: directory.infoJSON.path()) {
-            let data = try Data(contentsOf: directory.infoJSON)
-            infoJSON = try JSONDecoder().decode(NestInfo.self, from: data)
-        } else {
-            infoJSON = NestInfo(version: NestInfo.currentVersion, commands: [:])
-        }
-        updater(&infoJSON)
-
-        // Format
-        for (name, commands) in infoJSON.commands {
-            infoJSON.commands[name] = commands.sorted(by: { $0.version >= $1.version })
-        }
-
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.withoutEscapingSlashes, .prettyPrinted, .sortedKeys]
-        let updateData = try encoder.encode(infoJSON)
-        try updateData.write(to: directory.infoJSON)
-    }
-
-    func getInfo() -> NestInfo {
-        do {
-            if fileManager.fileExists(atPath: directory.infoJSON.path()) {
-                let data = try Data(contentsOf: directory.infoJSON)
-                return try JSONDecoder().decode(NestInfo.self, from: data)
-            }
-        }
-        catch {}
-        return NestInfo(version: NestInfo.currentVersion, commands: [:])
     }
 }
