@@ -27,10 +27,9 @@ public struct ArtifactBundleFetcher {
         // Fetch asset information from the remove repository
         let repositoryClient = repositoryClientBuilder.build(for: url)
         let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
-        let assets = assetInfo.assets
 
         // Choose an asset which may be an artifact bundle.
-        guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(from: assets) else {
+        guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(from: assetInfo.assets) else {
             throw ArtifactBundleFetcherError.noCandidates
         }
         logger.info("📦 Found an artifact bundle, \(selectedAsset.fileName), for \(url.lastPathComponent).")
@@ -49,8 +48,10 @@ public struct ArtifactBundleFetcher {
         logger.debug("The current triple is \(triple)")
 
         return try fileManager.child(extension: "artifactbundle", at: repositoryDirectory)
-            .compactMap { artifactBundlePath in
-                try ArtifactBundleRootDirectory(at: artifactBundlePath, source: .git(.url(url)))
+            .map { artifactBundlePath in
+                let repository = Repository(reference: .url(url), version: assetInfo.tagName)
+                let sourceInfo = ArtifactBundleSourceInfo(zipURL: selectedAsset.url, repository: repository)
+                return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
             }
             .flatMap { bundle in bundle.binaries(of: triple) }
     }
@@ -70,7 +71,8 @@ public struct ArtifactBundleFetcher {
 
         return try fileManager.child(extension: "artifactbundle", at: directory)
             .compactMap { artifactBundlePath in
-                try ArtifactBundleRootDirectory(at: artifactBundlePath, source: .url(url))
+                let sourceInfo = ArtifactBundleSourceInfo(zipURL: url, repository: nil)
+                return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
             }
             .flatMap { bundle in bundle.binaries(of: triple) }
     }

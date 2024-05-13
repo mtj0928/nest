@@ -45,12 +45,12 @@ public struct SwiftPackageBuilder {
         // Extract the built binaries.
         let executableNames = try await swiftPackage.description().executableNames
         return executableNames.map { executableName in
-            ExecutableBinary(
+            let version = tagOrVersion ?? branch
+            return ExecutableBinary(
                 commandName: executableName,
                 binaryPath: swiftPackage.executableFile(name: executableName),
-                source: .git(gitURL),
-                version: tagOrVersion ?? branch,
-                manufacturer: .localBuild
+                version: version,
+                manufacturer: .localBuild(repository: Repository(reference: gitURL, version: version))
             )
         }
     }

@@ -53,10 +53,10 @@ public struct NestFileManager: Sendable {
         try fileManager.moveItem(at: binary.binaryPath, to: binaryPath)
 
         let command = NestInfo.Command(
-            source: binary.source,
+            version: binary.version,
             binaryPath: directory.relativePath(binaryPath),
             isLinked: false,
-            version: binary.version
+            manufacturer: binary.manufacturer
         )
         try nestInfoRepository.add(name: binary.commandName, command: command)
     }

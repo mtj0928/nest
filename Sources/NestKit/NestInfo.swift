@@ -14,16 +14,16 @@ extension NestInfo {
     public static let currentVersion = "1"
 
     public struct Command: Codable {
-        public var source: ExecutorBinarySource
-        public var binaryPath: String
         public var version: String
+        public var binaryPath: String
         public var isLinked: Bool
+        public var manufacturer: ExecutableManufacturer
 
-        public init(source: ExecutorBinarySource, binaryPath: String, isLinked: Bool, version: String) {
-            self.source = source
+        public init(version: String, binaryPath: String, isLinked: Bool, manufacturer: ExecutableManufacturer) {
+            self.version = version
             self.binaryPath = binaryPath
             self.isLinked = isLinked
-            self.version = version
+            self.manufacturer = manufacturer
         }
     }
 }

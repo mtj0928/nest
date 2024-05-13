@@ -24,7 +24,7 @@ struct ListCommand: AsyncParsableCommand {
         for (name, commands) in installedCommands {
             logger.info("\(name)")
             for command in commands {
-                logger.info("  \(command.version) \(source ? command.source.description : "") \(command.isLinked ? "(Selected)".green : "")")
+                logger.info("  \(command.version) \(source ? command.source : "") \(command.isLinked ? "(Selected)".green : "")")
             }
         }
     }
@@ -33,4 +33,15 @@ struct ListCommand: AsyncParsableCommand {
 extension ListCommand {
     var nestFileManager: NestFileManager { Configuration.default.nestFileManager }
     var logger: Logger { Configuration.default.logger }
+}
+
+extension NestInfo.Command {
+    var source: String {
+        switch manufacturer {
+        case .artifactBundle(let sourceInfo):
+            sourceInfo.repository?.reference.stringURL ?? sourceInfo.zipURL.absoluteString
+        case .localBuild(let repository):
+            repository.reference.stringURL
+        }
+    }
 }

@@ -62,26 +62,6 @@ public enum GitURL: Sendable, Hashable, Codable {
         case .ssh(let sshURL): sshURL.stringURL
         }
     }
-
-    public var sourceIdentifier: String {
-        let scheme: String?
-        let host: String?
-        let pathComponents: [String]
-
-        switch self {
-        case .url(let url):
-            scheme = url.scheme
-            host = url.host()
-            pathComponents = Array(url.pathComponents.dropFirst())
-        case .ssh(let sshURL):
-            scheme = sshURL.user
-            host = sshURL.host
-            pathComponents = sshURL.path.split(separator: "/").compactMap { String($0) }
-        }
-
-        let components = pathComponents + [host, scheme].compactMap { $0 }
-        return components.joined(separator: "_")
-    }
 }
 
 public struct SSHURL: Sendable, Hashable, Codable {
