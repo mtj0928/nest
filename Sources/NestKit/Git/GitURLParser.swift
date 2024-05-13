@@ -75,6 +75,6 @@ public struct SSHURL: Sendable, Hashable {
     }
 
     var stringURL: String {
-        "\(user)@\(host)/\(path)"
+        "\(user)@\(host):\(path)"
     }
 }
