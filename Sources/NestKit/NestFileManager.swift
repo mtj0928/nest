@@ -28,7 +28,17 @@ public struct NestFileManager: Sendable {
             if command.isLinked && fileManager.fileExists(atPath: symbolicFilePath.path()) {
                 try? fileManager.removeItem(at: symbolicFilePath)
             }
-            try? fileManager.removeItem(atPath: directory.rootDirectory.path() + command.binaryPath)
+
+            let binaryPath = URL(filePath: directory.rootDirectory.path() + command.binaryPath)
+            try? fileManager.removeItemIfExists(at: binaryPath)
+
+            // Remove empty directories
+            var targetPath = binaryPath.deletingLastPathComponent()
+            while (try? fileManager.contentsOfDirectory(atPath: targetPath.path()).isEmpty) ?? false,
+                  targetPath != directory.rootDirectory {
+                try fileManager.removeItemIfExists(at: targetPath)
+                targetPath = targetPath.deletingLastPathComponent()
+            }
         }
         try nestInfoRepository.remove(command: name, version: version)
     }

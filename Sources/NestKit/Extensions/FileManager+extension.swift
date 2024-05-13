@@ -12,4 +12,14 @@ extension FileManager {
             .map { url.appending(component: $0) }
             .filter { $0.pathExtension == extensionName }
     }
+
+    public func removeItemAndParentDirectoryIfEmpty(at path: URL) throws {
+        try removeItemIfExists(at: path)
+
+        let directory = path.deletingLastPathComponent()
+
+        if let contents = try? contentsOfDirectory(atPath: directory.path), contents.isEmpty {
+            try removeItemIfExists(at: directory)
+        }
+    }
 }
