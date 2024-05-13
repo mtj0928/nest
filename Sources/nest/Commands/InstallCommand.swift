@@ -10,8 +10,10 @@ struct InstallCommand: AsyncParsableCommand {
         abstract: "Install a repository"
     )
 
-    @Argument(help: "A repository you want to install. (e.g., `owner/repository` or \"https://github.com/...\")")
-    var repositoryURL: GitURL
+    @Argument(help: """
+        A git repository or a URL of an artifactbunlde you want to install. (e.g., `owner/repository`, `https://github.com/...`, and `https://examaple.com/../foo.artifactbundle.zip`)
+        """)
+    var target: InstallTarget
 
     @Argument
     var version: GitVersion = .latestRelease
@@ -23,7 +25,13 @@ struct InstallCommand: AsyncParsableCommand {
         LoggingSystem.bootstrap()
         Configuration.default.logger.logLevel = verbose ? .trace : .info
 
-        let executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinaries(at: repositoryURL, version: version)
+        let executableBinaries = switch target {
+        case .git(let gitURL):
+            try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(at: gitURL, version: version)
+        case .artifactBundle(let url):
+            try await executableBinaryPreparer.fetchArtifactBundle(at: url)
+        }
+
         for binary in executableBinaries {
             try nestFileManager.install(binary)
             logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))

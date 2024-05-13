@@ -10,6 +10,9 @@ struct ListCommand: AsyncParsableCommand {
         abstract: "Show all installed binaries "
     )
 
+    @Flag(name: .shortAndLong, help: "Show a source of a binary.")
+    var source: Bool = false
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
@@ -21,7 +24,7 @@ struct ListCommand: AsyncParsableCommand {
         for (name, commands) in installedCommands {
             logger.info("\(name)")
             for command in commands {
-                logger.info("  \(command.version) \(command.isLinked ? "(Selected)".green : "")")
+                logger.info("  \(command.version) \(source ? command.source.description : "") \(command.isLinked ? "(Selected)".green : "")")
             }
         }
     }

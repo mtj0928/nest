@@ -22,41 +22,25 @@ extension NestDirectory {
         rootDirectory.appending(component: "info.json")
     }
 
-    public func repository(gitURL: GitURL) -> URL {
-        let scheme: String?
-        let host: String?
-        let pathComponents: [String]
-
-        switch gitURL {
-        case .url(let url):
-            scheme = url.scheme
-            host = url.host()
-            pathComponents = Array(url.pathComponents.dropFirst())
-        case .ssh(let sshURL):
-            scheme = sshURL.user
-            host = sshURL.host
-            pathComponents = sshURL.path.split(separator: "/").compactMap { String($0) }
-        }
-
-        let components = pathComponents + [host, scheme].compactMap { $0 }
-        return artifacts.appending(path: components.joined(separator: "_"))
+    public func source(source: ExecutorBinarySource) -> URL {
+        artifacts.appending(component: source.identifier)
     }
 
-    public func version(gitURL: GitURL, version: String) -> URL {
-        repository(gitURL: gitURL).appending(path: version)
+    public func version(source: ExecutorBinarySource, version: String) -> URL {
+        self.source(source: source).appending(path: version)
     }
 
-    public func binaryDirectory(gitURL: GitURL, version: String, manufacturer: ExecutableManufacturer) -> URL {
+    public func binaryDirectory(source: ExecutorBinarySource, version: String, manufacturer: ExecutableManufacturer) -> URL {
         let directoryName = switch manufacturer {
         case .artifactBundle(let fileName): fileName
         case .localBuild: "local_build"
         }
-        return self.version(gitURL: gitURL, version: version).appending(path: directoryName)
+        return self.version(source: source, version: version).appending(path: directoryName)
     }
 
     public func binaryDirectory(of binary: ExecutableBinary) -> URL {
         binaryDirectory(
-            gitURL: binary.gitURL,
+            source: binary.source,
             version: binary.version,
             manufacturer: binary.manufacturer
         )

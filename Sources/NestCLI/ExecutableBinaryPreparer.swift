@@ -1,3 +1,4 @@
+import Foundation
 import NestKit
 import Logging
 
@@ -16,11 +17,14 @@ public struct ExecutableBinaryPreparer {
         self.logger = logger
     }
 
-    public func fetchOrBuildBinaries(at gitURL: GitURL, version: GitVersion) async throws -> [ExecutableBinary] {
+    public func fetchOrBuildBinariesFromGitRepository(
+        at gitURL: GitURL,
+        version: GitVersion
+    ) async throws -> [ExecutableBinary] {
         switch gitURL {
         case .url(let url):
             do {
-                return try await artifactBundleFetcher.fetchArtifactBundle(for: url, version: version)
+                return try await artifactBundleFetcher.fetchArtifactBundleFromGitRepository(for: url, version: version)
             } catch ArtifactBundleFetcherError.noCandidates {
                 logger.info("🪹 No artifact bundles in the repository.")
             } catch GitRepositoryClientError.notFound {
@@ -32,5 +36,9 @@ public struct ExecutableBinaryPreparer {
             logger.info("Specify a https url if you want to download an artifact bundle.")
         }
         return try await swiftPackageBuilder.build(gitURL: gitURL, version: version)
+    }   
+
+    public func fetchArtifactBundle(at url: URL) async throws -> [ExecutableBinary] {
+        try await artifactBundleFetcher.downloadArtifactBundle(url: url)
     }
 }

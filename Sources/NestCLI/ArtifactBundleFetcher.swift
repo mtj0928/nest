@@ -23,7 +23,7 @@ public struct ArtifactBundleFetcher {
         self.logger = logger
     }
 
-    public func fetchArtifactBundle(for url: URL, version: GitVersion) async throws -> [ExecutableBinary] {
+    public func fetchArtifactBundleFromGitRepository(for url: URL, version: GitVersion) async throws -> [ExecutableBinary] {
         // Fetch asset information from the remove repository
         let repositoryClient = repositoryClientBuilder.build(for: url)
         let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
@@ -49,7 +49,29 @@ public struct ArtifactBundleFetcher {
         logger.debug("The current triple is \(triple)")
 
         return try fileManager.child(extension: "artifactbundle", at: repositoryDirectory)
-            .compactMap { artifactBundlePath in try ArtifactBundleRootDirectory(at: artifactBundlePath, gitURL: .url(url)) }
+            .compactMap { artifactBundlePath in
+                try ArtifactBundleRootDirectory(at: artifactBundlePath, source: .git(.url(url)))
+            }
+            .flatMap { bundle in bundle.binaries(of: triple) }
+    }
+
+    public func downloadArtifactBundle(url: URL) async throws -> [ExecutableBinary] {
+        let directory = workingDirectory.appending(component: url.fileNameWithoutPathExtension)
+        try fileManager.removeItemIfExists(at: directory)
+
+        // Download the artifact bundle
+        logger.info("🌐 Downloading the artifact bundle at \(url.absoluteString)...")
+        try await zipFileDownloader.download(url: url, to: directory)
+        logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
+
+        // Get the current triple.
+        let triple = try await TripleDetector(logger: logger).detect()
+        logger.debug("The current triple is \(triple)")
+
+        return try fileManager.child(extension: "artifactbundle", at: directory)
+            .compactMap { artifactBundlePath in
+                try ArtifactBundleRootDirectory(at: artifactBundlePath, source: .url(url))
+            }
             .flatMap { bundle in bundle.binaries(of: triple) }
     }
 }

@@ -1,8 +1,22 @@
 import Foundation
 
-public enum GitURL: Sendable, Hashable {
+public enum GitURL: Sendable, Hashable, Codable {
     case url(URL)
     case ssh(SSHURL)
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let string = try container.decode(String.self)
+        guard let value = Self.parse(string: string) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "Invalid format"))
+        }
+        self = value
+    }
+
+    public func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(stringURL)
+    }
 
     public static func parse(string: String) -> GitURL? {
         if let sshURL = SSHURL(string: string) {
@@ -48,9 +62,29 @@ public enum GitURL: Sendable, Hashable {
         case .ssh(let sshURL): sshURL.stringURL
         }
     }
+
+    public var sourceIdentifier: String {
+        let scheme: String?
+        let host: String?
+        let pathComponents: [String]
+
+        switch self {
+        case .url(let url):
+            scheme = url.scheme
+            host = url.host()
+            pathComponents = Array(url.pathComponents.dropFirst())
+        case .ssh(let sshURL):
+            scheme = sshURL.user
+            host = sshURL.host
+            pathComponents = sshURL.path.split(separator: "/").compactMap { String($0) }
+        }
+
+        let components = pathComponents + [host, scheme].compactMap { $0 }
+        return components.joined(separator: "_")
+    }
 }
 
-public struct SSHURL: Sendable, Hashable {
+public struct SSHURL: Sendable, Hashable, Codable {
     public let user: String
     public let host: String
     public let path: String

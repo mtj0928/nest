@@ -48,7 +48,7 @@ public struct SwiftPackageBuilder {
             ExecutableBinary(
                 commandName: executableName,
                 binaryPath: swiftPackage.executableFile(name: executableName),
-                gitURL: gitURL,
+                source: .git(gitURL),
                 version: tagOrVersion ?? branch,
                 manufacturer: .localBuild
             )
