@@ -23,12 +23,19 @@ struct UninstallCommand: AsyncParsableCommand {
         LoggingSystem.bootstrap()
         Configuration.default.logger.logLevel = verbose ? .trace : .info
 
-        try nestFileManager.uninstall(command: commandName, version: version)
+        let info = nestFileManager.list()
+
+        let targetCommand = info[commandName, default: []].filter { command in
+            command.version == version || version == nil
+        }
+        for command in targetCommand {
+            try nestFileManager.uninstall(command: commandName, version: command.version)
+            logger.info("🗑️ \(commandName) \(command.version) is uninstalled.")
+        }
     }
 }
 
 extension UninstallCommand {
-    var executableBinaryPreparer: ExecutableBinaryPreparer { Configuration.default.executableBinaryPreparer }
     var nestFileManager: NestFileManager { Configuration.default.nestFileManager }
     var logger: Logger { Configuration.default.logger }
 }

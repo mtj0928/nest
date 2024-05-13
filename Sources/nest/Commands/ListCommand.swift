@@ -28,7 +28,6 @@ struct ListCommand: AsyncParsableCommand {
 }
 
 extension ListCommand {
-    var executableBinaryPreparer: ExecutableBinaryPreparer { Configuration.default.executableBinaryPreparer }
     var nestFileManager: NestFileManager { Configuration.default.nestFileManager }
     var logger: Logger { Configuration.default.logger }
 }

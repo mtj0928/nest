@@ -17,13 +17,11 @@ public struct NestFileManager: Sendable {
         try link(binary)
     }
 
-    public func uninstall(command name: String, version: String?) throws {
+    public func uninstall(command name: String, version: String) throws {
         let info = nestInfoRepository.getInfo()
         guard var commands = info.commands[name] else { return }
 
-        if let version {
-            commands = commands.filter { $0.version == version }
-        }
+        commands = commands.filter { $0.version == version }
 
         for command in commands {
             let symbolicFilePath = directory.symbolicPath(name: name)

@@ -44,7 +44,7 @@ struct NestInfoRepository {
 
 extension NestInfoRepository {
 
-    func remove(command: String, version: String?) throws {
+    func remove(command: String, version: String) throws {
         try updateInfo { info in
             info.commands[command] = info.commands[command]?.filter { $0.version != version }
             if info.commands[command]?.isEmpty ?? false {
