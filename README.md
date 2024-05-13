@@ -28,7 +28,7 @@ The tool drastically reduced the build time for the pre-build frameworks.
 
 nest adopts the concept of these tools and reuses an artifact bundle to reduce the build time.
 If there is an artifact bundle in GitHub release, nest downloads the artifact bundles and installs the executable binaries in the bundles.
-If not, nest clones and build the package and installs the executable binaries.
+If not, nest clones and builds the package and installs the executable binaries.
 
 ## Why nest
 A nest is place where Swift birds store their crafts.
