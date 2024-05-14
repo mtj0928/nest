@@ -25,7 +25,11 @@ struct NestInfoRepository {
         }
 
         let encoder = JSONEncoder()
-        encoder.outputFormatting = [.withoutEscapingSlashes, .prettyPrinted, .sortedKeys]
+#if DEBUG
+        encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys, .prettyPrinted]
+#else
+        encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
+#endif
         let updateData = try encoder.encode(infoJSON)
         try updateData.write(to: directory.infoJSON)
     }
