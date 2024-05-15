@@ -16,13 +16,11 @@ extension NestInfo {
     public struct Command: Codable {
         public var version: String
         public var binaryPath: String
-        public var isLinked: Bool
         public var manufacturer: ExecutableManufacturer
 
-        public init(version: String, binaryPath: String, isLinked: Bool, manufacturer: ExecutableManufacturer) {
+        public init(version: String, binaryPath: String, manufacturer: ExecutableManufacturer) {
             self.version = version
             self.binaryPath = binaryPath
-            self.isLinked = isLinked
             self.manufacturer = manufacturer
         }
     }

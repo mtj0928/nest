@@ -24,8 +24,9 @@ public struct NestFileManager: Sendable {
         commands = commands.filter { $0.version == version }
 
         for command in commands {
-            let symbolicFilePath = directory.symbolicPath(name: name)
-            if command.isLinked && fileManager.fileExists(atPath: symbolicFilePath.path()) {
+            if let linkedFilePath = try? self.linkedFilePath(commandName: command.binaryPath),
+               linkedFilePath == command.binaryPath {
+                let symbolicFilePath = directory.symbolicPath(name: name)
                 try? fileManager.removeItem(at: symbolicFilePath)
             }
 
@@ -55,7 +56,6 @@ public struct NestFileManager: Sendable {
         let command = NestInfo.Command(
             version: binary.version,
             binaryPath: directory.relativePath(binaryPath),
-            isLinked: false,
             manufacturer: binary.manufacturer
         )
         try nestInfoRepository.add(name: binary.commandName, command: command)
@@ -69,13 +69,21 @@ public struct NestFileManager: Sendable {
 
         let binaryPath = directory.binaryPath(of: binary)
         try fileManager.createSymbolicLink(at: symbolicURL, withDestinationURL: binaryPath)
-
-        try nestInfoRepository.link(name: binary.commandName, binaryPath: directory.relativePath(binaryPath))
     }
 }
 
 extension NestFileManager {
     var nestInfoRepository: NestInfoRepository {
         NestInfoRepository(directory: directory, fileManager: fileManager)
+    }
+
+    public func isLinked(name: String, commend: NestInfo.Command) -> Bool {
+        (try? self.linkedFilePath(commandName: name)) == commend.binaryPath
+    }
+
+    private func linkedFilePath(commandName: String) throws -> String {
+        let urlString = try fileManager.destinationOfSymbolicLink(atPath: directory.symbolicPath(name: commandName).path())
+        let url = URL(filePath: urlString)
+        return directory.relativePath(url)
     }
 }

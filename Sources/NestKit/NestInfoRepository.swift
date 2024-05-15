@@ -65,14 +65,4 @@ extension NestInfoRepository {
             info.commands[name] = commands
         }
     }
-
-    func link(name: String, binaryPath: String) throws {
-        try updateInfo { info in
-            info.commands[name] = info.commands[name]?.map { command in
-                var command = command
-                command.isLinked = command.binaryPath == binaryPath
-                return command
-            }
-        }
-    }
 }

@@ -24,7 +24,8 @@ struct ListCommand: AsyncParsableCommand {
         for (name, commands) in installedCommands {
             logger.info("\(name)")
             for command in commands {
-                logger.info("  \(command.version) \(source ? command.source : "") \(command.isLinked ? "(Selected)".green : "")")
+                let isLinked = nestFileManager.isLinked(name: name, commend: command)
+                logger.info("  \(command.version) \(source ? command.source : "") \(isLinked ? "(Selected)".green : "")")
             }
         }
     }
