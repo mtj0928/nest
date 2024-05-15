@@ -1,5 +1,7 @@
 # 🪺 nest
 
+*nest is in development. It can broke backward compatibility.*
+
 nest is a package manager to install an executable binary which is made with Swift.
 
 ```
