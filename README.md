@@ -32,8 +32,12 @@ nest adopts the concept of these tools and reuses an artifact bundle to reduce t
 If there is an artifact bundle in GitHub release, nest downloads the artifact bundles and installs the executable binaries in the bundles.
 If not, nest clones and builds the package and installs the executable binaries.
 
-## Why nest
-A nest is place where Swift birds store their crafts.
+## Installation
+Run this command.
+This script downloads the latest artifact bundle of this repository, and installs nest by using nest in the artifact bundle.
+```sh
+curl -s https://raw.githubusercontent.com/mtj0928/nest/main/install.sh | bash
+```
 
 ## How to Use
 
@@ -54,3 +58,6 @@ $ nest uninstall swiftlint 0.55.0 # A verision can be specified.
 ```
 $ nest list
 ```
+
+## Why nest
+A nest is place where Swift birds store their crafts.
