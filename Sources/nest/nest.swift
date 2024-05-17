@@ -15,7 +15,7 @@ struct Nest: AsyncParsableCommand {
 }
 
 extension Configuration {
-    static var `default` = Configuration(
+    static let `default` = Configuration(
         urlSession: .shared,
         fileManager: .default,
         logger: Logger(label: "com.github.mtj0928.nest")

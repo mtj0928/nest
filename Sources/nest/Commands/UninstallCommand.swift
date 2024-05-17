@@ -20,8 +20,7 @@ struct UninstallCommand: AsyncParsableCommand {
     var verbose: Bool = false
 
     mutating func run() async throws {
-        LoggingSystem.bootstrap()
-        Configuration.default.logger.logLevel = verbose ? .trace : .info
+        let (nestFileManager, logger) = setUp()
 
         let info = nestFileManager.list()
 
@@ -36,6 +35,17 @@ struct UninstallCommand: AsyncParsableCommand {
 }
 
 extension UninstallCommand {
-    var nestFileManager: NestFileManager { Configuration.default.nestFileManager }
-    var logger: Logger { Configuration.default.logger }
+    private func setUp() -> (
+        NestFileManager,
+        Logger
+    ) {
+        LoggingSystem.bootstrap()
+        var configuration = Configuration.default
+        configuration.logger.logLevel = verbose ? .trace : .info
+
+        return (
+            configuration.nestFileManager,
+            configuration.logger
+        )
+    }
 }

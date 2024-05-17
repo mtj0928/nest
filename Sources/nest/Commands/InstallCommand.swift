@@ -22,8 +22,7 @@ struct InstallCommand: AsyncParsableCommand {
     var verbose: Bool = false
 
     mutating func run() async throws {
-        LoggingSystem.bootstrap()
-        Configuration.default.logger.logLevel = verbose ? .trace : .info
+        let (executableBinaryPreparer, nestFileManager, logger) = setUp()
 
         let executableBinaries = switch target {
         case .git(let gitURL):
@@ -40,7 +39,19 @@ struct InstallCommand: AsyncParsableCommand {
 }
 
 extension InstallCommand {
-    var executableBinaryPreparer: ExecutableBinaryPreparer { Configuration.default.executableBinaryPreparer }
-    var nestFileManager: NestFileManager { Configuration.default.nestFileManager }
-    var logger: Logger { Configuration.default.logger }
+    private func setUp() -> (
+        ExecutableBinaryPreparer,
+        NestFileManager,
+        Logger
+    ) {
+        LoggingSystem.bootstrap()
+        var configuration = Configuration.default
+        configuration.logger.logLevel = verbose ? .trace : .info
+
+        return (
+            configuration.executableBinaryPreparer,
+            configuration.nestFileManager,
+            configuration.logger
+        )
+    }
 }

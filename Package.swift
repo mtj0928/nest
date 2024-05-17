@@ -47,6 +47,7 @@ let package = Package(
 let swiftSettings: [SwiftSetting] = [
     .enableUpcomingFeature("BareSlashRegexLiterals"),
     .enableUpcomingFeature("StrictConcurrency"),
+    .unsafeFlags(["-strict-concurrency=complete"]),
     .unsafeFlags(["-enable-actor-data-race-checks"])
 ]
 
