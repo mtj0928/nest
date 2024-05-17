@@ -36,7 +36,7 @@ If not, nest clones and builds the package and installs the executable binaries.
 Run this command.
 This script downloads the latest artifact bundle of this repository, and installs nest by using nest in the artifact bundle.
 ```sh
-curl -s https://raw.githubusercontent.com/mtj0928/nest/main/install.sh | bash
+curl -s https://raw.githubusercontent.com/mtj0928/nest/main/Scripts/install.sh | bash
 ```
 
 ## How to Use
