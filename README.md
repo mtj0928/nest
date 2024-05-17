@@ -59,5 +59,9 @@ $ nest uninstall swiftlint 0.55.0 # A verision can be specified.
 $ nest list
 ```
 
-## Why nest
+## Cache directory
+`nest` stores artifacts at `~/.nest` as a default. 
+If you want change the directory, please update `$NEST_PATH`.
+
+## Why is the name nest?
 A nest is place where Swift birds store their crafts.
