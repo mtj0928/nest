@@ -1,0 +1,12 @@
+amends "./Nestfile.pkl"
+
+artifacts = new Listing {
+  new Repository {
+    reference = "mtj0928/nest"
+    version = "0.0.7"
+  }
+  "https://github.com/mtj0928/nest/releases/download/0.0.7/nest-macos.artifactbundle.zip"
+  new Repository {
+    reference = "mtj0928/nest"
+  }
+}

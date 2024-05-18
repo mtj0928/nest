@@ -1,4 +1,4 @@
-public enum GitVersion: Sendable {
+public enum GitVersion: Sendable, Equatable {
     case latestRelease
     case tag(String)
 

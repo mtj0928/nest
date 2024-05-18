@@ -1,6 +1,6 @@
 import Foundation
 
-public struct NestFileManager {
+public struct NestFileManager: Sendable {
     private let fileManager: FileManager
     private let directory: NestDirectory
 

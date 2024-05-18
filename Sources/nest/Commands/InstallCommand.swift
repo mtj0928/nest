@@ -45,8 +45,10 @@ extension InstallCommand {
         Logger
     ) {
         LoggingSystem.bootstrap()
-        var configuration = Configuration.default
-        configuration.logger.logLevel = verbose ? .trace : .info
+        let configuration = Configuration.make(
+            nestPath: ProcessInfo.processInfo.nesPath,
+            logLevel: verbose ? .trace : .info
+        )
 
         return (
             configuration.executableBinaryPreparer,
