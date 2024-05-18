@@ -69,7 +69,6 @@ public struct ArtifactBundleFetcher {
     public func downloadArtifactBundle(url: URL) async throws -> [ExecutableBinary] {
         let nestInfo = nestInfoRepository.getInfo()
         if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: url, in: nestInfo) {
-            logger.info("🪺 The artifact bundle is already installed.")
             throw NestCLIError.alreadyInstalled
         }
 
