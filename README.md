@@ -49,7 +49,24 @@ $ nest install realm/SwiftLint 0.55.0 # A version can be specified.
 $ nest install https://github.com/realm/SwiftLint 0.55.0
 ```
 
-#### Configuration file.
+### Uninstall package
+```sh
+$ nest uninstall swiftlint # All versions of swiftlint are uninstalled.
+$ nest uninstall swiftlint 0.55.0 # A verision can be specified.
+```
+
+### Show all binaries
+```sh
+$ nest list
+```
+
+### Switch command version
+If multiple versions for a command are ionstalled, you can switch the linked version.
+```sh
+$ nest switch swiftlint 0.55.0 // swiftlint 0.55.0 are selected.
+```
+
+## Configuration file.
 `nest` supports to install multiple packages at once with a configuration file, 
 and the file needs to be written in [Pkl](https://github.com/apple/pkl).
 
@@ -78,24 +95,6 @@ Finally run `bootstrap` command. The command installs all packages in the config
 ```sh
 $ nest bootstrap nestfile.pkl
 ```
-
-### Uninstall package
-```sh
-$ nest uninstall swiftlint # All versions of swiftlint are uninstalled.
-$ nest uninstall swiftlint 0.55.0 # A verision can be specified.
-```
-
-### Show all binaries
-```sh
-$ nest list
-```
-
-### Switch command version
-If multiple versions for a command are ionstalled, you can switch the linked version.
-```sh
-$ nest switch swiftlint 0.55.0 // swiftlint 0.55.0 are selected.
-```
-
 ## Cache directory
 `nest` stores artifacts at `~/.nest` as a default. 
 If you want change the directory,
