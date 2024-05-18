@@ -1,0 +1,18 @@
+name: Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+    - uses: swift-actions/setup-swift@v2
+      with:
+        swift-version: "5.10.0"
+    - uses: actions/checkout@v4
+    - name: Run tests
+      run: swift test
