@@ -20,9 +20,9 @@ struct GitHubURLBuilderTests {
             expect: "https://matsuji.net/api/v3/repos/owner/repo/releases/latest"
         ),
     ])
-    func testReleaseURL(parameter: (urlString: String, version: GitVersion, expect: String)) throws {
+    func testReleaseURL(parameter: (urlString: String, tag: GitVersion, expect: String)) throws {
         let url = try #require(URL(string: parameter.urlString))
-        let assetURL = try GitHubURLBuilder.assetURL(url, version: parameter.version)
+        let assetURL = try GitHubURLBuilder.assetURL(url, version: parameter.tag)
         #expect(assetURL == URL(string: parameter.expect))
     }
 }
