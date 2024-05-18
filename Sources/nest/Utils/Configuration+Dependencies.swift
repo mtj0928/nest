@@ -15,7 +15,8 @@ extension Configuration {
     }
 
     var nestDirectory: NestDirectory {
-        if let configuredStringPath = ProcessInfo.processInfo.environment["NEST_PATH"] {
+        if let configuredStringPath = ProcessInfo.processInfo.environment["NEST_PATH"],
+           !configuredStringPath.isEmpty {
             logger.debug("$NEST_PATH: \(configuredStringPath).")
             let configuredPath = URL(fileURLWithPath: configuredStringPath)
             return NestDirectory(rootDirectory: configuredPath)
@@ -46,6 +47,7 @@ extension Configuration {
             workingDirectory: workingDirectory,
             fileManager: fileManager,
             zipFileDownloader: ZipFileDownloader(urlSession: urlSession, fileManager: fileManager),
+            nestInfoRepository: NestInfoRepository(directory: nestDirectory, fileManager: fileManager),
             repositoryClientBuilder: GitRepositoryClientBuilder(configuration: self),
             logger: logger
         )
@@ -55,6 +57,7 @@ extension Configuration {
         SwiftPackageBuilder(
             workingDirectory: workingDirectory,
             fileManager: fileManager,
+            nestInfoRepository: NestInfoRepository(directory: nestDirectory, fileManager: fileManager),
             repositoryClientBuilder: GitRepositoryClientBuilder(configuration: self),
             logger: logger
         )

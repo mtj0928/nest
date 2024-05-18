@@ -6,6 +6,7 @@ public struct ArtifactBundleFetcher {
     private let workingDirectory: URL
     private let fileManager: FileManager
     private let zipFileDownloader: ZipFileDownloader
+    private let nestInfoRepository: NestInfoRepository
     private let repositoryClientBuilder: GitRepositoryClientBuilder
     private let logger: Logger
 
@@ -13,12 +14,14 @@ public struct ArtifactBundleFetcher {
         workingDirectory: URL,
         fileManager: FileManager,
         zipFileDownloader: ZipFileDownloader,
+        nestInfoRepository: NestInfoRepository,
         repositoryClientBuilder: GitRepositoryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
         self.fileManager = fileManager
         self.zipFileDownloader = zipFileDownloader
+        self.nestInfoRepository = nestInfoRepository
         self.repositoryClientBuilder = repositoryClientBuilder
         self.logger = logger
     }
@@ -32,6 +35,13 @@ public struct ArtifactBundleFetcher {
         guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(from: assetInfo.assets) else {
             throw ArtifactBundleFetcherError.noCandidates
         }
+        let tagName = assetInfo.tagName
+        let nestInfo = nestInfoRepository.getInfo()
+
+        if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: selectedAsset.url, in: nestInfo) {
+            throw NestCLIError.alreadyInstalled
+        }
+
         logger.info("📦 Found an artifact bundle, \(selectedAsset.fileName), for \(url.lastPathComponent).")
 
         // Reset the existing directory.
@@ -49,7 +59,7 @@ public struct ArtifactBundleFetcher {
 
         return try fileManager.child(extension: "artifactbundle", at: repositoryDirectory)
             .map { artifactBundlePath in
-                let repository = Repository(reference: .url(url), version: assetInfo.tagName)
+                let repository = Repository(reference: .url(url), version: tagName)
                 let sourceInfo = ArtifactBundleSourceInfo(zipURL: selectedAsset.url, repository: repository)
                 return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
             }
@@ -57,6 +67,12 @@ public struct ArtifactBundleFetcher {
     }
 
     public func downloadArtifactBundle(url: URL) async throws -> [ExecutableBinary] {
+        let nestInfo = nestInfoRepository.getInfo()
+        if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: url, in: nestInfo) {
+            logger.info("🪺 The artifact bundle is already installed.")
+            throw NestCLIError.alreadyInstalled
+        }
+
         let directory = workingDirectory.appending(component: url.fileNameWithoutPathExtension)
         try fileManager.removeItemIfExists(at: directory)
 
