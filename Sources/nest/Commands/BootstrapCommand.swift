@@ -21,20 +21,18 @@ struct BootstrapCommand: AsyncParsableCommand {
 
         let (executableBinaryPreparer, nestFileManager, logger) = setUp(nestPath: nestfile.nestPath)
 
-        for artifactInfo in nestfile.artifacts {
-
+        for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion = .latestRelease
-            if let repositoryInfo = artifactInfo as? Nestfile.Repository,
-               let parsedTarget =  InstallTarget(argument: repositoryInfo.reference)
-            {
+            if let repositoryInfo = targetInfo as? Nestfile.Repository,
+               let parsedTarget =  InstallTarget(argument: repositoryInfo.reference) {
                 target = parsedTarget
                 version = repositoryInfo.version.map(GitVersion.tag) ?? .latestRelease
-            } else if let zipURL = artifactInfo as? Nestfile.ZipUrl,
+            } else if let zipURL = targetInfo as? Nestfile.ZipUrl,
                       let parsedTarget =  InstallTarget(argument: zipURL) {
                 target = parsedTarget
             } else {
-                logger.error("Invalid input: \(artifactInfo?.description ?? "")", metadata: .color(.red))
+                logger.error("Invalid input: \(targetInfo?.description ?? "")", metadata: .color(.red))
                 return
             }
 

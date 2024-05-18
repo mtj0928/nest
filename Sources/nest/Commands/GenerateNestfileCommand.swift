@@ -41,7 +41,7 @@ extension GenerateNestfileCommand {
 let templateString = """
 amends "https://github.com/mtj0928/nest/releases/download/0.0.7/Nestfile.pkl" // Do not remove this line.
 
-artifacts = new Listing {
+targets = new Listing {
   // Example 1: Specify a repository
   new Repository {
     reference = "mtj0928/nest" // or htpps://github.com/mtj0928/nest

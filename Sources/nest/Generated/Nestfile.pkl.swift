@@ -9,19 +9,19 @@ extension Nestfile {
 
         public var nestPath: String?
 
-        public var artifacts: [AnyHashable?]
+        public var targets: [AnyHashable?]
 
-        public init(nestPath: String?, artifacts: [AnyHashable?]) {
+        public init(nestPath: String?, targets: [AnyHashable?]) {
             self.nestPath = nestPath
-            self.artifacts = artifacts
+            self.targets = targets
         }
 
         public init(from decoder: Decoder) throws {
             let dec = try decoder.container(keyedBy: PklCodingKey.self)
             let nestPath = try dec.decode(String?.self, forKey: PklCodingKey(string: "nestPath"))
-            let artifacts = try dec.decode([PklSwift.PklAny].self, forKey: PklCodingKey(string: "artifacts"))
+            let targets = try dec.decode([PklSwift.PklAny].self, forKey: PklCodingKey(string: "targets"))
                     .map { $0.value as! AnyHashable? }
-            self = Module(nestPath: nestPath, artifacts: artifacts)
+            self = Module(nestPath: nestPath, targets: targets)
         }
     }
 
