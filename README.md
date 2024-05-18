@@ -50,8 +50,9 @@ $ nest install https://github.com/realm/SwiftLint 0.55.0
 ```
 
 #### Configuration file.
-`nest` supports to install multiple packages at once with a configuration file.  
-The configuration file needs to be written in [Pkl](https://github.com/apple/pkl).  
+`nest` supports to install multiple packages at once with a configuration file, 
+and the file needs to be written in [Pkl](https://github.com/apple/pkl).
+
 `generate-nestfile` generates the basic configuration file.
 ```sh
 $ nest generate-nestfile
