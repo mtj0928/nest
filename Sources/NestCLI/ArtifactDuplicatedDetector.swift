@@ -28,7 +28,7 @@ public enum ArtifactDuplicatedDetector {
                 switch command.manufacturer {
                 case .artifactBundle(let sourceInfo):
                     return sourceInfo.zipURL == zipURL
-                case .localBuild(let repository):
+                case .localBuild:
                     return false
                 }
             })
