@@ -6,34 +6,6 @@ import NestKit
 
 extension Configuration {
 
-    var zipFileDownloader: ZipFileDownloader {
-        ZipFileDownloader(urlSession: urlSession, fileManager: fileManager)
-    }
-
-    var workingDirectory: URL {
-        fileManager.temporaryDirectory.appending(path: "nest")
-    }
-
-    var nestDirectory: NestDirectory {
-        if let configuredStringPath = ProcessInfo.processInfo.environment["NEST_PATH"],
-           !configuredStringPath.isEmpty {
-            logger.debug("$NEST_PATH: \(configuredStringPath).")
-            let configuredPath = URL(fileURLWithPath: configuredStringPath)
-            return NestDirectory(rootDirectory: configuredPath)
-        } else {
-            logger.debug("$NEST_PATH is not set.")
-            let homeDirectory = fileManager.homeDirectoryForCurrentUser
-            let dotNestDirectory = homeDirectory.appending(path: ".nest")
-            return NestDirectory(rootDirectory: dotNestDirectory)
-        }
-    }
-
-    var nestFileManager: NestFileManager {
-        NestFileManager(fileManager: fileManager, directory: nestDirectory)
-    }
-}
-
-extension Configuration {
     var executableBinaryPreparer: ExecutableBinaryPreparer {
         ExecutableBinaryPreparer(
             artifactBundleFetcher: artifactBundleFetcher,

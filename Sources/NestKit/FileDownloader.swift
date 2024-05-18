@@ -1,7 +1,7 @@
 import Foundation
 import ZIPFoundation
 
-public struct ZipFileDownloader {
+public struct ZipFileDownloader: Sendable {
     let urlSession: URLSession
     let fileManager: FileManager
 

@@ -15,11 +15,13 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/weichsel/ZIPFoundation", from: "0.9.0"),
         .package(url: "https://github.com/onevcat/Rainbow", from: "4.0.1"),
+        .package(url: "https://github.com/apple/pkl-swift", from: "0.2.1"),
     ],
     targets: [
         .executableTarget(name: "nest", dependencies: [
+            "NestCLI",
             .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            "NestCLI"
+            .product(name: "PklSwift", package: "pkl-swift"),
         ]),
 
         .target(name: "NestCLI", dependencies: [

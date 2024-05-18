@@ -1,0 +1,9 @@
+class Repository {
+  reference: String
+  version: String?
+}
+
+typealias ZipUrl = String(matches(Regex(#"(https?:\/\/)?[^\/]+\/.*\.zip"#)))
+
+nestPath: String?
+artifacts: Listing<Repository|ZipUrl>

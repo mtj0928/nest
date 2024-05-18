@@ -25,6 +25,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: nest-macos.artifactbundle.zip
+          files: |
+            nest-macos.artifactbundle.zip
+            pkl/Nestfile.pkl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

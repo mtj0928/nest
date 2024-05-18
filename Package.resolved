@@ -1,6 +1,15 @@
 {
-  "originHash" : "002b97aea1f3677d995cbcf22e701fd58d1ec511acbfa66a2e2f04b2864b4d1c",
+  "originHash" : "c72de19b6ffa8910f766a855cb17ad5cca58d7de02497a26cc662dcf355c6b3e",
   "pins" : [
+    {
+      "identity" : "pkl-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/pkl-swift",
+      "state" : {
+        "revision" : "7d573f7c5f0e843b9fb25a91f24c6f27bb65f353",
+        "version" : "0.2.3"
+      }
+    },
     {
       "identity" : "rainbow",
       "kind" : "remoteSourceControl",
@@ -35,6 +44,15 @@
       "state" : {
         "revision" : "3897cc8358b4a19499d93afe1519e6eeecaffa96",
         "version" : "600.0.0-prerelease-2024-05-07"
+      }
+    },
+    {
+      "identity" : "swift-system",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-system",
+      "state" : {
+        "revision" : "025bcb1165deab2e20d4eaba79967ce73013f496",
+        "version" : "1.2.1"
       }
     },
     {
