@@ -26,7 +26,8 @@ The tool is so amazing, but the tool requires to build packages at first.
 The build time cannot be ignored on Cl environment where caches are not available like Xcode Cloud.
 
 scipio is a tool to generate and reuse xcframeworks,
-The tool drastically reduced the build time for the pre-build frameworks.
+The tool drastically reduced the build time for the pre-build frameworks 
+by fetching XCFrameworks from remote storage and reusing them.
 
 nest adopts the concept of these tools and reuses an artifact bundle to reduce the build time.
 If there is an artifact bundle in GitHub release, nest downloads the artifact bundles and installs the executable binaries in the bundles.
