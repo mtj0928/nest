@@ -39,16 +39,16 @@ extension GenerateNestfileCommand {
 
 
 let templateString = """
-amends "https://github.com/mtj0928/nest/releases/download/0.0.7/Nestfile.pkl" // Do not remove this line.
+amends "https://github.com/mtj0928/nest/releases/download/0.0.10/Nestfile.pkl" // Do not remove this line.
 
 targets = new Listing {
   // Example 1: Specify a repository
   new Repository {
     reference = "mtj0928/nest" // or htpps://github.com/mtj0928/nest
-    version = "0.0.7" // (Optional) If version doesn't exit, the latest release will be used.
+    version = "0.0.10" // (Optional) If version doesn't exit, the latest release will be used.
   }
 
   // Example 2: Specify zip URL directly
-  "https://github.com/mtj0928/nest/releases/download/0.0.7/nest-macos.artifactbundle.zip"
+  "https://github.com/mtj0928/nest/releases/download/0.0.10/nest-macos.artifactbundle.zip"
 }
 """
