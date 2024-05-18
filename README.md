@@ -49,15 +49,33 @@ $ nest install realm/SwiftLint 0.55.0 # A version can be specified.
 $ nest install https://github.com/realm/SwiftLint 0.55.0
 ```
 
-And, `nest` supports to install multiple packages at once with a configuration file.
-```sh
-$ nest bootstrap nestfile.pkl
-```
-
-The configuration file needs to be written in [Pkl](https://github.com/apple/pkl).
-`nest` generate the basic configuration file.
+#### Configuration file.
+`nest` supports to install multiple packages at once with a configuration file.  
+The configuration file needs to be written in [Pkl](https://github.com/apple/pkl).  
+`generate-nestfile` generates the basic configuration file.
 ```sh
 $ nest generate-nestfile
+```
+And update add the file based on your requirements.
+
+```pkl
+amends "https://github.com/mtj0928/nest/releases/download/0.0.7/Nestfile.pkl" // Do not remove this line.
+
+artifacts = new Listing {
+  // Example 1: Specify a repository
+  new Repository {
+    reference = "mtj0928/nest" // or htpps://github.com/mtj0928/nest
+    version = "0.0.7" // (Optional) If version doesn't exit, the latest release will be used.
+  }
+
+  // Example 2: Specify zip URL directly
+  "https://github.com/mtj0928/nest/releases/download/0.0.7/nest-macos.artifactbundle.zip"
+}
+```
+
+`bootstrap` can install all packages in the configuration file at once.
+```sh
+$ nest bootstrap nestfile.pkl
 ```
 
 ### Uninstall package
