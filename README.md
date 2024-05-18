@@ -25,7 +25,7 @@ mint is a tool to install and run executable Swift packages.
 The tool is so amazing, but the tool requires to build packages at first.
 The build time cannot be ignored on Cl environment where caches are not available like Xcode Cloud.
 
-scipio is a tool to generate and reuse xcframeworks,
+scipio is a tool to generate and reuse xcframeworks.
 The tool drastically reduced the build time for the pre-build frameworks 
 by fetching XCFrameworks from remote storage and reusing them.
 
@@ -64,5 +64,5 @@ $ nest list
 `nest` stores artifacts at `~/.nest` as a default. 
 If you want change the directory, please update `$NEST_PATH`.
 
-## Why is the name nest?
+## Why is the name `nest`?
 A nest is place where Swift birds store their crafts.
