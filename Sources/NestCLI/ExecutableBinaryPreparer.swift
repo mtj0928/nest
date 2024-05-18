@@ -29,16 +29,33 @@ public struct ExecutableBinaryPreparer {
                 logger.info("🪹 No artifact bundles in the repository.")
             } catch GitRepositoryClientError.notFound {
                 logger.info("🪹 No releases in the repository.")
-            } catch {
+            } catch NestCLIError.alreadyInstalled {
+                logger.info("🪺 The artifact bundle has been already installed.")
+                return []
+            }
+            catch {
                 logger.error(error)
             }
         case .ssh:
             logger.info("Specify a https url if you want to download an artifact bundle.")
         }
-        return try await swiftPackageBuilder.build(gitURL: gitURL, version: version)
+
+        do {
+            return try await swiftPackageBuilder.build(gitURL: gitURL, version: version)
+        }
+        catch NestCLIError.alreadyInstalled {
+            logger.info("🪺 The artifact bundle has been already installed.")
+            return []
+        }
     }   
 
     public func fetchArtifactBundle(at url: URL) async throws -> [ExecutableBinary] {
-        try await artifactBundleFetcher.downloadArtifactBundle(url: url)
+        do {
+            return try await artifactBundleFetcher.downloadArtifactBundle(url: url)
+        }
+        catch NestCLIError.alreadyInstalled {
+            logger.info("🪺 The artifact bundle has been already installed.")
+            return []
+        }
     }
 }

@@ -1,15 +1,15 @@
 import Foundation
 
-struct NestInfoRepository {
+public struct NestInfoRepository {
     private let directory: NestDirectory
     private let fileManager: FileManager
 
-    init(directory: NestDirectory, fileManager: FileManager) {
+    public init(directory: NestDirectory, fileManager: FileManager) {
         self.directory = directory
         self.fileManager = fileManager
     }
 
-    func updateInfo(_ updater: (inout NestInfo) -> Void) throws {
+    public func updateInfo(_ updater: (inout NestInfo) -> Void) throws {
         var infoJSON: NestInfo
         if fileManager.fileExists(atPath: directory.infoJSON.path()) {
             let data = try Data(contentsOf: directory.infoJSON)
@@ -34,7 +34,7 @@ struct NestInfoRepository {
         try updateData.write(to: directory.infoJSON)
     }
 
-    func getInfo() -> NestInfo {
+    public func getInfo() -> NestInfo {
         do {
             if fileManager.fileExists(atPath: directory.infoJSON.path()) {
                 let data = try Data(contentsOf: directory.infoJSON)
