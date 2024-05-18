@@ -43,26 +43,44 @@ curl -s https://raw.githubusercontent.com/mtj0928/nest/main/Scripts/install.sh |
 ## How to Use
 
 ### Install packages
-```
+```sh
 $ nest install realm/SwiftLint 
 $ nest install realm/SwiftLint 0.55.0 # A version can be specified.
 $ nest install https://github.com/realm/SwiftLint 0.55.0
 ```
 
-### Uninstall package
+And, `nest` supports to install multiple packages at once with a configuration file.
+```sh
+$ nest bootstrap nestfile.pkl
 ```
+
+The configuration file needs to be written in [Pkl](https://github.com/apple/pkl).
+`nest` generate the basic configuration file.
+```sh
+$ nest generate-nestfile
+```
+
+### Uninstall package
+```sh
 $ nest uninstall swiftlint # All versions of swiftlint are uninstalled.
 $ nest uninstall swiftlint 0.55.0 # A verision can be specified.
 ```
 
 ### Show all binaries
-```
+```sh
 $ nest list
+```
+
+### Switch command version
+If multiple versions for a command are ionstalled, you can switch the linked version.
+```sh
+$ nest switch swiftlint 0.55.0
 ```
 
 ## Cache directory
 `nest` stores artifacts at `~/.nest` as a default. 
-If you want change the directory, please update `$NEST_PATH`.
+If you want change the directory,
+please update `$NEST_PATH` or specify `nestPath` in a configuration file (only `bootstrap`).
 
 ## Why is the name `nest`?
 A nest is place where Swift birds store their crafts.

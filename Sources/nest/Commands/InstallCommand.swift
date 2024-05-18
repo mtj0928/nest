@@ -22,7 +22,7 @@ struct InstallCommand: AsyncParsableCommand {
     var verbose: Bool = false
 
     mutating func run() async throws {
-        let (executableBinaryPreparer, nestFileManager, logger) = setUp()
+        let (executableBinaryPreparer, nestDirectory, nestFileManager, logger) = setUp()
 
         let executableBinaries = switch target {
         case .git(let gitURL):
@@ -35,12 +35,20 @@ struct InstallCommand: AsyncParsableCommand {
             try nestFileManager.install(binary)
             logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
         }
+
+        let binDirectory = nestDirectory.bin.path()
+        let path = ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":").map { String($0) } ?? []
+        if ProcessInfo.processInfo.nesPath?.isEmpty ?? true,
+           !path.contains(binDirectory) {
+            logger.warning("\(binDirectory) is not added to $PATH.", metadata: .color(.yellow))
+        }
     }
 }
 
 extension InstallCommand {
     private func setUp() -> (
         ExecutableBinaryPreparer,
+        NestDirectory,
         NestFileManager,
         Logger
     ) {
@@ -52,6 +60,7 @@ extension InstallCommand {
 
         return (
             configuration.executableBinaryPreparer,
+            configuration.nestDirectory,
             configuration.nestFileManager,
             configuration.logger
         )
