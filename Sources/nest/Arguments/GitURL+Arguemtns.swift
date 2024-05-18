@@ -17,7 +17,7 @@ enum InstallTarget: ExpressibleByArgument {
         if let url = URL(string: argument),
            url.pathExtension == "zip" {
             self = .artifactBundle(url)
-        } else if let  gitURL = GitURL.parse(string: argument) {
+        } else if let gitURL = GitURL.parse(string: argument) {
             self = .git(gitURL)
         } else {
             return nil

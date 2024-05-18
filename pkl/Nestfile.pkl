@@ -6,4 +6,5 @@ class Repository {
 typealias ZipUrl = String(matches(Regex(#"(https?:\/\/)?[^\/]+\/.*\.zip"#)))
 
 nestPath: String?
-targets: Listing<Repository|ZipUrl>
+typealias Target = Repository | ZipUrl
+targets: Listing<Target>

@@ -4,24 +4,39 @@ import PklSwift
 public enum Nestfile {}
 
 extension Nestfile {
+    public enum Target: Decodable, Hashable {
+        case repository(Repository)
+        case zipUrl(ZipUrl)
+
+        public init(from decoder: Decoder) throws {
+            let decoded = try decoder.singleValueContainer().decode(PklSwift.PklAny.self).value
+            switch decoded {
+            case let decoded as Repository:
+                self = Target.repository(decoded)
+            case let decoded as ZipUrl:
+                self = Target.zipUrl(decoded)
+            default:
+                throw DecodingError.typeMismatch(
+                    Target.self,
+                    .init(
+                        codingPath: decoder.codingPath,
+                        debugDescription: "Expected type Target, but got \(String(describing: decoded))"
+                    )
+                )
+            }
+        }
+    }
+
     public struct Module: PklRegisteredType, Decodable, Hashable {
         public static var registeredIdentifier: String = "Nestfile"
 
         public var nestPath: String?
 
-        public var targets: [AnyHashable?]
+        public var targets: [Target]
 
-        public init(nestPath: String?, targets: [AnyHashable?]) {
+        public init(nestPath: String?, targets: [Target]) {
             self.nestPath = nestPath
             self.targets = targets
-        }
-
-        public init(from decoder: Decoder) throws {
-            let dec = try decoder.container(keyedBy: PklCodingKey.self)
-            let nestPath = try dec.decode(String?.self, forKey: PklCodingKey(string: "nestPath"))
-            let targets = try dec.decode([PklSwift.PklAny].self, forKey: PklCodingKey(string: "targets"))
-                    .map { $0.value as! AnyHashable? }
-            self = Module(nestPath: nestPath, targets: targets)
         }
     }
 

@@ -23,17 +23,16 @@ struct BootstrapCommand: AsyncParsableCommand {
 
         for targetInfo in nestfile.targets {
             let target: InstallTarget
-            var version: GitVersion = .latestRelease
-            if let repositoryInfo = targetInfo as? Nestfile.Repository,
-               let parsedTarget =  InstallTarget(argument: repositoryInfo.reference) {
-                target = parsedTarget
-                version = repositoryInfo.version.map(GitVersion.tag) ?? .latestRelease
-            } else if let zipURL = targetInfo as? Nestfile.ZipUrl,
-                      let parsedTarget =  InstallTarget(argument: zipURL) {
-                target = parsedTarget
-            } else {
-                logger.error("Invalid input: \(targetInfo?.description ?? "")", metadata: .color(.red))
+            var version: GitVersion
+
+            switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
+            case (.failure(let error), _):
+                logger.error("Invalid input: \(error.contents)", metadata: .color(.red))
                 return
+            case (.success(let installTarget), let resolvedVersion):
+                target = installTarget
+                version = if let resolvedVersion { .tag(resolvedVersion) }
+                else { .latestRelease }
             }
 
             let executableBinaries: [ExecutableBinary]
@@ -55,7 +54,36 @@ struct BootstrapCommand: AsyncParsableCommand {
                 logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
             }
         }
+    }
+}
 
+extension Nestfile.Target {
+    struct ParseError: Error {
+        let contents: String
+    }
+
+    func resolveInstallTarget() -> Result<InstallTarget, ParseError> {
+        switch self {
+        case .repository(let repository):
+            guard let parsedTarget = InstallTarget(argument: repository.reference) else {
+                return .failure(ParseError(contents: repository.reference))
+            }
+            return .success(parsedTarget)
+        case .zipUrl(let zipURL):
+            guard let parsedTarget =  InstallTarget(argument: zipURL) else {
+                return .failure(ParseError(contents: zipURL))
+            }
+            return .success(parsedTarget)
+        }
+    }
+
+    func resolveVersion() -> String? {
+        switch self {
+        case .repository(let repository):
+            return repository.version
+        case .zipUrl:
+            return nil
+        }
     }
 }
 
