@@ -74,7 +74,7 @@ $ nest list
 ### Switch command version
 If multiple versions for a command are ionstalled, you can switch the linked version.
 ```sh
-$ nest switch swiftlint 0.55.0
+$ nest switch swiftlint 0.55.0 // swiftlint 0.55.0 are selected.
 ```
 
 ## Cache directory
