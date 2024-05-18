@@ -12,7 +12,8 @@ struct Nest: AsyncParsableCommand {
             UninstallCommand.self,
             ListCommand.self,
             SwitchCommand.self,
-            BootstrapCommand.self
+            BootstrapCommand.self,
+            GenerateNestfileCommand.self
         ]
     )
 }
