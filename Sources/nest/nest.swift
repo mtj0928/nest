@@ -9,7 +9,8 @@ struct Nest: AsyncParsableCommand {
         subcommands: [
             InstallCommand.self,
             UninstallCommand.self,
-            ListCommand.self
+            ListCommand.self,
+            SwitchCommand.self
         ]
     )
 }

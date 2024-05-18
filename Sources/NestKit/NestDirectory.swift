@@ -90,7 +90,11 @@ extension NestDirectory {
         bin.appending(path: name)
     }
 
-    func relativePath(_ url: URL) -> String {
+    public func relativePath(_ url: URL) -> String {
         url.absoluteString.replacingOccurrences(of: rootDirectory.absoluteString, with: "")
+    }
+
+    public func url(_ path: String) -> URL {
+        rootDirectory.appending(path: path)
     }
 }

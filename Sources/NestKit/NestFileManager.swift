@@ -61,7 +61,7 @@ public struct NestFileManager {
         try nestInfoRepository.add(name: binary.commandName, command: command)
     }
 
-    private func link(_ binary: ExecutableBinary) throws {
+    public func link(_ binary: ExecutableBinary) throws {
         try fileManager.createDirectory(at: directory.bin, withIntermediateDirectories: true)
 
         let symbolicURL = directory.symbolicPath(name: binary.commandName)
