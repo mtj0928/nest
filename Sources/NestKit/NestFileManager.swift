@@ -24,7 +24,7 @@ public struct NestFileManager: Sendable {
         commands = commands.filter { $0.version == version }
 
         for command in commands {
-            if let linkedFilePath = try? self.linkedFilePath(commandName: command.binaryPath),
+            if let linkedFilePath = try? self.linkedFilePath(commandName: name),
                linkedFilePath == command.binaryPath {
                 let symbolicFilePath = directory.symbolicPath(name: name)
                 try? fileManager.removeItem(at: symbolicFilePath)
