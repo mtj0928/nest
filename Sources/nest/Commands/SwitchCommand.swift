@@ -28,22 +28,27 @@ struct SwitchCommand: AsyncParsableCommand {
         }
         let candidates = commands.filter { $0.version == version || version == nil }
 
-        if candidates.isEmpty,
-           let version {
-            logger.error("🪹 \(commandName) (\(version)) doesn't exist.", metadata: .color(.red))
-        } else if candidates.count == 1 {
-            try switchCommand(candidates[0], nestDirectory: nestDirectory, nestFileManager: nestFileManager, logger: logger)
-        }
-        else {
-            let options = candidates.map { candidate in 
-                let isLinked = nestFileManager.isLinked(name: commandName, commend: candidate)
-                return "\(candidate.version) (\(candidate.source)) \(isLinked ? "(Selected)".green : "")"}
-            guard let selectedIndex = CLIUtil.getUserChoice(from: options) else {
-                logger.error("Unknown error")
-                return
+        do {
+            if candidates.isEmpty,
+               let version {
+                logger.error("🪹 \(commandName) (\(version)) doesn't exist.", metadata: .color(.red))
+            } else if candidates.count == 1 {
+                try switchCommand(candidates[0], nestDirectory: nestDirectory, nestFileManager: nestFileManager, logger: logger)
             }
-            let command = candidates[selectedIndex]
-            try switchCommand(command, nestDirectory: nestDirectory, nestFileManager: nestFileManager, logger: logger)
+            else {
+                let options = candidates.map { candidate in
+                    let isLinked = nestFileManager.isLinked(name: commandName, commend: candidate)
+                    return "\(candidate.version) (\(candidate.source)) \(isLinked ? "(Selected)".green : "")"}
+                guard let selectedIndex = CLIUtil.getUserChoice(from: options) else {
+                    logger.error("Unknown error")
+                    return
+                }
+                let command = candidates[selectedIndex]
+                try switchCommand(command, nestDirectory: nestDirectory, nestFileManager: nestFileManager, logger: logger)
+            }
+        } catch {
+            logger.error(error)
+            Foundation.exit(1)
         }
     }
 

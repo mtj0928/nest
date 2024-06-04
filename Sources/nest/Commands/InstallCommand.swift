@@ -23,24 +23,29 @@ struct InstallCommand: AsyncParsableCommand {
 
     mutating func run() async throws {
         let (executableBinaryPreparer, nestDirectory, nestFileManager, logger) = setUp()
+        do {
 
-        let executableBinaries = switch target {
-        case .git(let gitURL):
-            try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(at: gitURL, version: version)
-        case .artifactBundle(let url):
-            try await executableBinaryPreparer.fetchArtifactBundle(at: url)
-        }
+            let executableBinaries = switch target {
+            case .git(let gitURL):
+                try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(at: gitURL, version: version)
+            case .artifactBundle(let url):
+                try await executableBinaryPreparer.fetchArtifactBundle(at: url)
+            }
 
-        for binary in executableBinaries {
-            try nestFileManager.install(binary)
-            logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
-        }
+            for binary in executableBinaries {
+                try nestFileManager.install(binary)
+                logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
+            }
 
-        let binDirectory = nestDirectory.bin.path()
-        let path = ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":").map { String($0) } ?? []
-        if ProcessInfo.processInfo.nesPath?.isEmpty ?? true,
-           !path.contains(binDirectory) {
-            logger.warning("\(binDirectory) is not added to $PATH.", metadata: .color(.yellow))
+            let binDirectory = nestDirectory.bin.path()
+            let path = ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":").map { String($0) } ?? []
+            if ProcessInfo.processInfo.nesPath?.isEmpty ?? true,
+               !path.contains(binDirectory) {
+                logger.warning("\(binDirectory) is not added to $PATH.", metadata: .color(.yellow))
+            }
+        } catch {
+            logger.error(error)
+            Foundation.exit(1)
         }
     }
 }

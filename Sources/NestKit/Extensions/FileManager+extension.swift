@@ -8,9 +8,13 @@ extension FileManager {
     }
 
     public func child(extension extensionName: String, at url: URL) throws -> [URL] {
+        try child(at: url)
+            .filter { $0.pathExtension == extensionName }
+    }
+
+    public func child(at url: URL) throws -> [URL] {
         try contentsOfDirectory(atPath: url.path())
             .map { url.appending(component: $0) }
-            .filter { $0.pathExtension == extensionName }
     }
 
     public func removeItemAndParentDirectoryIfEmpty(at path: URL) throws {

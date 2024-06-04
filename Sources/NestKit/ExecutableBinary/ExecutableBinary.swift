@@ -5,7 +5,11 @@ public struct ExecutableBinary: Codable {
     public var binaryPath: URL
     public var version: String
     public var manufacturer: ExecutableManufacturer
-    
+
+    public var parentDirectory: URL {
+        binaryPath.deletingLastPathComponent()
+    }
+
     public init(commandName: String, binaryPath: URL, version: String, manufacturer: ExecutableManufacturer) {
         self.commandName = commandName
         self.binaryPath = binaryPath
