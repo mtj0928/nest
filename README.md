@@ -1,7 +1,5 @@
 # 🪺 nest
 
-*nest is in development. It can broke backward compatibility.*
-
 nest is a package manager to install an executable binary which is made with Swift.
 
 ```
@@ -17,6 +15,8 @@ $ nest install XcodesOrg/xcodes
 🔨 Building xcodes for 1.4.1...
 🪺 Success to install xcodes.
 ```
+
+** nest doesn't reach 1.0.0 yet. It may break backward compatibility. **
 
 ## Concept
 nest is highly inspired by [mint](https://github.com/yonaskolb/Mint) and [scipio](https://github.com/giginet/Scipio).
