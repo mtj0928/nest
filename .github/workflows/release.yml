@@ -16,7 +16,7 @@ jobs:
         with:
           swift-version: "5.10.0"
       - name: Build Swift package
-        run: swift build -c release
+        run: swift build -c release --arch arm64 --arch x86_64  
         
       - name: Get Current Tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
