@@ -7,7 +7,7 @@ struct InstallTargetTests {
     func testNeedsUnzipForZip() throws {
         let downloader = ZipFileDownloader(urlSession: .shared, fileManager: .default)
         let url = URL(string: "artifactBundle.zip")!
-        #expect(downloader.needsUnzip(for: url) == true)
+        #expect(downloader.needsUnzip(for: url))
     }
     
     @Test
