@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import NestKit
+import UniformTypeIdentifiers
 
 extension GitURL: ExpressibleByArgument {
     public init?(argument: String) {
@@ -14,8 +15,9 @@ enum InstallTarget: ExpressibleByArgument {
     case artifactBundle(URL)
 
     init?(argument: String) {
-        if let url = URL(string: argument),
-           url.pathExtension == "zip" {
+        guard let url = URL(string: argument) else { return nil }
+        
+        if let utType = UTType(filenameExtension: url.pathExtension), utType.conforms(to: .zip) {
             self = .artifactBundle(url)
         } else if let gitURL = GitURL.parse(string: argument) {
             self = .git(gitURL)
