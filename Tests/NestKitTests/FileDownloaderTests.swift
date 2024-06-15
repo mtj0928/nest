@@ -14,6 +14,6 @@ struct InstallTargetTests {
     func testNeedsUnzipForNonArchivedFile() throws {
         let downloader = ZipFileDownloader(urlSession: .shared, fileManager: .default)
         let url = URL(string: "artifactBundle.ipa")!
-        #expect(downloader.needsUnzip(for: url) == false)
+        #expect(!downloader.needsUnzip(for: url))
     }
 }
