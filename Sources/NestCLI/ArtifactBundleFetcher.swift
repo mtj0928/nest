@@ -6,7 +6,7 @@ public struct ArtifactBundleFetcher {
     private let workingDirectory: URL
     private let fileManager: FileManager
     private let zipFileDownloader: ZipFileDownloader
-    private let nestInfoRepository: NestInfoRepository
+    private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
     private let logger: Logger
 
@@ -14,14 +14,14 @@ public struct ArtifactBundleFetcher {
         workingDirectory: URL,
         fileManager: FileManager,
         zipFileDownloader: ZipFileDownloader,
-        nestInfoRepository: NestInfoRepository,
+        nestInfoController: NestInfoController,
         repositoryClientBuilder: GitRepositoryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
         self.fileManager = fileManager
         self.zipFileDownloader = zipFileDownloader
-        self.nestInfoRepository = nestInfoRepository
+        self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
         self.logger = logger
     }
@@ -36,7 +36,7 @@ public struct ArtifactBundleFetcher {
             throw ArtifactBundleFetcherError.noCandidates
         }
         let tagName = assetInfo.tagName
-        let nestInfo = nestInfoRepository.getInfo()
+        let nestInfo = nestInfoController.getInfo()
 
         if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: selectedAsset.url, in: nestInfo) {
             throw NestCLIError.alreadyInstalled
@@ -67,7 +67,7 @@ public struct ArtifactBundleFetcher {
     }
 
     public func downloadArtifactBundle(url: URL) async throws -> [ExecutableBinary] {
-        let nestInfo = nestInfoRepository.getInfo()
+        let nestInfo = nestInfoController.getInfo()
         if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: url, in: nestInfo) {
             throw NestCLIError.alreadyInstalled
         }

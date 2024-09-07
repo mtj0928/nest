@@ -18,7 +18,7 @@ public struct NestFileManager: Sendable {
     }
 
     public func uninstall(command name: String, version: String) throws {
-        let info = nestInfoRepository.getInfo()
+        let info = nestInfoController.getInfo()
         guard var commands = info.commands[name] else { return }
 
         commands = commands.filter { $0.version == version }
@@ -46,11 +46,11 @@ public struct NestFileManager: Sendable {
                 targetPath = targetPath.deletingLastPathComponent()
             }
         }
-        try nestInfoRepository.remove(command: name, version: version)
+        try nestInfoController.remove(command: name, version: version)
     }
 
     public func list() -> [String: [NestInfo.Command]] {
-        nestInfoRepository.getInfo().commands
+        nestInfoController.getInfo().commands
     }
 
     private func add(_ binary: ExecutableBinary) throws {
@@ -75,7 +75,7 @@ public struct NestFileManager: Sendable {
             resourcePaths: copiedResources.map { directory.relativePath($0) },
             manufacturer: binary.manufacturer
         )
-        try nestInfoRepository.add(name: binary.commandName, command: command)
+        try nestInfoController.add(name: binary.commandName, command: command)
     }
 
     public func link(_ binary: ExecutableBinary) throws {
@@ -113,7 +113,7 @@ public struct NestFileManager: Sendable {
             .filter { resourceNames.contains($0.lastPathComponent) }
             .map(\.lastPathComponent)
 
-        let info = nestInfoRepository.getInfo()
+        let info = nestInfoController.getInfo()
 
         let installedCommands = info.commands.compactMap { commandName, commands -> (String, NestInfo.Command)? in
             guard let command = commands.first(where: { isLinked(name: commandName, commend: $0) }) else { return nil }
@@ -145,8 +145,8 @@ public struct NestFileManager: Sendable {
 }
 
 extension NestFileManager {
-    var nestInfoRepository: NestInfoRepository {
-        NestInfoRepository(directory: directory, fileManager: fileManager)
+    var nestInfoController: NestInfoController {
+        NestInfoController(directory: directory, fileManager: fileManager)
     }
 
     public func isLinked(name: String, commend: NestInfo.Command) -> Bool {

@@ -6,20 +6,20 @@ public struct SwiftPackageBuilder {
 
     private let workingDirectory: URL
     private let fileManager: FileManager
-    private let nestInfoRepository: NestInfoRepository
+    private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
     private let logger: Logger
 
     public init(
         workingDirectory: URL,
         fileManager: FileManager,
-        nestInfoRepository: NestInfoRepository,
+        nestInfoController: NestInfoController,
         repositoryClientBuilder: GitRepositoryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
         self.fileManager = fileManager
-        self.nestInfoRepository = nestInfoRepository
+        self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
         self.logger = logger
     }
@@ -33,7 +33,7 @@ public struct SwiftPackageBuilder {
         let tagOrVersion = try await resolveTagOrVersion(gitURL: gitURL, version: version)
         logger.debug("The tag or version is \(tagOrVersion ?? "nil")")
 
-        let info = nestInfoRepository.getInfo()
+        let info = nestInfoController.getInfo()
         if ArtifactDuplicatedDetector.isAlreadyInstalled(url: gitURL, version: tagOrVersion, in: info) {
             logger.info("🪺 The artifact bundle is already installed.")
             throw NestCLIError.alreadyInstalled

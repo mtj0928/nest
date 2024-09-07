@@ -19,7 +19,7 @@ extension Configuration {
             workingDirectory: workingDirectory,
             fileManager: fileManager,
             zipFileDownloader: ZipFileDownloader(urlSession: urlSession, fileManager: fileManager),
-            nestInfoRepository: NestInfoRepository(directory: nestDirectory, fileManager: fileManager),
+            nestInfoController: NestInfoController(directory: nestDirectory, fileManager: fileManager),
             repositoryClientBuilder: GitRepositoryClientBuilder(configuration: self),
             logger: logger
         )
@@ -29,7 +29,7 @@ extension Configuration {
         SwiftPackageBuilder(
             workingDirectory: workingDirectory,
             fileManager: fileManager,
-            nestInfoRepository: NestInfoRepository(directory: nestDirectory, fileManager: fileManager),
+            nestInfoController: NestInfoController(directory: nestDirectory, fileManager: fileManager),
             repositoryClientBuilder: GitRepositoryClientBuilder(configuration: self),
             logger: logger
         )
