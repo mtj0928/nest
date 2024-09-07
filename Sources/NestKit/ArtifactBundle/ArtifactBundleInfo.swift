@@ -1,6 +1,7 @@
 import Foundation
 
-public struct ArtifactBundleInfo: Codable, Hashable {
+/// A data structure corresponding to info.json in artifact bundle.
+public struct ArtifactBundleInfo: Codable, Hashable, Sendable {
     public var schemaVersion: String
     public var artifacts: [String: Artifact]
 
@@ -10,7 +11,7 @@ public struct ArtifactBundleInfo: Codable, Hashable {
     }
 }
 
-public struct Artifact: Codable, Hashable {
+public struct Artifact: Codable, Hashable, Sendable {
     public var version: String
     public var type: String
     public var variants: Set<ArtifactVariant>
@@ -22,7 +23,7 @@ public struct Artifact: Codable, Hashable {
     }
 }
 
-public struct ArtifactVariant: Codable, Hashable {
+public struct ArtifactVariant: Codable, Hashable, Sendable {
     public var path: String
     public var supportedTriples: [String]
 

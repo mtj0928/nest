@@ -1,6 +1,7 @@
 import Foundation
 
-public struct NestInfo: Codable {
+/// A data structure representing info.json of nest.
+public struct NestInfo: Codable, Sendable {
     public var version: String
     public var commands: [String: [Command]]
 
@@ -13,7 +14,7 @@ public struct NestInfo: Codable {
 extension NestInfo {
     public static let currentVersion = "1"
 
-    public struct Command: Codable {
+    public struct Command: Codable, Sendable {
         public var version: String
         public var binaryPath: String
         public var resourcePaths: [String]

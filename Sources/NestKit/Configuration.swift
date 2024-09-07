@@ -29,4 +29,4 @@ public struct Configuration: Sendable {
     }
 }
 
-extension FileManager: @unchecked Sendable {}
+extension FileManager: @unchecked Swift.Sendable {}
