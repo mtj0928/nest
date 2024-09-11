@@ -21,23 +21,3 @@ public struct ArtifactBundle: Sendable {
         self.sourceInfo = sourceInfo
     }
 }
-
-extension ArtifactBundle {
-
-    public func binaries(of triple: String) -> [ExecutableBinary] {
-        info.artifacts.flatMap { name, artifact in
-            artifact.variants
-                .filter { variant in variant.supportedTriples.contains(triple) }
-                .map { variant in variant.path }
-                .map { variantPath in rootDirectory.appending(path: variantPath) }
-                .map { binaryPath in
-                    ExecutableBinary(
-                        commandName: name,
-                        binaryPath: binaryPath,
-                        version: artifact.version,
-                        manufacturer: .artifactBundle(sourceInfo: sourceInfo)
-                    )
-                }
-        }
-    }
-}

@@ -63,7 +63,7 @@ public struct ArtifactBundleFetcher {
                 let sourceInfo = ArtifactBundleSourceInfo(zipURL: selectedAsset.url, repository: repository)
                 return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
             }
-            .flatMap { bundle in bundle.binaries(of: triple) }
+            .flatMap { bundle in try bundle.binaries(of: triple) }
     }
 
     public func downloadArtifactBundle(url: URL) async throws -> [ExecutableBinary] {
@@ -89,17 +89,41 @@ public struct ArtifactBundleFetcher {
                 let sourceInfo = ArtifactBundleSourceInfo(zipURL: url, repository: nil)
                 return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
             }
-            .flatMap { bundle in bundle.binaries(of: triple) }
+            .flatMap { bundle in try bundle.binaries(of: triple) }
     }
 }
 
+extension ArtifactBundle {
+    func binaries(of triple: String) throws -> [ExecutableBinary] {
+        try info.artifacts.flatMap { name, artifact in
+            let binaries = artifact.variants
+                .filter { variant in variant.supportedTriples.contains(triple) }
+                .map { variant in variant.path }
+                .map { variantPath in rootDirectory.appending(path: variantPath) }
+                .map { binaryPath in
+                    ExecutableBinary(
+                        commandName: name,
+                        binaryPath: binaryPath,
+                        version: artifact.version,
+                        manufacturer: .artifactBundle(sourceInfo: sourceInfo)
+                    )
+                }
+            if binaries.isEmpty {
+                throw ArtifactBundleFetcherError.unsupportedTriple
+            }
+            return binaries
+        }
+    }
+}
 
 public enum ArtifactBundleFetcherError: LocalizedError {
     case noCandidates
+    case unsupportedTriple
 
     public var errorDescription: String? {
         switch self {
         case .noCandidates: "No candidates for artifact bundle in the repository, please specify the file name."
+        case .unsupportedTriple: "No binaries corresponding to the current triple."
         }
     }
 }

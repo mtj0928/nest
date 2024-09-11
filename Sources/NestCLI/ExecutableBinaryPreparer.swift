@@ -27,6 +27,8 @@ public struct ExecutableBinaryPreparer {
                 return try await artifactBundleFetcher.fetchArtifactBundleFromGitRepository(for: url, version: version)
             } catch ArtifactBundleFetcherError.noCandidates {
                 logger.info("🪹 No artifact bundles in the repository.")
+            } catch ArtifactBundleFetcherError.unsupportedTriple {
+                logger.info("🪹 No binaries corresponding to the current triple.")
             } catch GitRepositoryClientError.notFound {
                 logger.info("🪹 No releases in the repository.")
             } catch NestCLIError.alreadyInstalled {
