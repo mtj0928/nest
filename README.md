@@ -16,7 +16,7 @@ $ nest install XcodesOrg/xcodes
 🪺 Success to install xcodes.
 ```
 
-** nest doesn't reach 1.0.0 yet. It may break backward compatibility. **
+**nest doesn't reach 1.0.0 yet. It may break backward compatibility.**
 
 ## Concept
 nest is highly inspired by [mint](https://github.com/yonaskolb/Mint) and [scipio](https://github.com/giginet/Scipio).
