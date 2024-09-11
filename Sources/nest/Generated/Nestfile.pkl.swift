@@ -28,7 +28,7 @@ extension Nestfile {
     }
 
     public struct Module: PklRegisteredType, Decodable, Hashable {
-        public static var registeredIdentifier: String = "Nestfile"
+        public static let registeredIdentifier: String = "Nestfile"
 
         public var nestPath: String?
 
@@ -41,7 +41,7 @@ extension Nestfile {
     }
 
     public struct Repository: PklRegisteredType, Decodable, Hashable {
-        public static var registeredIdentifier: String = "Nestfile#Repository"
+        public static let registeredIdentifier: String = "Nestfile#Repository"
 
         public var reference: String
 
