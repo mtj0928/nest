@@ -26,7 +26,7 @@ extension Configuration {
         fileManager: FileManager = .default
     ) -> Configuration {
         let nestDirectory = NestDirectory(
-            rootDirectory: nestPath.map { URL(filePath: $0) } ?? fileManager.defaultNeonPath
+            rootDirectory: nestPath.map { URL(filePath: $0) } ?? fileManager.defaultNestPath
         )
 
         var logger = Logger(label: "com.github.mtj0928.nest")
@@ -46,13 +46,13 @@ extension Configuration {
 }
 
 extension FileManager {
-    var defaultNeonPath: URL {
+    var defaultNestPath: URL {
         homeDirectoryForCurrentUser.appending(component: ".nest")
     }
 }
 
 extension ProcessInfo {
-    var nesPath: String? {
+    var nestPath: String? {
         environment["NEST_PATH"]
     }
 }

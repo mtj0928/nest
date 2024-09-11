@@ -39,7 +39,7 @@ struct InstallCommand: AsyncParsableCommand {
 
             let binDirectory = nestDirectory.bin.path()
             let path = ProcessInfo.processInfo.environment["PATH"]?.split(separator: ":").map { String($0) } ?? []
-            if ProcessInfo.processInfo.nesPath?.isEmpty ?? true,
+            if ProcessInfo.processInfo.nestPath?.isEmpty ?? true,
                !path.contains(binDirectory) {
                 logger.warning("\(binDirectory) is not added to $PATH.", metadata: .color(.yellow))
             }
@@ -59,7 +59,7 @@ extension InstallCommand {
     ) {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
-            nestPath: ProcessInfo.processInfo.nesPath,
+            nestPath: ProcessInfo.processInfo.nestPath,
             logLevel: verbose ? .trace : .info
         )
 

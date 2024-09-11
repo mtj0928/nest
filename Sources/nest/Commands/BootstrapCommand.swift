@@ -95,7 +95,7 @@ extension BootstrapCommand {
     ) {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
-            nestPath: nestPath ?? ProcessInfo.processInfo.nesPath,
+            nestPath: nestPath ?? ProcessInfo.processInfo.nestPath,
             logLevel: verbose ? .trace : .info
         )
 

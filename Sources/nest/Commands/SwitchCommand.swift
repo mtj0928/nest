@@ -77,7 +77,7 @@ extension SwitchCommand {
     ) {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
-            nestPath: ProcessInfo.processInfo.nesPath,
+            nestPath: ProcessInfo.processInfo.nestPath,
             logLevel: verbose ? .trace : .info
         )
 
