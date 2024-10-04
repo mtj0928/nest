@@ -85,7 +85,7 @@ targets:
   - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
 ```
 
-Finally run `bootstrap` command. The command installs all bundles in the configuration file at once.
+Finally run `bootstrap` command. The command installs all bundles in the configuration file at once.
 ```sh
 $ nest bootstrap nestfile.yaml
 ```
