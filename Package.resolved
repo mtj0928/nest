@@ -1,15 +1,6 @@
 {
-  "originHash" : "c72de19b6ffa8910f766a855cb17ad5cca58d7de02497a26cc662dcf355c6b3e",
+  "originHash" : "b89b24341e2cf83a3d0827197090dc0c3be07d2ffd126d962dbc8ee2ad080de3",
   "pins" : [
-    {
-      "identity" : "pkl-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/pkl-swift",
-      "state" : {
-        "revision" : "7d573f7c5f0e843b9fb25a91f24c6f27bb65f353",
-        "version" : "0.2.3"
-      }
-    },
     {
       "identity" : "rainbow",
       "kind" : "remoteSourceControl",
@@ -47,21 +38,21 @@
       }
     },
     {
-      "identity" : "swift-system",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-system",
-      "state" : {
-        "revision" : "025bcb1165deab2e20d4eaba79967ce73013f496",
-        "version" : "1.2.1"
-      }
-    },
-    {
       "identity" : "swift-testing",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-testing.git",
       "state" : {
         "branch" : "main",
         "revision" : "35b34ed98a2e313e9829b798d4ba371dfd5f16ea"
+      }
+    },
+    {
+      "identity" : "yams",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jpsim/Yams.git",
+      "state" : {
+        "revision" : "3036ba9d69cf1fd04d433527bc339dc0dc75433d",
+        "version" : "5.1.3"
       }
     },
     {

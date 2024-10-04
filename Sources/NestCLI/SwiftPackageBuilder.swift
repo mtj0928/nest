@@ -35,7 +35,6 @@ public struct SwiftPackageBuilder {
 
         let info = nestInfoController.getInfo()
         if ArtifactDuplicatedDetector.isAlreadyInstalled(url: gitURL, version: tagOrVersion, in: info) {
-            logger.info("🪺 The artifact bundle is already installed.")
             throw NestCLIError.alreadyInstalled
         }
 
