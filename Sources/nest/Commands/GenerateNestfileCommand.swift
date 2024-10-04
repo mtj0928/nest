@@ -15,9 +15,9 @@ struct GenerateNestfileCommand: AsyncParsableCommand {
 
     @MainActor mutating func run() async throws {
         let logger = setUp()
-        let url = URL(filePath: "./nestfile.pkl")
+        let url = URL(filePath: "./nestfile.yaml")
         if FileManager.default.fileExists(atPath: url.path()) {
-            logger.error("nestfile exists in the current fdirectory.", metadata: .color(.red))
+            logger.error("nestfile exists in the current directory.", metadata: .color(.red))
             return
         }
         try templateString.write(to: url, atomically: true, encoding: .utf8)
@@ -39,16 +39,7 @@ extension GenerateNestfileCommand {
 
 
 let templateString = """
-amends "https://github.com/mtj0928/nest/releases/download/0.1.0/Nestfile.pkl" // Do not remove this line.
-
-targets = new Listing {
-  // Example 1: Specify a repository
-  new Repository {
-    reference = "mtj0928/nest" // or htpps://github.com/mtj0928/nest
-    version = "0.1.0" // (Optional) If version doesn't exit, the latest release will be used.
-  }
-
-  // Example 2: Specify zip URL directly
-  "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
-}
+nestPath: ./.nest
+targets:
+  - reference: realm/SwiftLint
 """
