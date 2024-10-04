@@ -80,7 +80,7 @@ And update the file based on your requirements.
 targets:
   # Example 1: Specify a repository
   - reference: mtj0928/nest # or htpps://github.com/mtj0928/nest
-    version = 0.1.0 # When a version is not specified, the latest release will be used.
+    version: 0.1.0 # When a version is not specified, the latest release will be used.
   # Example 2 Specify zip URL directly
   - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
 ```
