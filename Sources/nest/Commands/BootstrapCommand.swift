@@ -10,14 +10,14 @@ struct BootstrapCommand: AsyncParsableCommand {
         abstract: "Install repositories based on a given nestfile."
     )
 
-    @Argument(help: "A nestfile written in pkl.")
+    @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
     mutating func run() async throws {
-        let nestfile = try await Nestfile.loadFrom(source: .path(nestfilePath))
+        let nestfile = try Nestfile.load(from: nestfilePath)
 
         let (executableBinaryPreparer, nestFileManager, logger) = setUp(nestPath: nestfile.nestPath)
 
@@ -69,9 +69,9 @@ extension Nestfile.Target {
                 return .failure(ParseError(contents: repository.reference))
             }
             return .success(parsedTarget)
-        case .zipUrl(let zipURL):
-            guard let parsedTarget =  InstallTarget(argument: zipURL) else {
-                return .failure(ParseError(contents: zipURL))
+        case .zip(let zipURL):
+            guard let parsedTarget = InstallTarget(argument: zipURL.url) else {
+                return .failure(ParseError(contents: zipURL.url))
             }
             return .success(parsedTarget)
         }
@@ -81,7 +81,7 @@ extension Nestfile.Target {
         switch self {
         case .repository(let repository):
             return repository.version
-        case .zipUrl:
+        case .zip:
             return nil
         }
     }
