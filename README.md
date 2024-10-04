@@ -68,7 +68,7 @@ $ nest switch swiftlint 0.55.0 // swiftlint 0.55.0 are selected.
 
 ## Configuration file.
 `nest` supports to install multiple packages at once with a configuration file, 
-and the file needs to be written in [Pkl](https://github.com/apple/pkl).
+and the file needs to be written in YAML.
 
 `generate-nestfile` command generates the basic configuration file in the current directory.
 ```sh
@@ -76,24 +76,18 @@ $ nest generate-nestfile
 ```
 And update the file based on your requirements.
 
-```pkl
-amends "https://github.com/mtj0928/nest/releases/download/0.1.0/Nestfile.pkl" // Do not remove this line.
-
-targets = new Listing {
-  // Example 1: Specify a repository
-  new Repository {
-    reference = "mtj0928/nest" // or htpps://github.com/mtj0928/nest
-    version = "0.1.0" // (Optional) If version doesn't exit, the latest release will be used.
-  }
-
-  // Example 2: Specify zip URL directly
-  "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
-}
+```yaml
+targets:
+  # Example 1: Specify a repository
+  - reference: mtj0928/nest # or htpps://github.com/mtj0928/nest
+    version = 0.1.0 # When a version is not specified, the latest release will be used.
+  # Example 2 Specify zip URL directly
+  - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
 ```
 
-Finally run `bootstrap` command. The command installs all packages in the configuration file at once.
+Finally run `bootstrap` command. The command installs all bundles in the configuration file at once.
 ```sh
-$ nest bootstrap nestfile.pkl
+$ nest bootstrap nestfile.yaml
 ```
 ## Cache directory
 `nest` stores artifacts at `~/.nest` as a default. 
