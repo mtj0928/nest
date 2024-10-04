@@ -15,7 +15,7 @@ jobs:
 
       - uses: SwiftyLab/setup-swift@latest
         with:
-          swift-version: 6.0
+          swift-version: 6.0.0
 
       - name: Build Swift package
         run: swift build -c release --arch arm64 --arch x86_64  
