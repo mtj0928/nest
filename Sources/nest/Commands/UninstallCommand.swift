@@ -27,6 +27,18 @@ struct UninstallCommand: AsyncParsableCommand {
         let targetCommand = info[commandName, default: []].filter { command in
             command.version == version || version == nil
         }
+
+        guard !targetCommand.isEmpty else {
+            let message: Logger.Message =
+                if let version {
+                    "🪹 \(commandName) (\(version)) doesn't exist."
+                } else {
+                    "🪹 \(commandName) doesn't exist."
+                }
+            logger.error(message, metadata: .color(.red))
+            Foundation.exit(1)
+        }
+
         for command in targetCommand {
             try nestFileManager.uninstall(command: commandName, version: command.version)
             logger.info("🗑️ \(commandName) \(command.version) is uninstalled.")
