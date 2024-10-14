@@ -29,11 +29,13 @@ struct UninstallCommand: AsyncParsableCommand {
         }
 
         guard !targetCommand.isEmpty else {
-            if let version {
-                logger.error("🪹 \(commandName) (\(version)) doesn't exist.", metadata: .color(.red))
-            } else {
-                logger.error("🪹 \(commandName) doesn't exist.", metadata: .color(.red))
-            }
+            let message: Logger.Message =
+                if let version {
+                    "🪹 \(commandName) (\(version)) doesn't exist."
+                } else {
+                    "🪹 \(commandName) doesn't exist."
+                }
+            logger.error(message, metadata: .color(.red))
             Foundation.exit(1)
         }
 
