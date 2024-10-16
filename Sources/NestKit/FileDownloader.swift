@@ -1,4 +1,6 @@
 import Foundation
+import HTTPTypes
+import HTTPTypesFoundation
 import ZIPFoundation
 
 public struct ZipFileDownloader: Sendable {
@@ -11,8 +13,9 @@ public struct ZipFileDownloader: Sendable {
     }
 
     public func download(url: URL, to destinationPath: URL) async throws {
-        let (downloadedFilePath, response) = try await urlSession.download(from: url)
-        if (response as? HTTPURLResponse)?.statusCode == 404 {
+        let request = HTTPRequest(url: url)
+        let (downloadedFilePath, response) = try await urlSession.download(for: request)
+        if response.status == .notFound {
             throw ZipFileDownloaderError.notFound(url: url)
         }
 
