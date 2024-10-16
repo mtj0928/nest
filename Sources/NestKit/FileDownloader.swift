@@ -12,7 +12,11 @@ public struct ZipFileDownloader: Sendable {
     }
 
     public func download(url: URL, to destinationPath: URL) async throws {
-        let (downloadedFilePath, _) = try await urlSession.download(from: url)
+        let (downloadedFilePath, response) = try await urlSession.download(from: url)
+        if (response as? HTTPURLResponse)?.statusCode == 404 {
+            throw ZipFileDownloaderError.notFound(url: url)
+        }
+
         if needsUnzip(for: url) {
             try fileManager.unzipItem(at: downloadedFilePath, to: destinationPath)
         } else {
@@ -23,5 +27,16 @@ public struct ZipFileDownloader: Sendable {
     func needsUnzip(for url: URL) -> Bool {
         let utType = UTType(filenameExtension: url.pathExtension)
         return utType?.conforms(to: .zip) ?? false
+    }
+}
+
+enum ZipFileDownloaderError: LocalizedError {
+    case notFound(url: URL)
+
+    var errorDescription: String? {
+        switch self {
+        case .notFound(let url):
+            "Not found: \(url.absoluteString)"
+        }
     }
 }

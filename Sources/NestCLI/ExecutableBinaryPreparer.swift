@@ -19,12 +19,17 @@ public struct ExecutableBinaryPreparer {
 
     public func fetchOrBuildBinariesFromGitRepository(
         at gitURL: GitURL,
-        version: GitVersion
+        version: GitVersion,
+        artifactBundleZipFileName: String?
     ) async throws -> [ExecutableBinary] {
         switch gitURL {
         case .url(let url):
             do {
-                return try await artifactBundleFetcher.fetchArtifactBundleFromGitRepository(for: url, version: version)
+                return try await artifactBundleFetcher.fetchArtifactBundleFromGitRepository(
+                    for: url,
+                    version: version,
+                    artifactBundleZipFileName: artifactBundleZipFileName
+                )
             } catch ArtifactBundleFetcherError.noCandidates {
                 logger.info("🪹 No artifact bundles in the repository.")
             } catch ArtifactBundleFetcherError.unsupportedTriple {

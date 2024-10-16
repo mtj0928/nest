@@ -27,12 +27,23 @@ public struct Nestfile: Codable {
     }
 
     public struct Repository: Codable {
+        /// A reference to a repository.
+        ///
+        /// The acceptable formats are the followings
+        /// - `{owner}/{name}`
+        /// - HTTPS URL
+        /// - SSH URL.
         public var reference: String
         public var version: String?
 
-        public init(reference: String, version: String?) {
+        /// Specify an asset file name of an artifact bundle.
+        /// If the name is not specified, the tool fetch the name by GitHub API.
+        public var assetName: String?
+
+        public init(reference: String, version: String?, assetName: String?) {
             self.reference = reference
             self.version = version
+            self.assetName = assetName
         }
     }
 

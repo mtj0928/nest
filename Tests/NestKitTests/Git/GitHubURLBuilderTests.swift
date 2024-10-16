@@ -25,4 +25,11 @@ struct GitHubURLBuilderTests {
         let assetURL = try GitHubURLBuilder.assetURL(url, version: parameter.tag)
         #expect(assetURL == URL(string: parameter.expect))
     }
+
+    @Test
+    func downloadURL() async throws {
+        let url = try #require(URL(string: "https://github.com/owner/repo"))
+        let assetURL = GitHubURLBuilder.assetDownloadURL(url, version: "0.1.0", fileName: "foo.txt")
+        #expect(assetURL == URL(string: "https://github.com/owner/repo/releases/download/0.1.0/foo.txt"))
+    }
 }
