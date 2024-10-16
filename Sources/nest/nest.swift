@@ -36,7 +36,7 @@ extension Configuration {
         return Configuration(
             urlSession: urlSession,
             fileManager: fileManager,
-            zipFileDownloader: ZipFileDownloader(urlSession: urlSession, fileManager: fileManager),
+            fileDownloader: NestFileDownloader(urlSession: urlSession, fileManager: fileManager),
             workingDirectory: fileManager.temporaryDirectory.appending(path: "nest"),
             nestDirectory: nestDirectory,
             nestFileManager: NestFileManager(fileManager: fileManager, directory: nestDirectory),

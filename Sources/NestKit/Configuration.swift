@@ -4,7 +4,7 @@ import Logging
 public struct Configuration: Sendable {
     public var urlSession: URLSession
     public var fileManager: FileManager
-    public var zipFileDownloader: ZipFileDownloader
+    public var fileDownloader: any FileDownloader
     public var workingDirectory: URL
     public var nestDirectory: NestDirectory
     public var nestFileManager: NestFileManager
@@ -13,7 +13,7 @@ public struct Configuration: Sendable {
     public init(
         urlSession: URLSession,
         fileManager: FileManager,
-        zipFileDownloader: ZipFileDownloader,
+        fileDownloader: some FileDownloader,
         workingDirectory: URL,
         nestDirectory: NestDirectory,
         nestFileManager: NestFileManager,
@@ -21,7 +21,7 @@ public struct Configuration: Sendable {
     ) {
         self.urlSession = urlSession
         self.fileManager = fileManager
-        self.zipFileDownloader = zipFileDownloader
+        self.fileDownloader = fileDownloader
         self.workingDirectory = workingDirectory
         self.nestDirectory = nestDirectory
         self.nestFileManager = nestFileManager

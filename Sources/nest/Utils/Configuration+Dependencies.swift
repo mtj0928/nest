@@ -18,7 +18,7 @@ extension Configuration {
         ArtifactBundleFetcher(
             workingDirectory: workingDirectory,
             fileManager: fileManager,
-            zipFileDownloader: ZipFileDownloader(urlSession: urlSession, fileManager: fileManager),
+            fileDownloader: NestFileDownloader(urlSession: urlSession, fileManager: fileManager),
             nestInfoController: NestInfoController(directory: nestDirectory, fileManager: fileManager),
             repositoryClientBuilder: GitRepositoryClientBuilder(configuration: self),
             logger: logger

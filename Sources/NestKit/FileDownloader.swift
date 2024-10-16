@@ -3,7 +3,11 @@ import HTTPTypes
 import HTTPTypesFoundation
 import ZIPFoundation
 
-public struct ZipFileDownloader: Sendable {
+public protocol FileDownloader: Sendable {
+    func download(url: URL, to destinationPath: URL) async throws
+}
+
+public struct NestFileDownloader: FileDownloader {
     let urlSession: URLSession
     let fileManager: FileManager
 
@@ -16,7 +20,7 @@ public struct ZipFileDownloader: Sendable {
         let request = HTTPRequest(url: url)
         let (downloadedFilePath, response) = try await urlSession.download(for: request)
         if response.status == .notFound {
-            throw ZipFileDownloaderError.notFound(url: url)
+            throw FileDownloaderError.notFound(url: url)
         }
 
         if url.needsUnzip {
@@ -27,7 +31,7 @@ public struct ZipFileDownloader: Sendable {
     }
 }
 
-enum ZipFileDownloaderError: LocalizedError {
+enum FileDownloaderError: LocalizedError {
     case notFound(url: URL)
 
     var errorDescription: String? {

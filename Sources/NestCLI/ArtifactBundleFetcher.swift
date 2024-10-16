@@ -5,7 +5,7 @@ import NestKit
 public struct ArtifactBundleFetcher {
     private let workingDirectory: URL
     private let fileManager: FileManager
-    private let zipFileDownloader: ZipFileDownloader
+    private let fileDownloader: any FileDownloader
     private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
     private let logger: Logger
@@ -13,14 +13,14 @@ public struct ArtifactBundleFetcher {
     public init(
         workingDirectory: URL,
         fileManager: FileManager,
-        zipFileDownloader: ZipFileDownloader,
+        fileDownloader: some FileDownloader,
         nestInfoController: NestInfoController,
         repositoryClientBuilder: GitRepositoryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
         self.fileManager = fileManager
-        self.zipFileDownloader = zipFileDownloader
+        self.fileDownloader = fileDownloader
         self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
         self.logger = logger
@@ -56,7 +56,7 @@ public struct ArtifactBundleFetcher {
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle of \(gitURL.lastPathComponent)...")
-        try await zipFileDownloader.download(url: resolvedAsset.zipURL, to: repositoryDirectory)
+        try await fileDownloader.download(url: resolvedAsset.zipURL, to: repositoryDirectory)
         logger.info("✅ Success to download the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
@@ -83,7 +83,7 @@ public struct ArtifactBundleFetcher {
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle at \(url.absoluteString)...")
-        try await zipFileDownloader.download(url: url, to: directory)
+        try await fileDownloader.download(url: url, to: directory)
         logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
