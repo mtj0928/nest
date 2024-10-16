@@ -16,7 +16,7 @@ public struct ArtifactBundleInfo: Codable, Hashable, Sendable {
 }
 
 public struct Artifact: Codable, Hashable, Sendable {
-    /// A version of the asrtifact
+    /// A version of the artifact
     public var version: String
 
     /// A type of the artifact.
