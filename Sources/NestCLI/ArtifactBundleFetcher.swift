@@ -105,7 +105,7 @@ public struct ArtifactBundleFetcher {
     ) async throws -> ResolvedAsset {
         if let fileName {
             guard case .tag(let version) = version else {
-                logger.error("\(fileName) is specified but the version is not a tag.")
+                logger.debug("\(fileName) is specified but the version is not a tag.", metadata: .color(.red))
                 throw ArtifactBundleFetcherError.noTagSpecified
             }
 
