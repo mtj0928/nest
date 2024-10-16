@@ -1,6 +1,15 @@
 import Foundation
 
-enum GitHubURLBuilder {
+public enum GitHubURLBuilder {
+    /// Builds a download url for an asset in a specified version in a specified repository.
+    /// - Parameters:
+    ///   - url: A URL to a repository
+    ///   - version: A specified version
+    ///   - fileName: A specified file name.
+    public static func assetDownloadURL(_ url: URL, version: String, fileName: String) -> URL {
+        url.appending(components: "releases", "download", version, fileName)
+    }
+
     static func assetURL(_ url: URL, version: GitVersion) throws -> URL {
         guard url.pathComponents.count >= 3 else {
             throw InvalidURLError(url: url)
@@ -38,7 +47,7 @@ enum GitHubURLBuilder {
 extension GitHubURLBuilder {
     public struct InvalidURLError: LocalizedError {
         public var url: URL
-        var failureReason: String? {
+        public var failureReason: String? {
             "Invalid url: \(url)"
         }
     }

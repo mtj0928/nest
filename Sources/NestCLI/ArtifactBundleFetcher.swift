@@ -25,33 +25,39 @@ public struct ArtifactBundleFetcher {
         self.repositoryClientBuilder = repositoryClientBuilder
         self.logger = logger
     }
-
-    public func fetchArtifactBundleFromGitRepository(for url: URL, version: GitVersion) async throws -> [ExecutableBinary] {
-        // Fetch asset information from the remove repository
-        let repositoryClient = repositoryClientBuilder.build(for: url)
-        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
-
-        // Choose an asset which may be an artifact bundle.
-        guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(from: assetInfo.assets) else {
-            throw ArtifactBundleFetcherError.noCandidates
-        }
-        let tagName = assetInfo.tagName
+    
+    /// Fetched an artifact bundle from the specified git repository.
+    /// - Parameters:
+    ///   - url: A url of a git repository
+    ///   - version: A version which should be
+    ///   - artifactBundleZipFileName: A name of artifact bundle ZIP file.
+    ///   When it is `nil`, this function tries to resolve a file name by accessing Web API.
+    public func fetchArtifactBundleFromGitRepository(
+        for gitURL: URL,
+        version: GitVersion,
+        artifactBundleZipFileName: String?
+    ) async throws -> [ExecutableBinary] {
+        let resolvedAsset = try await resolveAsset(
+            from: gitURL,
+            version: version,
+            artifactBundleZipFileName: artifactBundleZipFileName
+        )
         let nestInfo = nestInfoController.getInfo()
 
-        if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: selectedAsset.url, in: nestInfo) {
+        if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: resolvedAsset.zipURL, in: nestInfo) {
             throw NestCLIError.alreadyInstalled
         }
 
-        logger.info("📦 Found an artifact bundle, \(selectedAsset.fileName), for \(url.lastPathComponent).")
+        logger.info("📦 Found an artifact bundle, \(resolvedAsset.zipURL.lastPathComponent), for \(gitURL.lastPathComponent).")
 
         // Reset the existing directory.
-        let repositoryDirectory = workingDirectory.appending(component: url.fileNameWithoutPathExtension)
+        let repositoryDirectory = workingDirectory.appending(component: gitURL.fileNameWithoutPathExtension)
         try fileManager.removeItemIfExists(at: repositoryDirectory)
 
         // Download the artifact bundle
-        logger.info("🌐 Downloading the artifact bundle of \(url.lastPathComponent)...")
-        try await zipFileDownloader.download(url: selectedAsset.url, to: repositoryDirectory)
-        logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
+        logger.info("🌐 Downloading the artifact bundle of \(gitURL.lastPathComponent)...")
+        try await zipFileDownloader.download(url: resolvedAsset.zipURL, to: repositoryDirectory)
+        logger.info("✅ Success to download the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
         let triple = try await TripleDetector(logger: logger).detect()
@@ -59,8 +65,8 @@ public struct ArtifactBundleFetcher {
 
         return try fileManager.child(extension: "artifactbundle", at: repositoryDirectory)
             .map { artifactBundlePath in
-                let repository = Repository(reference: .url(url), version: tagName)
-                let sourceInfo = ArtifactBundleSourceInfo(zipURL: selectedAsset.url, repository: repository)
+                let repository = Repository(reference: .url(gitURL), version: resolvedAsset.tagName)
+                let sourceInfo = ArtifactBundleSourceInfo(zipURL: resolvedAsset.zipURL, repository: repository)
                 return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
             }
             .flatMap { bundle in try bundle.binaries(of: triple) }
@@ -91,6 +97,37 @@ public struct ArtifactBundleFetcher {
             }
             .flatMap { bundle in try bundle.binaries(of: triple) }
     }
+
+    private func resolveAsset(
+        from url: URL,
+        version: GitVersion,
+        artifactBundleZipFileName fileName: String?
+    ) async throws -> ResolvedAsset {
+        if let fileName {
+            guard case .tag(let version) = version else {
+                logger.debug("\(fileName) is specified but the version is not a tag.", metadata: .color(.red))
+                throw ArtifactBundleFetcherError.noTagSpecified
+            }
+
+            let artifactBundleZipURL = GitHubURLBuilder.assetDownloadURL(url, version: version, fileName: fileName)
+            logger.debug("Resolved artifact bundle zip URL: \(artifactBundleZipURL.absoluteString).")
+            let asset = ResolvedAsset( zipURL: artifactBundleZipURL, fileName: fileName, tagName: version)
+            return asset
+        }
+
+        let repositoryClient = repositoryClientBuilder.build(for: url)
+        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
+        // Choose an asset which may be an artifact bundle.
+        guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(from: assetInfo.assets) else {
+            throw ArtifactBundleFetcherError.noCandidates
+        }
+        return ResolvedAsset(
+            zipURL: selectedAsset.url,
+            fileName: selectedAsset.fileName,
+            tagName: assetInfo.tagName
+        )
+    }
+
 }
 
 extension ArtifactBundle {
@@ -118,12 +155,20 @@ extension ArtifactBundle {
 
 public enum ArtifactBundleFetcherError: LocalizedError {
     case noCandidates
+    case noTagSpecified
     case unsupportedTriple
 
     public var errorDescription: String? {
         switch self {
         case .noCandidates: "No candidates for artifact bundle in the repository, please specify the file name."
+        case .noTagSpecified: "No tag specified, please specify the tag."
         case .unsupportedTriple: "No binaries corresponding to the current triple."
         }
     }
+}
+
+struct ResolvedAsset {
+    public var zipURL: URL
+    public var fileName: String
+    public var tagName: String
 }

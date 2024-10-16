@@ -42,7 +42,8 @@ struct BootstrapCommand: AsyncParsableCommand {
                 logger.info("🔎 Found \(gitURL.repositoryName) \(versionString)")
                 executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
                     at: gitURL,
-                    version: version
+                    version: version,
+                    artifactBundleZipFileName: targetInfo.resolveAssetName()
                 )
             case .artifactBundle(let url):
                 logger.info("🔎 Start \(url.absoluteString)")
@@ -83,6 +84,13 @@ extension Nestfile.Target {
             return repository.version
         case .zip:
             return nil
+        }
+    }
+
+    func resolveAssetName() -> String? {
+        switch self {
+        case .repository(let repository): repository.assetName
+        case .zip: nil
         }
     }
 }

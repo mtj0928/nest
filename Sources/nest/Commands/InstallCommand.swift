@@ -27,7 +27,11 @@ struct InstallCommand: AsyncParsableCommand {
 
             let executableBinaries = switch target {
             case .git(let gitURL):
-                try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(at: gitURL, version: version)
+                try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
+                    at: gitURL,
+                    version: version,
+                    artifactBundleZipFileName: nil
+                )
             case .artifactBundle(let url):
                 try await executableBinaryPreparer.fetchArtifactBundle(at: url)
             }
