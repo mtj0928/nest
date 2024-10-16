@@ -1,6 +1,5 @@
 import Foundation
 import ZIPFoundation
-import UniformTypeIdentifiers
 
 public struct ZipFileDownloader: Sendable {
     let urlSession: URLSession
@@ -17,16 +16,11 @@ public struct ZipFileDownloader: Sendable {
             throw ZipFileDownloaderError.notFound(url: url)
         }
 
-        if needsUnzip(for: url) {
+        if url.needsUnzip {
             try fileManager.unzipItem(at: downloadedFilePath, to: destinationPath)
         } else {
             try fileManager.copyItem(at: downloadedFilePath, to: destinationPath)
         }
-    }
-    
-    func needsUnzip(for url: URL) -> Bool {
-        let utType = UTType(filenameExtension: url.pathExtension)
-        return utType?.conforms(to: .zip) ?? false
     }
 }
 
