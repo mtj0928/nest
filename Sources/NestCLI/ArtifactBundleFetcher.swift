@@ -127,7 +127,6 @@ public struct ArtifactBundleFetcher {
             tagName: assetInfo.tagName
         )
     }
-
 }
 
 extension ArtifactBundle {
