@@ -22,7 +22,7 @@ extension Configuration {
     static func make(
         nestPath: String?,
         logLevel: Logger.Level,
-        urlSession: URLSession = .shared,
+        httpClient: some HTTPClient = URLSession.shared,
         fileStorage: some FileStorage = FileManager.default
     ) -> Configuration {
         let nestDirectory = NestDirectory(
@@ -34,9 +34,9 @@ extension Configuration {
         logger.debug("NEST_PATH: \(nestDirectory.rootDirectory.path()).")
 
         return Configuration(
-            urlSession: urlSession,
+            httpClient: httpClient,
             fileStorage: fileStorage,
-            fileDownloader: NestFileDownloader(urlSession: urlSession, fileStorage: fileStorage),
+            fileDownloader: NestFileDownloader(httpClient: httpClient, fileStorage: fileStorage),
             workingDirectory: fileStorage.temporaryDirectory.appending(path: "nest"),
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileStorage: fileStorage, directory: nestDirectory),

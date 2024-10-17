@@ -2,7 +2,7 @@ import Foundation
 import Logging
 
 public struct Configuration: Sendable {
-    public var urlSession: URLSession
+    public var httpClient: any HTTPClient
     public var fileStorage: any FileStorage
     public var fileDownloader: any FileDownloader
     public var workingDirectory: URL
@@ -11,7 +11,7 @@ public struct Configuration: Sendable {
     public var logger: Logger
 
     public init(
-        urlSession: URLSession,
+        httpClient: some HTTPClient,
         fileStorage: any FileStorage,
         fileDownloader: some FileDownloader,
         workingDirectory: URL,
@@ -19,7 +19,7 @@ public struct Configuration: Sendable {
         artifactBundleManager: ArtifactBundleManager,
         logger: Logger
     ) {
-        self.urlSession = urlSession
+        self.httpClient = httpClient
         self.fileStorage = fileStorage
         self.fileDownloader = fileDownloader
         self.workingDirectory = workingDirectory

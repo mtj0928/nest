@@ -4,11 +4,11 @@ import HTTPTypesFoundation
 import Logging
 
 public struct GitHubRepositoryClient: GitRepositoryClient {
-    private let urlSession: URLSession
+    private let httpClient: any HTTPClient
     private let logger: Logger
 
-    public init(urlSession: URLSession, logger: Logger) {
-        self.urlSession = urlSession
+    public init(httpClient: some HTTPClient, logger: Logger) {
+        self.httpClient = httpClient
         self.logger = logger
     }
 
@@ -19,7 +19,7 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
             .accept: "application/vnd.github+json",
             .gitHubAPIVersion: "2022-11-28"
         ]
-        let (data, response) = try await urlSession.data(for: request)
+        let (data, response) = try await httpClient.data(for: request)
         if response.status == .notFound {
             throw GitRepositoryClientError.notFound
         }
