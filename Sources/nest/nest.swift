@@ -39,7 +39,7 @@ extension Configuration {
             fileDownloader: NestFileDownloader(urlSession: urlSession, fileManager: fileManager),
             workingDirectory: fileManager.temporaryDirectory.appending(path: "nest"),
             nestDirectory: nestDirectory,
-            nestFileManager: NestFileManager(fileManager: fileManager, directory: nestDirectory),
+            artifactBundleManager: ArtifactBundleManager(fileManager: fileManager, directory: nestDirectory),
             logger: logger
         )
     }

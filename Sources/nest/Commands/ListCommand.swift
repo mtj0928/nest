@@ -17,13 +17,13 @@ struct ListCommand: AsyncParsableCommand {
     var verbose: Bool = false
 
     @MainActor mutating func run() async throws {
-        let (nestFileManager, logger) = setUp()
+        let (artifactBundleManager, logger) = setUp()
 
-        let installedCommands = nestFileManager.list()
+        let installedCommands = artifactBundleManager.list()
         for (name, commands) in installedCommands {
             logger.info("\(name)")
             for command in commands {
-                let isLinked = nestFileManager.isLinked(name: name, commend: command)
+                let isLinked = artifactBundleManager.isLinked(name: name, commend: command)
                 logger.info("  \(command.version) \(source ? command.source : "") \(isLinked ? "(Selected)".green : "")")
             }
         }
@@ -32,7 +32,7 @@ struct ListCommand: AsyncParsableCommand {
 
 extension ListCommand {
     private func setUp() -> (
-        NestFileManager,
+        ArtifactBundleManager,
         Logger
     ) {
         LoggingSystem.bootstrap()
@@ -42,7 +42,7 @@ extension ListCommand {
         )
 
         return (
-            configuration.nestFileManager,
+            configuration.artifactBundleManager,
             configuration.logger
         )
     }

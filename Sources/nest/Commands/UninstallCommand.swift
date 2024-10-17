@@ -20,9 +20,9 @@ struct UninstallCommand: AsyncParsableCommand {
     var verbose: Bool = false
 
     mutating func run() async throws {
-        let (nestFileManager, logger) = setUp()
+        let (artifactBundleManager, logger) = setUp()
 
-        let info = nestFileManager.list()
+        let info = artifactBundleManager.list()
 
         let targetCommand = info[commandName, default: []].filter { command in
             command.version == version || version == nil
@@ -40,7 +40,7 @@ struct UninstallCommand: AsyncParsableCommand {
         }
 
         for command in targetCommand {
-            try nestFileManager.uninstall(command: commandName, version: command.version)
+            try artifactBundleManager.uninstall(command: commandName, version: command.version)
             logger.info("🗑️ \(commandName) \(command.version) is uninstalled.")
         }
     }
@@ -48,7 +48,7 @@ struct UninstallCommand: AsyncParsableCommand {
 
 extension UninstallCommand {
     private func setUp() -> (
-        NestFileManager,
+        ArtifactBundleManager,
         Logger
     ) {
         LoggingSystem.bootstrap()
@@ -58,7 +58,7 @@ extension UninstallCommand {
         )
 
         return (
-            configuration.nestFileManager,
+            configuration.artifactBundleManager,
             configuration.logger
         )
     }

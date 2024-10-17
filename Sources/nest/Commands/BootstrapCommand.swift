@@ -19,7 +19,7 @@ struct BootstrapCommand: AsyncParsableCommand {
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath)
 
-        let (executableBinaryPreparer, nestFileManager, logger) = setUp(nestPath: nestfile.nestPath)
+        let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestPath: nestfile.nestPath)
 
         for targetInfo in nestfile.targets {
             let target: InstallTarget
@@ -51,7 +51,7 @@ struct BootstrapCommand: AsyncParsableCommand {
             }
 
             for binary in executableBinaries {
-                try nestFileManager.install(binary)
+                try artifactBundleManager.install(binary)
                 logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
             }
         }
@@ -98,7 +98,7 @@ extension Nestfile.Target {
 extension BootstrapCommand {
     private func setUp(nestPath: String?) -> (
         ExecutableBinaryPreparer,
-        NestFileManager,
+        ArtifactBundleManager,
         Logger
     ) {
         LoggingSystem.bootstrap()
@@ -109,7 +109,7 @@ extension BootstrapCommand {
 
         return (
             configuration.executableBinaryPreparer,
-            configuration.nestFileManager,
+            configuration.artifactBundleManager,
             configuration.logger
         )
     }

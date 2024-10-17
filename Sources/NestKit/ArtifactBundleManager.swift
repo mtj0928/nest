@@ -1,6 +1,6 @@
 import Foundation
 
-public struct NestFileManager: Sendable {
+public struct ArtifactBundleManager: Sendable {
     private let fileManager: FileManager
     private let directory: NestDirectory
 
@@ -84,7 +84,7 @@ public struct NestFileManager: Sendable {
         // Check existing resources are not conflicted.
         let conflictingInfo = try extractConflictInfos(binary: binary)
         if !conflictingInfo.isEmpty {
-            throw NestFileManagerError.resourceConflicting(
+            throw ArtifactBundleManagerError.resourceConflicting(
                 commandName: binary.commandName,
                 conflictingNames: conflictingInfo.map(\.commandName),
                 resourceNames: conflictingInfo.flatMap(\.resourceNames)
@@ -144,7 +144,7 @@ public struct NestFileManager: Sendable {
     }
 }
 
-extension NestFileManager {
+extension ArtifactBundleManager {
     var nestInfoController: NestInfoController {
         NestInfoController(directory: directory, fileManager: fileManager)
     }
@@ -160,7 +160,7 @@ extension NestFileManager {
     }
 }
 
-enum NestFileManagerError: LocalizedError {
+enum ArtifactBundleManagerError: LocalizedError {
     case resourceConflicting(commandName: String, conflictingNames: [String], resourceNames: [String])
 
     var errorDescription: String? {

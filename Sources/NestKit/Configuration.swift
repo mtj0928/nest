@@ -7,7 +7,7 @@ public struct Configuration: Sendable {
     public var fileDownloader: any FileDownloader
     public var workingDirectory: URL
     public var nestDirectory: NestDirectory
-    public var nestFileManager: NestFileManager
+    public var artifactBundleManager: ArtifactBundleManager
     public var logger: Logger
 
     public init(
@@ -16,7 +16,7 @@ public struct Configuration: Sendable {
         fileDownloader: some FileDownloader,
         workingDirectory: URL,
         nestDirectory: NestDirectory,
-        nestFileManager: NestFileManager,
+        artifactBundleManager: ArtifactBundleManager,
         logger: Logger
     ) {
         self.urlSession = urlSession
@@ -24,7 +24,7 @@ public struct Configuration: Sendable {
         self.fileDownloader = fileDownloader
         self.workingDirectory = workingDirectory
         self.nestDirectory = nestDirectory
-        self.nestFileManager = nestFileManager
+        self.artifactBundleManager = artifactBundleManager
         self.logger = logger
     }
 }
