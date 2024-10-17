@@ -5,13 +5,13 @@ import Testing
 struct URLTests {
     @Test
     func testNeedsUnzipForZip() throws {
-        let url = #require(URL(string: "artifactBundle.zip"))
+        let url = try #require(URL(string: "artifactBundle.zip"))
         #expect(url.needsUnzip)
     }
 
     @Test
     func testNeedsUnzipForNonArchivedFile() throws {
-        let url = #require(URL(string: "artifactBundle.ipa"))
+        let url = try #require(URL(string: "artifactBundle.ipa"))
         #expect(!url.needsUnzip)
     }
 }
