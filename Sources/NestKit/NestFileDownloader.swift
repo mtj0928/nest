@@ -9,11 +9,11 @@ public protocol FileDownloader: Sendable {
 
 public struct NestFileDownloader: FileDownloader {
     let urlSession: URLSession
-    let fileManager: FileManager
+    let fileStorage: any FileStorage
 
-    public init(urlSession: URLSession, fileManager: FileManager) {
+    public init(urlSession: URLSession, fileStorage: some FileStorage) {
         self.urlSession = urlSession
-        self.fileManager = fileManager
+        self.fileStorage = fileStorage
     }
 
     public func download(url: URL, to destinationPath: URL) async throws {
@@ -24,9 +24,9 @@ public struct NestFileDownloader: FileDownloader {
         }
 
         if url.needsUnzip {
-            try fileManager.unzipItem(at: downloadedFilePath, to: destinationPath)
+            fileStorage.unzipItem(at: downloadedFilePath, to: destinationPath)
         } else {
-            try fileManager.copyItem(at: downloadedFilePath, to: destinationPath)
+            try fileStorage.copyItem(at: downloadedFilePath, to: destinationPath)
         }
     }
 }

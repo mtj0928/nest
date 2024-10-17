@@ -1,17 +1,17 @@
 import Foundation
 
 public struct ArtifactBundleManager: Sendable {
-    private let fileManager: FileManager
+    private let fileStorage: any FileStorage
     private let directory: NestDirectory
 
-    public init(fileManager: FileManager, directory: NestDirectory) {
-        self.fileManager = fileManager
+    public init(fileStorage: some FileStorage, directory: NestDirectory) {
+        self.fileStorage = fileStorage
         self.directory = directory
     }
 
     public func install(_ binary: ExecutableBinary) throws {
         let binaryDirectory = directory.binaryDirectory(of: binary)
-        try fileManager.createDirectory(at: binaryDirectory, withIntermediateDirectories: true)
+        try fileStorage.createDirectory(at: binaryDirectory, withIntermediateDirectories: true)
 
         try add(binary)
         try link(binary)
@@ -30,19 +30,19 @@ public struct ArtifactBundleManager: Sendable {
                 let resourceNames = command.resourcePaths.map { directory.url($0).lastPathComponent }
                 for target in resourceNames + [name] {
                     let symbolicFilePath = directory.symbolicPath(name: target)
-                    try? fileManager.removeItem(at: symbolicFilePath)
+                    try? fileStorage.removeItem(at: symbolicFilePath)
                 }
             }
 
             // Remove files
             let binaryPath = URL(filePath: directory.rootDirectory.path() + command.binaryPath)
-            try? fileManager.removeItemIfExists(at: binaryPath)
+            try? fileStorage.removeItemIfExists(at: binaryPath)
 
             // Remove empty directories
             var targetPath = binaryPath.deletingLastPathComponent()
-            while (try? fileManager.contentsOfDirectory(atPath: targetPath.path()).isEmpty) ?? false,
+            while (try? fileStorage.contentsOfDirectory(atPath: targetPath.path()).isEmpty) ?? false,
                   targetPath != directory.rootDirectory {
-                try fileManager.removeItemIfExists(at: targetPath)
+                try fileStorage.removeItemIfExists(at: targetPath)
                 targetPath = targetPath.deletingLastPathComponent()
             }
         }
@@ -56,16 +56,16 @@ public struct ArtifactBundleManager: Sendable {
     private func add(_ binary: ExecutableBinary) throws {
         // Copy binary
         let binaryPath = directory.binaryPath(of: binary)
-        try fileManager.removeItemIfExists(at: binaryPath)
-        try fileManager.copyItem(at: binary.binaryPath, to: binaryPath)
+        try fileStorage.removeItemIfExists(at: binaryPath)
+        try fileStorage.copyItem(at: binary.binaryPath, to: binaryPath)
 
         // Copy resources
         let resources = try resources(of: binary)
         var copiedResources: [URL] = []
         for resource in resources {
             let destination = directory.binaryDirectory(of: binary).appending(path: resource.lastPathComponent)
-            try fileManager.removeItemIfExists(at: destination)
-            try fileManager.copyItem(at: resource, to: destination)
+            try fileStorage.removeItemIfExists(at: destination)
+            try fileStorage.copyItem(at: resource, to: destination)
             copiedResources.append(destination)
         }
 
@@ -79,7 +79,7 @@ public struct ArtifactBundleManager: Sendable {
     }
 
     public func link(_ binary: ExecutableBinary) throws {
-        try fileManager.createDirectory(at: directory.bin, withIntermediateDirectories: true)
+        try fileStorage.createDirectory(at: directory.bin, withIntermediateDirectories: true)
 
         // Check existing resources are not conflicted.
         let conflictingInfo = try extractConflictInfos(binary: binary)
@@ -94,22 +94,22 @@ public struct ArtifactBundleManager: Sendable {
         let resources = try resources(of: binary)
         for target in resources + [directory.binaryPath(of: binary)] {
             let symbolicURL = directory.symbolicPath(name: target.lastPathComponent)
-            try fileManager.removeItemIfExists(at: symbolicURL)
+            try fileStorage.removeItemIfExists(at: symbolicURL)
 
             let binaryPath = directory.binaryDirectory(of: binary).appending(path: target.lastPathComponent)
-            try fileManager.createSymbolicLink(at: symbolicURL, withDestinationURL: binaryPath)
+            try fileStorage.createSymbolicLink(at: symbolicURL, withDestinationURL: binaryPath)
         }
     }
 
     private func resources(of binary: ExecutableBinary) throws -> [URL] {
-        try fileManager.child(extension: "bundle", at: binary.parentDirectory)
+        try fileStorage.child(extension: "bundle", at: binary.parentDirectory)
             .filter { $0 != binary.binaryPath }
     }
 
     private func extractConflictInfos(binary: ExecutableBinary) throws -> [ConflictInfo] {
         let resourceNames = try resources(of: binary).map(\.lastPathComponent)
         
-        let conflictingResourcesInBin = try fileManager.child(at: directory.bin)
+        let conflictingResourcesInBin = try fileStorage.child(at: directory.bin)
             .filter { resourceNames.contains($0.lastPathComponent) }
             .map(\.lastPathComponent)
 
@@ -146,7 +146,7 @@ public struct ArtifactBundleManager: Sendable {
 
 extension ArtifactBundleManager {
     var nestInfoController: NestInfoController {
-        NestInfoController(directory: directory, fileManager: fileManager)
+        NestInfoController(directory: directory, fileStorage: fileStorage)
     }
 
     public func isLinked(name: String, commend: NestInfo.Command) -> Bool {
@@ -154,7 +154,7 @@ extension ArtifactBundleManager {
     }
 
     private func linkedFilePath(commandName: String) throws -> String {
-        let urlString = try fileManager.destinationOfSymbolicLink(atPath: directory.symbolicPath(name: commandName).path())
+        let urlString = try fileStorage.destinationOfSymbolicLink(atPath: directory.symbolicPath(name: commandName).path())
         let url = URL(filePath: urlString)
         return directory.relativePath(url)
     }

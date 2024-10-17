@@ -1,4 +1,3 @@
-
 public struct ArtifactBundleAssetSelector {
     public init() {}
 

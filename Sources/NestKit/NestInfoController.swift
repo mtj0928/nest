@@ -2,15 +2,15 @@ import Foundation
 
 public struct NestInfoController {
     private let directory: NestDirectory
-    private let fileManager: FileManager
+    private let fileStorage: any FileStorage
 
-    public init(directory: NestDirectory, fileManager: FileManager) {
+    public init(directory: NestDirectory, fileStorage: some FileStorage) {
         self.directory = directory
-        self.fileManager = fileManager
+        self.fileStorage = fileStorage
     }
 
     public func getInfo() -> NestInfo {
-        guard fileManager.fileExists(atPath: directory.infoJSON.path()),
+        guard fileStorage.fileExists(atPath: directory.infoJSON.path()),
               let data = try? Data(contentsOf: directory.infoJSON),
               let nestInfo = try? JSONDecoder().decode(NestInfo.self, from: data)
         else {
@@ -41,7 +41,7 @@ public struct NestInfoController {
 extension NestInfoController {
     private func updateInfo(_ updater: (inout NestInfo) -> Void) throws {
         var infoJSON: NestInfo
-        if fileManager.fileExists(atPath: directory.infoJSON.path()) {
+        if fileStorage.fileExists(atPath: directory.infoJSON.path()) {
             let data = try Data(contentsOf: directory.infoJSON)
             infoJSON = try JSONDecoder().decode(NestInfo.self, from: data)
         } else {
