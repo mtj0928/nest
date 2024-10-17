@@ -24,6 +24,8 @@ public protocol FileStorage: Sendable {
         pathEncoding: String.Encoding?
     )
     func fileExists(atPath path: String) -> Bool
+    func data(at url: URL) throws -> Data
+    func write(_ data: Data, to url: URL) throws
 }
 
 extension FileStorage {
@@ -69,4 +71,12 @@ extension FileStorage {
     }
 }
 
-extension FileManager: FileStorage {}
+extension FileManager: FileStorage {
+    public func data(at url: URL) throws -> Data {
+        try Data(contentsOf: url)
+    }
+
+    public func write(_ data: Data, to url: URL) throws {
+        try data.write(to: url)
+    }
+}

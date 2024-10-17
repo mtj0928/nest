@@ -11,13 +11,23 @@ public struct ArtifactBundle: Sendable {
     /// A information where the artifact bundle is from.
     public let sourceInfo: ArtifactBundleSourceInfo
 
-    public init(at path: URL, sourceInfo: ArtifactBundleSourceInfo) throws {
+    public init(info: ArtifactBundleInfo, rootDirectory: URL, sourceInfo: ArtifactBundleSourceInfo) {
+        self.info = info
+        self.rootDirectory = rootDirectory
+        self.sourceInfo = sourceInfo
+    }
+}
+
+extension ArtifactBundle {
+    public static func load(
+        at path: URL,
+        sourceInfo: ArtifactBundleSourceInfo,
+        fileStorage: some FileStorage
+    ) throws -> ArtifactBundle {
         let infoPath = path.appending(path: "info.json")
-        let data = try Data(contentsOf: infoPath)
+        let data = try fileStorage.data(at: infoPath)
         let info = try JSONDecoder().decode(ArtifactBundleInfo.self, from: data)
 
-        self.info = info
-        self.rootDirectory = path
-        self.sourceInfo = sourceInfo
+        return ArtifactBundle(info: info, rootDirectory: path, sourceInfo: sourceInfo)
     }
 }

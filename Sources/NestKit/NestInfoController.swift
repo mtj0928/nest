@@ -11,7 +11,7 @@ public struct NestInfoController {
 
     public func getInfo() -> NestInfo {
         guard fileStorage.fileExists(atPath: directory.infoJSON.path()),
-              let data = try? Data(contentsOf: directory.infoJSON),
+              let data = try? fileStorage.data(at: directory.infoJSON),
               let nestInfo = try? JSONDecoder().decode(NestInfo.self, from: data)
         else {
             return NestInfo(version: NestInfo.currentVersion, commands: [:])
@@ -42,7 +42,7 @@ extension NestInfoController {
     private func updateInfo(_ updater: (inout NestInfo) -> Void) throws {
         var infoJSON: NestInfo
         if fileStorage.fileExists(atPath: directory.infoJSON.path()) {
-            let data = try Data(contentsOf: directory.infoJSON)
+            let data = try fileStorage.data(at: directory.infoJSON)
             infoJSON = try JSONDecoder().decode(NestInfo.self, from: data)
         } else {
             infoJSON = NestInfo(version: NestInfo.currentVersion, commands: [:])
@@ -61,6 +61,6 @@ extension NestInfoController {
         encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
 #endif
         let updateData = try encoder.encode(infoJSON)
-        try updateData.write(to: directory.infoJSON)
+        try fileStorage.write(updateData, to: directory.infoJSON)
     }
 }

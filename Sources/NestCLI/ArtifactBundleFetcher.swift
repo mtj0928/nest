@@ -67,7 +67,7 @@ public struct ArtifactBundleFetcher {
             .map { artifactBundlePath in
                 let repository = Repository(reference: .url(gitURL), version: resolvedAsset.tagName)
                 let sourceInfo = ArtifactBundleSourceInfo(zipURL: resolvedAsset.zipURL, repository: repository)
-                return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
+                return try ArtifactBundle.load(at: artifactBundlePath, sourceInfo: sourceInfo, fileStorage: fileStorage)
             }
             .flatMap { bundle in try bundle.binaries(of: triple) }
     }
@@ -93,7 +93,7 @@ public struct ArtifactBundleFetcher {
         return try fileStorage.child(extension: "artifactbundle", at: directory)
             .compactMap { artifactBundlePath in
                 let sourceInfo = ArtifactBundleSourceInfo(zipURL: url, repository: nil)
-                return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
+                return try ArtifactBundle.load(at: artifactBundlePath, sourceInfo: sourceInfo, fileStorage: fileStorage)
             }
             .flatMap { bundle in try bundle.binaries(of: triple) }
     }
