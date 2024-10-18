@@ -31,7 +31,7 @@ public struct NestFileDownloader: FileDownloader {
     }
 }
 
-enum FileDownloaderError: LocalizedError {
+enum FileDownloaderError: LocalizedError, Equatable {
     case notFound(url: URL)
 
     var errorDescription: String? {
