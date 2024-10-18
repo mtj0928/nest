@@ -8,7 +8,8 @@ public struct ArtifactBundleManager: Sendable {
         self.fileStorage = fileStorage
         self.directory = directory
     }
-
+    
+    /// Puts the binary to artifact bundle directory and make a symbolic link from the put binary to bin directory.
     public func install(_ binary: ExecutableBinary) throws {
         let binaryDirectory = directory.binaryDirectory(of: binary)
         try fileStorage.createDirectory(at: binaryDirectory, withIntermediateDirectories: true)
@@ -39,12 +40,10 @@ public struct ArtifactBundleManager: Sendable {
             try? fileStorage.removeItemIfExists(at: binaryPath)
 
             // Remove empty directories
-            var targetPath = binaryPath.deletingLastPathComponent()
-            while (try? fileStorage.contentsOfDirectory(atPath: targetPath.path()).isEmpty) ?? false,
-                  targetPath != directory.rootDirectory {
-                try fileStorage.removeItemIfExists(at: targetPath)
-                targetPath = targetPath.deletingLastPathComponent()
-            }
+            try fileStorage.removeEmptyDirectory(
+                from: binaryPath.deletingLastPathComponent(),
+                until: directory.rootDirectory
+            )
         }
         try nestInfoController.remove(command: name, version: version)
     }
@@ -78,6 +77,7 @@ public struct ArtifactBundleManager: Sendable {
         try nestInfoController.add(name: binary.commandName, command: command)
     }
 
+    /// Makes a symbolic link for the given binary to bin directory.
     public func link(_ binary: ExecutableBinary) throws {
         try fileStorage.createDirectory(at: directory.bin, withIntermediateDirectories: true)
 

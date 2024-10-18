@@ -69,6 +69,15 @@ extension FileStorage {
         try contentsOfDirectory(atPath: url.path())
             .map { url.appending(component: $0) }
     }
+
+    public func removeEmptyDirectory(from path: URL, until rootPath: URL) throws {
+        var targetPath = path
+        while (try? contentsOfDirectory(atPath: targetPath.path()).isEmpty) ?? false,
+              targetPath != rootPath {
+            try removeItemIfExists(at: targetPath)
+            targetPath = targetPath.deletingLastPathComponent()
+        }
+    }
 }
 
 extension FileManager: FileStorage {
