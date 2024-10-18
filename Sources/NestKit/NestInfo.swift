@@ -1,7 +1,7 @@
 import Foundation
 
 /// A data structure representing info.json of nest.
-public struct NestInfo: Codable, Sendable {
+public struct NestInfo: Codable, Sendable, Equatable, Hashable {
     public var version: String
     public var commands: [String: [Command]]
 
