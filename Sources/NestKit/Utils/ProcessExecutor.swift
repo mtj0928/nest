@@ -1,20 +1,30 @@
 import Foundation
 import Logging
 
-struct ProcessExecutor {
+public protocol ProcessExecutor: Sendable {
+    func execute(command: String, _ arguments: [String]) async throws -> String
+}
+
+extension ProcessExecutor {
+    public func execute(command: String, _ arguments: String...) async throws -> String {
+        try await execute(command: command, arguments)
+    }
+
+    public func which(_ command: String) async throws -> String {
+        try await execute(command: "/usr/bin/which", command)
+    }
+}
+
+public struct NestProcessExecutor: ProcessExecutor {
     let currentDirectoryURL: URL?
     let logger: Logger
 
-    init(currentDirectory: URL? = nil, logger: Logger) {
+    public init(currentDirectory: URL? = nil, logger: Logger) {
         self.currentDirectoryURL = currentDirectory
         self.logger = logger
     }
 
-    func executeAndWait(command: String, _ arguments: String...) async throws -> String {
-        try await executeAndWait(command: command, arguments)
-    }
-
-    func executeAndWait(command: String, _ arguments: [String]) async throws -> String {
+    public func execute(command: String, _ arguments: [String]) async throws -> String {
         let elements = try await _execute(command: command, arguments.map { $0 })
         return elements.compactMap { element in
             switch element {
@@ -22,10 +32,6 @@ struct ProcessExecutor {
             case .error: nil
             }
         }.joined()
-    }
-
-    func which(_ command: String) async throws -> String {
-        try await executeAndWait(command: "/usr/bin/which", command)
     }
 
     private func _execute(command: String, _ arguments: [String]) async throws -> [StreamElement] {
