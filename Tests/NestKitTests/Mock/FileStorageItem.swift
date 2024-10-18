@@ -1,8 +1,8 @@
 import Foundation
 import Testing
 
-enum FileStorageItem: Equatable {
-    case directory(children: [String: FileStorageItem])
+enum FileSystemItem: Equatable {
+    case directory(children: [String: FileSystemItem])
     case file(data: Data)
 
     mutating func remove(at components: [String]) {
@@ -24,7 +24,7 @@ enum FileStorageItem: Equatable {
 
     }
 
-    mutating func update(item: FileStorageItem, at components: [String]) {
+    mutating func update(item: FileSystemItem, at components: [String]) {
         switch self {
         case .directory(var children):
             var components = components
@@ -42,7 +42,7 @@ enum FileStorageItem: Equatable {
         }
     }
 
-    func item(components: [String]) -> FileStorageItem? {
+    func item(components: [String]) -> FileSystemItem? {
         if components.isEmpty {
             return self
         }
@@ -73,25 +73,25 @@ enum FileStorageItem: Equatable {
     }
 }
 
-extension FileStorageItem: ExpressibleByDictionaryLiteral {
+extension FileSystemItem: ExpressibleByDictionaryLiteral {
     typealias Key = String
-    typealias Value = FileStorageItem
+    typealias Value = FileSystemItem
 
-    init(dictionaryLiteral elements: (String, FileStorageItem)...) {
-        self = .directory(children: elements.reduce(into: [String: FileStorageItem](), { partialResult, pair in
+    init(dictionaryLiteral elements: (String, FileSystemItem)...) {
+        self = .directory(children: elements.reduce(into: [String: FileSystemItem](), { partialResult, pair in
             partialResult[pair.0] = pair.1
         }))
     }
 }
 
-struct FileStorageItemTests {
+struct FileSystemItemTests {
     enum DummyData {
         static let aTextData = "a.txt".data(using: .utf8)!
         static let bTextData = "b.txt".data(using: .utf8)!
         static let cTextData = "c".data(using: .utf8)!
     }
 
-    let initialItem: FileStorageItem = [
+    let initialItem: FileSystemItem = [
         "a": [
             "b.txt": .file(data: DummyData.bTextData),
             "b": ["c": .file(data: DummyData.cTextData)]

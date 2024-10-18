@@ -2,8 +2,8 @@ import Foundation
 import os
 import NestKit
 
-final class MockFileStorage: FileStorage, @unchecked Sendable {
-    var item: FileStorageItem {
+final class MockFileSystem: FileSystem, @unchecked Sendable {
+    var item: FileSystemItem {
         get { lockedItem.withLock { $0 } }
         set { lockedItem.withLock { $0 = newValue } }
     }
@@ -15,7 +15,7 @@ final class MockFileStorage: FileStorage, @unchecked Sendable {
     let homeDirectoryForCurrentUser: URL
     let temporaryDirectory: URL
 
-    private let lockedItem = OSAllocatedUnfairLock(initialState: FileStorageItem.directory(children: [:]))
+    private let lockedItem = OSAllocatedUnfairLock(initialState: FileSystemItem.directory(children: [:]))
     private let lockedSymbolicLink = OSAllocatedUnfairLock(initialState: [URL: URL]())
 
     init(homeDirectoryForCurrentUser: URL, temporaryDirectory: URL) {
@@ -48,7 +48,7 @@ final class MockFileStorage: FileStorage, @unchecked Sendable {
         let url = symbolicLink[originalURL] ?? originalURL
 
         guard case .directory(let children) = item.item(components: url.pathComponents) else {
-            throw MockFileStorageError.fileNotFound
+            throw MockFileSystemError.fileNotFound
         }
         return children.keys.map { $0 }
     }
@@ -63,7 +63,7 @@ final class MockFileStorage: FileStorage, @unchecked Sendable {
         let srcURL = symbolicLink[srcURL] ?? srcURL
         let dstURL = symbolicLink[dstURL] ?? dstURL
         guard let item = item.item(components: srcURL.pathComponents) else {
-            throw MockFileStorageError.fileNotFound
+            throw MockFileSystemError.fileNotFound
         }
         self.item.update(item: item, at: dstURL.pathComponents)
     }
@@ -74,7 +74,7 @@ final class MockFileStorage: FileStorage, @unchecked Sendable {
 
     func destinationOfSymbolicLink(atPath path: String) throws -> String {
         guard let result = symbolicLink[URL(fileURLWithPath: path)] else {
-            throw MockFileStorageError.fileNotFound
+            throw MockFileSystemError.fileNotFound
         }
         return result.path()
     }
@@ -91,7 +91,7 @@ final class MockFileStorage: FileStorage, @unchecked Sendable {
         let components = url.pathComponents
         switch item.item(components: components) {
         case .file(let data): return data
-        default: throw MockFileStorageError.fileNotFound
+        default: throw MockFileSystemError.fileNotFound
         }
     }
 
@@ -101,7 +101,7 @@ final class MockFileStorage: FileStorage, @unchecked Sendable {
     }
 }
 
-extension MockFileStorage {
+extension MockFileSystem {
     func printStructure() {
         item.printStructure()
         for (sourceURL, destinationURL) in symbolicLink {
@@ -109,7 +109,7 @@ extension MockFileStorage {
         }
     }
 
-    enum MockFileStorageError: Error {
+    enum MockFileSystemError: Error {
         case fileNotFound
     }
 }

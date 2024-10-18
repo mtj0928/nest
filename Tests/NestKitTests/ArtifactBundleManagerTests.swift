@@ -4,7 +4,7 @@ import Testing
 
 struct ArtifactBundleManagerTests {
     let nestDirectory = NestDirectory(rootDirectory: URL(filePath: "/User/.nest"))
-    let fileStorage = MockFileStorage(
+    let fileSystem = MockFileSystem(
         homeDirectoryForCurrentUser: URL(filePath: "/User"),
         temporaryDirectory: URL(filePath: "/User/temp")
     )
@@ -12,14 +12,14 @@ struct ArtifactBundleManagerTests {
     @Test
     func install() async throws {
         let binaryData = "binaryData".data(using: .utf8)!
-        fileStorage.item = [
+        fileSystem.item = [
             "/": [
                 "User": [
                     "Desktop": ["binary": .file(data: binaryData)]
                 ]
             ]
         ]
-        let manager = ArtifactBundleManager(fileStorage: fileStorage, directory: nestDirectory)
+        let manager = ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory)
         let manufacturer = ExecutableManufacturer.localBuild(
             repository: .init(reference: .url(URL(string: "https://github.com/aaa/bbb")!), version: "1.0.0")
         )
@@ -32,10 +32,10 @@ struct ArtifactBundleManagerTests {
         try manager.install(binary)
 
         let binaryInArtifactBundlePath = "/User/.nest/artifacts/aaa_bbb_github.com_https/1.0.0/local_build/foo"
-        let binaryInArtifactBundle = try fileStorage.data(at: URL(filePath: binaryInArtifactBundlePath))
+        let binaryInArtifactBundle = try fileSystem.data(at: URL(filePath: binaryInArtifactBundlePath))
         #expect(binaryInArtifactBundle == binaryData)
 
-        let binaryInBin = try fileStorage.data(at: URL(filePath: "/User/.nest/bin/foo"))
+        let binaryInBin = try fileSystem.data(at: URL(filePath: "/User/.nest/bin/foo"))
         #expect(binaryInBin == binaryData)
 
         let nestInfo = manager.nestInfoController.getInfo()
@@ -50,14 +50,14 @@ struct ArtifactBundleManagerTests {
     @Test
     func uninstall() async throws {
         let binaryData = "binaryData".data(using: .utf8)!
-        fileStorage.item = [
+        fileSystem.item = [
             "/": [
                 "User": [
                     "Desktop": ["binary": .file(data: binaryData)]
                 ]
             ]
         ]
-        let manager = ArtifactBundleManager(fileStorage: fileStorage, directory: nestDirectory)
+        let manager = ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory)
         let binary = ExecutableBinary(
             commandName: "foo",
             binaryPath: URL(filePath: "/User/Desktop/binary"),
@@ -70,10 +70,10 @@ struct ArtifactBundleManagerTests {
         try manager.uninstall(command: "foo", version: "1.0.0")
 
         let binaryInArtifactBundlePath = "/User/.nest/artifacts/aaa_bbb_github.com_https/1.0.0/local_build/foo"
-        let binaryInArtifactBundle = try? fileStorage.data(at: URL(filePath: binaryInArtifactBundlePath))
+        let binaryInArtifactBundle = try? fileSystem.data(at: URL(filePath: binaryInArtifactBundlePath))
         #expect(binaryInArtifactBundle == nil)
 
-        let symbolicatedBinary = try? fileStorage.data(at: URL(filePath: "/User/.nest/bin/foo"))
+        let symbolicatedBinary = try? fileSystem.data(at: URL(filePath: "/User/.nest/bin/foo"))
         #expect(symbolicatedBinary == nil)
 
         let nestInfo = manager.nestInfoController.getInfo()
@@ -83,14 +83,14 @@ struct ArtifactBundleManagerTests {
     @Test
     func list() async throws {
         let binaryData = "binaryData".data(using: .utf8)!
-        fileStorage.item = [
+        fileSystem.item = [
             "/": [
                 "User": [
                     "Desktop": ["binary": .file(data: binaryData)]
                 ]
             ]
         ]
-        let manager = ArtifactBundleManager(fileStorage: fileStorage, directory: nestDirectory)
+        let manager = ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory)
         let binaryA = ExecutableBinary(
             commandName: "foo",
             binaryPath: URL(filePath: "/User/Desktop/binary"),

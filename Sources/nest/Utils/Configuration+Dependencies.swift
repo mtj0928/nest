@@ -17,9 +17,9 @@ extension Configuration {
     var artifactBundleFetcher: ArtifactBundleFetcher {
         ArtifactBundleFetcher(
             workingDirectory: workingDirectory,
-            fileStorage: fileStorage,
-            fileDownloader: NestFileDownloader(httpClient: httpClient, fileStorage: fileStorage),
-            nestInfoController: NestInfoController(directory: nestDirectory, fileStorage: fileStorage),
+            fileSystem: fileSystem,
+            fileDownloader: NestFileDownloader(httpClient: httpClient, fileSystem: fileSystem),
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
             repositoryClientBuilder: GitRepositoryClientBuilder(configuration: self),
             logger: logger
         )
@@ -28,8 +28,8 @@ extension Configuration {
     var swiftPackageBuilder: SwiftPackageBuilder {
         SwiftPackageBuilder(
             workingDirectory: workingDirectory,
-            fileStorage: fileStorage,
-            nestInfoController: NestInfoController(directory: nestDirectory, fileStorage: fileStorage),
+            fileSystem: fileSystem,
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
             repositoryClientBuilder: GitRepositoryClientBuilder(configuration: self),
             logger: logger
         )

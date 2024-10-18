@@ -63,9 +63,9 @@ public struct Nestfile: Codable {
 }
 
 extension Nestfile {
-    public static func load(from path: String, fileStorage: some FileStorage) throws -> Nestfile {
+    public static func load(from path: String, fileSystem: some FileSystem) throws -> Nestfile {
         let url = URL(fileURLWithPath: path)
-        let data = try fileStorage.data(at: url)
+        let data = try fileSystem.data(at: url)
         return try YAMLDecoder().decode(Nestfile.self, from: data)
     }
 }

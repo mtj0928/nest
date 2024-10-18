@@ -17,7 +17,7 @@ struct BootstrapCommand: AsyncParsableCommand {
     var verbose: Bool = false
 
     mutating func run() async throws {
-        let nestfile = try Nestfile.load(from: nestfilePath, fileStorage: FileManager.default)
+        let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
 
         let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestPath: nestfile.nestPath)
 

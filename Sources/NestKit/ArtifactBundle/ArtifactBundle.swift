@@ -22,10 +22,10 @@ extension ArtifactBundle {
     public static func load(
         at path: URL,
         sourceInfo: ArtifactBundleSourceInfo,
-        fileStorage: some FileStorage
+        fileSystem: some FileSystem
     ) throws -> ArtifactBundle {
         let infoPath = path.appending(path: "info.json")
-        let data = try fileStorage.data(at: infoPath)
+        let data = try fileSystem.data(at: infoPath)
         let info = try JSONDecoder().decode(ArtifactBundleInfo.self, from: data)
 
         return ArtifactBundle(info: info, rootDirectory: path, sourceInfo: sourceInfo)

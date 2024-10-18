@@ -2,16 +2,16 @@ import Foundation
 
 public struct NestInfoController {
     private let directory: NestDirectory
-    private let fileStorage: any FileStorage
+    private let fileSystem: any FileSystem
 
-    public init(directory: NestDirectory, fileStorage: some FileStorage) {
+    public init(directory: NestDirectory, fileSystem: some FileSystem) {
         self.directory = directory
-        self.fileStorage = fileStorage
+        self.fileSystem = fileSystem
     }
 
     public func getInfo() -> NestInfo {
-        guard fileStorage.fileExists(atPath: directory.infoJSON.path()),
-              let data = try? fileStorage.data(at: directory.infoJSON),
+        guard fileSystem.fileExists(atPath: directory.infoJSON.path()),
+              let data = try? fileSystem.data(at: directory.infoJSON),
               let nestInfo = try? JSONDecoder().decode(NestInfo.self, from: data)
         else {
             return NestInfo(version: NestInfo.currentVersion, commands: [:])
@@ -41,8 +41,8 @@ public struct NestInfoController {
 extension NestInfoController {
     private func updateInfo(_ updater: (inout NestInfo) -> Void) throws {
         var infoJSON: NestInfo
-        if fileStorage.fileExists(atPath: directory.infoJSON.path()) {
-            let data = try fileStorage.data(at: directory.infoJSON)
+        if fileSystem.fileExists(atPath: directory.infoJSON.path()) {
+            let data = try fileSystem.data(at: directory.infoJSON)
             infoJSON = try JSONDecoder().decode(NestInfo.self, from: data)
         } else {
             infoJSON = NestInfo(version: NestInfo.currentVersion, commands: [:])
@@ -61,6 +61,6 @@ extension NestInfoController {
         encoder.outputFormatting = [.withoutEscapingSlashes, .sortedKeys]
 #endif
         let updateData = try encoder.encode(infoJSON)
-        try fileStorage.write(updateData, to: directory.infoJSON)
+        try fileSystem.write(updateData, to: directory.infoJSON)
     }
 }

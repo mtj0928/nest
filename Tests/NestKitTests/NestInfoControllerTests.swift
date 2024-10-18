@@ -4,13 +4,13 @@ import Testing
 
 struct NestInfoControllerTests {
     let nestDirectory = NestDirectory(rootDirectory: URL(filePath: "/User/.nest"))
-    let mockFileStorage = MockFileStorage(
+    let mockFileSystem = MockFileSystem(
         homeDirectoryForCurrentUser: URL(filePath: "/User"),
         temporaryDirectory: URL(filePath: "/tmp")
     )
 
     init() {
-        mockFileStorage.item = [
+        mockFileSystem.item = [
             "/": [
                 "User": [
                     ".nest": [:]
@@ -21,7 +21,7 @@ struct NestInfoControllerTests {
 
     @Test
     func add() throws {
-        let nestInfoController = NestInfoController(directory: nestDirectory, fileStorage: mockFileStorage)
+        let nestInfoController = NestInfoController(directory: nestDirectory, fileSystem: mockFileSystem)
         let command = try NestInfo.Command(
             version: "0.0.1",
             binaryPath: "a",
@@ -42,7 +42,7 @@ struct NestInfoControllerTests {
 
     @Test
     func remove() throws {
-        let nestInfoController = NestInfoController(directory: nestDirectory, fileStorage: mockFileStorage)
+        let nestInfoController = NestInfoController(directory: nestDirectory, fileSystem: mockFileSystem)
         let command = try NestInfo.Command(
             version: "0.0.1",
             binaryPath: "a",

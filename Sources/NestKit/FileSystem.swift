@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol FileStorage: Sendable {
+public protocol FileSystem: Sendable {
     var homeDirectoryForCurrentUser: URL { get }
     var temporaryDirectory: URL { get }
 
@@ -28,7 +28,7 @@ public protocol FileStorage: Sendable {
     func write(_ data: Data, to url: URL) throws
 }
 
-extension FileStorage {
+extension FileSystem {
     public func createDirectory(
         at url: URL,
         withIntermediateDirectories createIntermediates: Bool
@@ -80,7 +80,7 @@ extension FileStorage {
     }
 }
 
-extension FileManager: FileStorage {
+extension FileManager: FileSystem {
     public func data(at url: URL) throws -> Data {
         try Data(contentsOf: url)
     }

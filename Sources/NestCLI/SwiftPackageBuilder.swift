@@ -5,20 +5,20 @@ import NestKit
 public struct SwiftPackageBuilder {
 
     private let workingDirectory: URL
-    private let fileStorage: any FileStorage
+    private let fileSystem: any FileSystem
     private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
     private let logger: Logger
 
     public init(
         workingDirectory: URL,
-        fileStorage: some FileStorage,
+        fileSystem: some FileSystem,
         nestInfoController: NestInfoController,
         repositoryClientBuilder: GitRepositoryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
-        self.fileStorage = fileStorage
+        self.fileSystem = fileSystem
         self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
         self.logger = logger
@@ -27,7 +27,7 @@ public struct SwiftPackageBuilder {
     public func build(gitURL: GitURL, version: GitVersion) async throws -> [ExecutableBinary] {
         // Reset the existing directory.
         let repositoryDirectory = workingDirectory.appending(component: gitURL.repositoryName)
-        try fileStorage.removeItemIfExists(at: repositoryDirectory)
+        try fileSystem.removeItemIfExists(at: repositoryDirectory)
 
         // Resolve a tag or version.
         let tagOrVersion = try await resolveTagOrVersion(gitURL: gitURL, version: version)
