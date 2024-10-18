@@ -4,23 +4,23 @@ import NestKit
 
 public struct ArtifactBundleFetcher {
     private let workingDirectory: URL
-    private let fileManager: FileManager
-    private let zipFileDownloader: ZipFileDownloader
+    private let fileSystem: any FileSystem
+    private let fileDownloader: any FileDownloader
     private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
     private let logger: Logger
 
     public init(
         workingDirectory: URL,
-        fileManager: FileManager,
-        zipFileDownloader: ZipFileDownloader,
+        fileSystem: some FileSystem,
+        fileDownloader: some FileDownloader,
         nestInfoController: NestInfoController,
         repositoryClientBuilder: GitRepositoryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
-        self.fileManager = fileManager
-        self.zipFileDownloader = zipFileDownloader
+        self.fileSystem = fileSystem
+        self.fileDownloader = fileDownloader
         self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
         self.logger = logger
@@ -52,22 +52,22 @@ public struct ArtifactBundleFetcher {
 
         // Reset the existing directory.
         let repositoryDirectory = workingDirectory.appending(component: gitURL.fileNameWithoutPathExtension)
-        try fileManager.removeItemIfExists(at: repositoryDirectory)
+        try fileSystem.removeItemIfExists(at: repositoryDirectory)
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle of \(gitURL.lastPathComponent)...")
-        try await zipFileDownloader.download(url: resolvedAsset.zipURL, to: repositoryDirectory)
+        try await fileDownloader.download(url: resolvedAsset.zipURL, to: repositoryDirectory)
         logger.info("✅ Success to download the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
         let triple = try await TripleDetector(logger: logger).detect()
         logger.debug("The current triple is \(triple)")
 
-        return try fileManager.child(extension: "artifactbundle", at: repositoryDirectory)
+        return try fileSystem.child(extension: "artifactbundle", at: repositoryDirectory)
             .map { artifactBundlePath in
                 let repository = Repository(reference: .url(gitURL), version: resolvedAsset.tagName)
                 let sourceInfo = ArtifactBundleSourceInfo(zipURL: resolvedAsset.zipURL, repository: repository)
-                return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
+                return try ArtifactBundle.load(at: artifactBundlePath, sourceInfo: sourceInfo, fileSystem: fileSystem)
             }
             .flatMap { bundle in try bundle.binaries(of: triple) }
     }
@@ -79,21 +79,21 @@ public struct ArtifactBundleFetcher {
         }
 
         let directory = workingDirectory.appending(component: url.fileNameWithoutPathExtension)
-        try fileManager.removeItemIfExists(at: directory)
+        try fileSystem.removeItemIfExists(at: directory)
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle at \(url.absoluteString)...")
-        try await zipFileDownloader.download(url: url, to: directory)
+        try await fileDownloader.download(url: url, to: directory)
         logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
         let triple = try await TripleDetector(logger: logger).detect()
         logger.debug("The current triple is \(triple)")
 
-        return try fileManager.child(extension: "artifactbundle", at: directory)
+        return try fileSystem.child(extension: "artifactbundle", at: directory)
             .compactMap { artifactBundlePath in
                 let sourceInfo = ArtifactBundleSourceInfo(zipURL: url, repository: nil)
-                return try ArtifactBundle(at: artifactBundlePath, sourceInfo: sourceInfo)
+                return try ArtifactBundle.load(at: artifactBundlePath, sourceInfo: sourceInfo, fileSystem: fileSystem)
             }
             .flatMap { bundle in try bundle.binaries(of: triple) }
     }
@@ -127,7 +127,6 @@ public struct ArtifactBundleFetcher {
             tagName: assetInfo.tagName
         )
     }
-
 }
 
 extension ArtifactBundle {

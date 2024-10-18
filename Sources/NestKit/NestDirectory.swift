@@ -60,7 +60,7 @@ extension NestDirectory {
     }
 
     /// `root/artifacts/{source}/{version}/{build kind}`
-    public func binaryDirectory( manufacturer: ExecutableManufacturer, version: String) -> URL {
+    public func binaryDirectory(manufacturer: ExecutableManufacturer, version: String) -> URL {
         let directoryName = switch manufacturer {
         case .artifactBundle(let sourceInfo): 
             sourceInfo.zipURL.lastPathComponent

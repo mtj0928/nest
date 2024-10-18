@@ -2,29 +2,29 @@ import Foundation
 import Logging
 
 public struct Configuration: Sendable {
-    public var urlSession: URLSession
-    public var fileManager: FileManager
-    public var zipFileDownloader: ZipFileDownloader
+    public var httpClient: any HTTPClient
+    public var fileSystem: any FileSystem
+    public var fileDownloader: any FileDownloader
     public var workingDirectory: URL
     public var nestDirectory: NestDirectory
-    public var nestFileManager: NestFileManager
+    public var artifactBundleManager: ArtifactBundleManager
     public var logger: Logger
 
     public init(
-        urlSession: URLSession,
-        fileManager: FileManager,
-        zipFileDownloader: ZipFileDownloader,
+        httpClient: some HTTPClient,
+        fileSystem: any FileSystem,
+        fileDownloader: some FileDownloader,
         workingDirectory: URL,
         nestDirectory: NestDirectory,
-        nestFileManager: NestFileManager,
+        artifactBundleManager: ArtifactBundleManager,
         logger: Logger
     ) {
-        self.urlSession = urlSession
-        self.fileManager = fileManager
-        self.zipFileDownloader = zipFileDownloader
+        self.httpClient = httpClient
+        self.fileSystem = fileSystem
+        self.fileDownloader = fileDownloader
         self.workingDirectory = workingDirectory
         self.nestDirectory = nestDirectory
-        self.nestFileManager = nestFileManager
+        self.artifactBundleManager = artifactBundleManager
         self.logger = logger
     }
 }

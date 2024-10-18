@@ -9,7 +9,7 @@ public struct GitRepositoryClientBuilder {
 
     public func build(for url: GitURL) -> any GitRepositoryClient {
         // Only GitHub is supported now.
-        GitHubRepositoryClient(urlSession: configuration.urlSession, logger: configuration.logger)
+        GitHubRepositoryClient(httpClient: configuration.httpClient, logger: configuration.logger)
     }
 
     public func build(for url: URL) -> any GitRepositoryClient {

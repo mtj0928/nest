@@ -1,7 +1,7 @@
 import Foundation
 
 /// A data structure representing executable target.
-public struct ExecutableBinary: Codable, Sendable {
+public struct ExecutableBinary: Codable, Sendable, Equatable {
     public var commandName: String
     public var binaryPath: URL
     public var version: String
@@ -20,7 +20,7 @@ public struct ExecutableBinary: Codable, Sendable {
 }
 
 /// An enum representing manufacturer of an executable target
-public enum ExecutableManufacturer: Codable, Sendable {
+public enum ExecutableManufacturer: Codable, Sendable, Equatable, Hashable {
     /// A case where the executable target is from an artifact bundle
     case artifactBundle(sourceInfo: ArtifactBundleSourceInfo)
 
@@ -29,7 +29,7 @@ public enum ExecutableManufacturer: Codable, Sendable {
 }
 
 /// Informations of artifact bundle.
-public struct ArtifactBundleSourceInfo: Codable, Sendable {
+public struct ArtifactBundleSourceInfo: Codable, Sendable, Equatable, Hashable {
     /// A url where the artifact bundle is located.
     public let zipURL: URL
 
@@ -42,7 +42,7 @@ public struct ArtifactBundleSourceInfo: Codable, Sendable {
     }
 }
 
-public struct Repository: Codable, Sendable {
+public struct Repository: Codable, Sendable, Equatable, Hashable {
     public let reference: GitURL
     public let version: String
 

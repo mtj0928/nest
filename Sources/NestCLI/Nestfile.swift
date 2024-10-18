@@ -1,4 +1,5 @@
 import Foundation
+import NestKit
 import Yams
 
 public struct Nestfile: Codable {
@@ -62,9 +63,9 @@ public struct Nestfile: Codable {
 }
 
 extension Nestfile {
-    public static func load(from path: String) throws -> Nestfile {
+    public static func load(from path: String, fileSystem: some FileSystem) throws -> Nestfile {
         let url = URL(fileURLWithPath: path)
-        let data = try Data(contentsOf: url)
+        let data = try fileSystem.data(at: url)
         return try YAMLDecoder().decode(Nestfile.self, from: data)
     }
 }

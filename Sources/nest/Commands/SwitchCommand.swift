@@ -20,9 +20,9 @@ struct SwitchCommand: AsyncParsableCommand {
     var verbose: Bool = false
 
     mutating func run() async throws {
-        let (nestDirectory, nestFileManager, logger) = setUp()
+        let (nestDirectory, artifactBundleManager, logger) = setUp()
 
-        guard let commands = nestFileManager.list()[commandName] else {
+        guard let commands = artifactBundleManager.list()[commandName] else {
             logger.error("🪹 \(commandName) doesn't exist.", metadata: .color(.red))
             return
         }
@@ -33,18 +33,18 @@ struct SwitchCommand: AsyncParsableCommand {
                let version {
                 logger.error("🪹 \(commandName) (\(version)) doesn't exist.", metadata: .color(.red))
             } else if candidates.count == 1 {
-                try switchCommand(candidates[0], nestDirectory: nestDirectory, nestFileManager: nestFileManager, logger: logger)
+                try switchCommand(candidates[0], nestDirectory: nestDirectory, artifactBundleManager: artifactBundleManager, logger: logger)
             }
             else {
                 let options = candidates.map { candidate in
-                    let isLinked = nestFileManager.isLinked(name: commandName, commend: candidate)
+                    let isLinked = artifactBundleManager.isLinked(name: commandName, commend: candidate)
                     return "\(candidate.version) (\(candidate.source)) \(isLinked ? "(Selected)".green : "")"}
                 guard let selectedIndex = CLIUtil.getUserChoice(from: options) else {
                     logger.error("Unknown error")
                     return
                 }
                 let command = candidates[selectedIndex]
-                try switchCommand(command, nestDirectory: nestDirectory, nestFileManager: nestFileManager, logger: logger)
+                try switchCommand(command, nestDirectory: nestDirectory, artifactBundleManager: artifactBundleManager, logger: logger)
             }
         } catch {
             logger.error(error)
@@ -55,7 +55,7 @@ struct SwitchCommand: AsyncParsableCommand {
     private func switchCommand(
         _ command: NestInfo.Command,
         nestDirectory: NestDirectory,
-        nestFileManager: NestFileManager,
+        artifactBundleManager: ArtifactBundleManager,
         logger: Logger
     ) throws {
         let binaryInfo = ExecutableBinary(
@@ -64,7 +64,7 @@ struct SwitchCommand: AsyncParsableCommand {
             version: command.version,
             manufacturer: command.manufacturer
         )
-        try nestFileManager.link(binaryInfo)
+        try artifactBundleManager.link(binaryInfo)
         logger.info("🪺 \(binaryInfo.commandName) (\(binaryInfo.version)) is installed.")
     }
 }
@@ -72,7 +72,7 @@ struct SwitchCommand: AsyncParsableCommand {
 extension SwitchCommand {
     private func setUp() -> (
         NestDirectory,
-        NestFileManager,
+        ArtifactBundleManager,
         Logger
     ) {
         LoggingSystem.bootstrap()
@@ -83,7 +83,7 @@ extension SwitchCommand {
 
         return (
             configuration.nestDirectory,
-            configuration.nestFileManager,
+            configuration.artifactBundleManager,
             configuration.logger
         )
     }

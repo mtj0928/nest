@@ -22,11 +22,11 @@ extension Configuration {
     static func make(
         nestPath: String?,
         logLevel: Logger.Level,
-        urlSession: URLSession = .shared,
-        fileManager: FileManager = .default
+        httpClient: some HTTPClient = URLSession.shared,
+        fileSystem: some FileSystem = FileManager.default
     ) -> Configuration {
         let nestDirectory = NestDirectory(
-            rootDirectory: nestPath.map { URL(filePath: $0) } ?? fileManager.defaultNestPath
+            rootDirectory: nestPath.map { URL(filePath: $0) } ?? fileSystem.defaultNestPath
         )
 
         var logger = Logger(label: "com.github.mtj0928.nest")
@@ -34,18 +34,18 @@ extension Configuration {
         logger.debug("NEST_PATH: \(nestDirectory.rootDirectory.path()).")
 
         return Configuration(
-            urlSession: urlSession,
-            fileManager: fileManager,
-            zipFileDownloader: ZipFileDownloader(urlSession: urlSession, fileManager: fileManager),
-            workingDirectory: fileManager.temporaryDirectory.appending(path: "nest"),
+            httpClient: httpClient,
+            fileSystem: fileSystem,
+            fileDownloader: NestFileDownloader(httpClient: httpClient, fileSystem: fileSystem),
+            workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
             nestDirectory: nestDirectory,
-            nestFileManager: NestFileManager(fileManager: fileManager, directory: nestDirectory),
+            artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
         )
     }
 }
 
-extension FileManager {
+extension FileSystem {
     var defaultNestPath: URL {
         homeDirectoryForCurrentUser.appending(component: ".nest")
     }
