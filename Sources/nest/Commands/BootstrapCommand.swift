@@ -13,6 +13,9 @@ struct BootstrapCommand: AsyncParsableCommand {
     @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
+    @Flag(name: .shortAndLong, help: "Skip checksum validation for downloaded artifactbundles.")
+    var skipChecksumValidation = false
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
@@ -31,7 +34,7 @@ struct BootstrapCommand: AsyncParsableCommand {
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
-            let checksum = targetInfo.resolveChecksum()
+            let checksumOption = checksumOption(expectedChecksum: targetInfo.resolveChecksum(), logger: logger)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):
@@ -52,17 +55,29 @@ struct BootstrapCommand: AsyncParsableCommand {
                     at: gitURL,
                     version: version,
                     artifactBundleZipFileName: targetInfo.resolveAssetName(),
-                    checksum: checksum
+                    checksum: checksumOption
                 )
             case .artifactBundle(let url):
                 logger.info("🔎 Start \(url.absoluteString)")
-                executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url, checksum: checksum)
+                executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url, checksum: checksumOption)
             }
 
             for binary in executableBinaries {
                 try artifactBundleManager.install(binary)
                 logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
             }
+        }
+    }
+
+    private func checksumOption(expectedChecksum: String?, logger: Logger) -> ChecksumOption {
+        if skipChecksumValidation {
+            return .skip
+        }
+        if let expectedChecksum {
+            return .needsCheck(expected: expectedChecksum)
+        }
+        return .printActual { checksum in
+            logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
         }
     }
 }

@@ -6,7 +6,7 @@ extension URL {
         lastPathComponent.replacingOccurrences(of: ".\(pathExtension)", with: "")
     }
 
-    var needsUnzip: Bool {
+    public var needsUnzip: Bool {
         let utType = UTType(filenameExtension: pathExtension)
         return utType?.conforms(to: .zip) ?? false
     }

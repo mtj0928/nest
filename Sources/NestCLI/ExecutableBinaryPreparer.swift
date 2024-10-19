@@ -21,7 +21,7 @@ public struct ExecutableBinaryPreparer {
         at gitURL: GitURL,
         version: GitVersion,
         artifactBundleZipFileName: String?,
-        checksum: String?
+        checksum: ChecksumOption
     ) async throws -> [ExecutableBinary] {
         switch gitURL {
         case .url(let url):
@@ -58,7 +58,7 @@ public struct ExecutableBinaryPreparer {
         }
     }   
 
-    public func fetchArtifactBundle(at url: URL, checksum: String?) async throws -> [ExecutableBinary] {
+    public func fetchArtifactBundle(at url: URL, checksum: ChecksumOption) async throws -> [ExecutableBinary] {
         do {
             return try await artifactBundleFetcher.downloadArtifactBundle(url: url, checksum: checksum)
         }

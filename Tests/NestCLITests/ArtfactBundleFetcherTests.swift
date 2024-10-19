@@ -12,7 +12,9 @@ struct ArtfactBundleFetcherTests {
         "/usr/bin/which swift": "/usr/bin/swift",
         "/usr/bin/swift -print-target-info": """
                 { "target": { "unversionedTriple": "arm64-apple-macosx" } }
-                """
+                """,
+        "/usr/bin/swift package compute-checksum /tmp/artifactbundle.zip": "aaa",
+        "/usr/bin/swift package compute-checksum /tmp/repo.zip": "aaa"
     ])
     let fileSystem = MockFileSystem(
         homeDirectoryForCurrentUser: URL(filePath: "/User"),
@@ -36,7 +38,7 @@ struct ArtfactBundleFetcherTests {
         let httpClient = MockHTTPClient(mockFileSystem: fileSystem)
         httpClient.dummyData = [zipURL: try Data(contentsOf: artifactBundlePath)]
 
-        let fileDownloader = NestFileDownloader(httpClient: httpClient, fileSystem: fileSystem)
+        let fileDownloader = NestFileDownloader(httpClient: httpClient)
         let fetcher = ArtifactBundleFetcher(
             workingDirectory: workingDirectory,
             executorBuilder: executorBuilder,
@@ -46,7 +48,7 @@ struct ArtfactBundleFetcherTests {
             repositoryClientBuilder: GitRepositoryClientBuilder(httpClient: httpClient, logger: logger),
             logger: logger
         )
-        let result = try await fetcher.downloadArtifactBundle(url: zipURL)
+        let result = try await fetcher.downloadArtifactBundle(url: zipURL, checksum: .skip)
         #expect(result == [ExecutableBinary(
             commandName: "foo",
             binaryPath: URL(filePath: "/tmp/nest/artifactbundle/foo.artifactbundle/foo-1.0.0-macosx/bin/foo"),
@@ -77,7 +79,7 @@ struct ArtfactBundleFetcherTests {
             #require(URL(string: "https://api.github.com/repos/owner/repo/releases/tags/1.0.0")): apiResponse
         ]
 
-        let fileDownloader = NestFileDownloader(httpClient: httpClient, fileSystem: fileSystem)
+        let fileDownloader = NestFileDownloader(httpClient: httpClient)
         let fetcher = ArtifactBundleFetcher(
             workingDirectory: workingDirectory,
             executorBuilder: executorBuilder,
@@ -91,7 +93,10 @@ struct ArtfactBundleFetcherTests {
         let result = try await fetcher.fetchArtifactBundleFromGitRepository(
             for: gitRepositoryURL,
             version: .tag("1.0.0"),
-            artifactBundleZipFileName: nil
+            artifactBundleZipFileName: nil,
+            checksum: .printActual { checksum in
+                #expect(checksum == "aaa")
+            }
         )
         let expected = [ExecutableBinary(
             commandName: "foo",
