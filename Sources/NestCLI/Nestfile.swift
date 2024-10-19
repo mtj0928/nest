@@ -11,7 +11,7 @@ public struct Nestfile: Codable {
         self.targets = targets
     }
 
-    public enum Target: Codable {
+    public enum Target: Codable, Equatable {
         case repository(Repository)
         case zip(ZIPURL)
 
@@ -27,7 +27,7 @@ public struct Nestfile: Codable {
         }
     }
 
-    public struct Repository: Codable {
+    public struct Repository: Codable, Equatable {
         /// A reference to a repository.
         ///
         /// The acceptable formats are the followings
@@ -48,7 +48,7 @@ public struct Nestfile: Codable {
         }
     }
 
-    public struct ZIPURL: Codable {
+    public struct ZIPURL: Codable, Equatable {
         public var url: String
 
         public init (url: String) {
