@@ -1,6 +1,7 @@
 import NestKit
 import Testing
 import Foundation
+import NestTestHelpers
 
 struct TripleDetectorTests {
     @Test

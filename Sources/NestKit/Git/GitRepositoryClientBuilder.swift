@@ -1,15 +1,18 @@
 import Foundation
+import Logging
 
 public struct GitRepositoryClientBuilder {
-    private let configuration: Configuration
+    private let httpClient: any HTTPClient
+    private let logger: Logger
 
-    public init(configuration: Configuration) {
-        self.configuration = configuration
+    public init(httpClient: some HTTPClient, logger: Logger) {
+        self.httpClient = httpClient
+        self.logger = logger
     }
 
     public func build(for url: GitURL) -> any GitRepositoryClient {
         // Only GitHub is supported now.
-        GitHubRepositoryClient(httpClient: configuration.httpClient, logger: configuration.logger)
+        GitHubRepositoryClient(httpClient: httpClient, logger: logger)
     }
 
     public func build(for url: URL) -> any GitRepositoryClient {

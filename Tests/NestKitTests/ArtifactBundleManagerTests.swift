@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 @testable import NestKit
+import NestTestHelpers
 
 struct ArtifactBundleManagerTests {
     let nestDirectory = NestDirectory(rootDirectory: URL(filePath: "/User/.nest"))

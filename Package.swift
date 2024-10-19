@@ -27,7 +27,7 @@ let package = Package(
             "NestKit",
             .product(name: "Yams", package: "Yams")
         ]),
-
+        .target(name: "NestTestHelpers", dependencies: ["NestKit"]),
         .target(name: "NestKit", dependencies: [
             .product(name: "Logging", package: "swift-log"),
             "Rainbow",
@@ -37,6 +37,12 @@ let package = Package(
 
         // MARK: - Test targets
         .testTarget(name: "NestTests", dependencies: ["nest"]),
-        .testTarget(name: "NestKitTests", dependencies: ["NestKit"]),
+        .testTarget(
+            name: "NestCLITests",
+            dependencies: ["NestCLI", "NestTestHelpers"],
+            exclude: ["Resources/Fixtures"],
+            resources: [.copy("Resources/Fixtures")]
+        ),
+        .testTarget(name: "NestKitTests", dependencies: ["NestKit", "NestTestHelpers"]),
     ]
 )

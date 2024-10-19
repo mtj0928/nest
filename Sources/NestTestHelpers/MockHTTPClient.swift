@@ -3,20 +3,20 @@ import HTTPTypes
 import os
 import NestKit
 
-final class MockHTTPClient: HTTPClient {
+public final class MockHTTPClient: HTTPClient {
     let mockFileSystem: MockFileSystem
 
     private let lockedDummyData = OSAllocatedUnfairLock<[URL: Data]>(initialState: [:])
-    var dummyData: [URL: Data] {
+    public var dummyData: [URL: Data] {
         get { lockedDummyData.withLock { $0} }
         set { lockedDummyData.withLock { $0 = newValue } }
     }
 
-    init(mockFileSystem: MockFileSystem) {
+    public init(mockFileSystem: MockFileSystem) {
         self.mockFileSystem = mockFileSystem
     }
 
-    func data(for request: HTTPRequest) async throws -> (Data, HTTPTypes.HTTPResponse) {
+    public func data(for request: HTTPRequest) async throws -> (Data, HTTPTypes.HTTPResponse) {
         guard let url = request.url,
             let data = dummyData[url] else {
             return (Data(), HTTPResponse(status: .notFound))
@@ -24,7 +24,7 @@ final class MockHTTPClient: HTTPClient {
         return (data, HTTPResponse(status: .ok))
     }
 
-    func download(for request: HTTPRequest) async throws -> (URL, HTTPTypes.HTTPResponse) {
+    public func download(for request: HTTPRequest) async throws -> (URL, HTTPTypes.HTTPResponse) {
         let localFilePath = mockFileSystem.temporaryDirectory.appending(path: UUID().uuidString)
         guard let url = request.url,
               let data = dummyData[url] else {

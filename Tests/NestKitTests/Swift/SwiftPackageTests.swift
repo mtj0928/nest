@@ -1,6 +1,7 @@
 import Testing
 import Foundation
 @testable import NestKit
+import NestTestHelpers
 
 struct SwiftPackageTests {
 

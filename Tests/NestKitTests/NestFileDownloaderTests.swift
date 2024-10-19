@@ -1,5 +1,6 @@
 import Foundation
 import Testing
+import NestTestHelpers
 @testable import NestKit
 
 struct NestFileDownloaderTests {

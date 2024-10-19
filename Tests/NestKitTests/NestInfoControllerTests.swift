@@ -1,6 +1,7 @@
 import Foundation
 @testable import NestKit
 import Testing
+import NestTestHelpers
 
 struct NestInfoControllerTests {
     let nestDirectory = NestDirectory(rootDirectory: URL(filePath: "/User/.nest"))

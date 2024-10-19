@@ -1,29 +1,30 @@
 import Foundation
+import ZIPFoundation
 import os
 import NestKit
 
-final class MockFileSystem: FileSystem, @unchecked Sendable {
-    var item: FileSystemItem {
+public final class MockFileSystem: FileSystem, Sendable {
+    public var item: FileSystemItem {
         get { lockedItem.withLock { $0 } }
         set { lockedItem.withLock { $0 = newValue } }
     }
-    var symbolicLink: [URL: URL] {
+    public var symbolicLink: [URL: URL] {
         get { lockedSymbolicLink.withLock { $0 } }
         set { lockedSymbolicLink.withLock { $0 = newValue } }
     }
 
-    let homeDirectoryForCurrentUser: URL
-    let temporaryDirectory: URL
+    public let homeDirectoryForCurrentUser: URL
+    public let temporaryDirectory: URL
 
     private let lockedItem = OSAllocatedUnfairLock(initialState: FileSystemItem.directory(children: [:]))
     private let lockedSymbolicLink = OSAllocatedUnfairLock(initialState: [URL: URL]())
 
-    init(homeDirectoryForCurrentUser: URL, temporaryDirectory: URL) {
+    public init(homeDirectoryForCurrentUser: URL, temporaryDirectory: URL) {
         self.homeDirectoryForCurrentUser = homeDirectoryForCurrentUser
         self.temporaryDirectory = temporaryDirectory
     }
 
-    func createDirectory(
+    public func createDirectory(
         at url: URL,
         withIntermediateDirectories createIntermediates: Bool,
         attributes: [FileAttributeKey: Any]?
@@ -43,7 +44,7 @@ final class MockFileSystem: FileSystem, @unchecked Sendable {
         }
     }
 
-    func contentsOfDirectory(atPath path: String) throws -> [String] {
+    public func contentsOfDirectory(atPath path: String) throws -> [String] {
         let originalURL = URL(fileURLWithPath: path)
         let url = symbolicLink[originalURL] ?? originalURL
 
@@ -53,13 +54,13 @@ final class MockFileSystem: FileSystem, @unchecked Sendable {
         return children.keys.map { $0 }
     }
 
-    func removeItem(at originalURL: URL) throws {
+    public func removeItem(at originalURL: URL) throws {
         let url = symbolicLink[originalURL] ?? originalURL
         item.remove(at: url.pathComponents)
         symbolicLink.removeValue(forKey: originalURL)
     }
 
-    func copyItem(at srcURL: URL, to dstURL: URL) throws {
+    public func copyItem(at srcURL: URL, to dstURL: URL) throws {
         let srcURL = symbolicLink[srcURL] ?? srcURL
         let dstURL = symbolicLink[dstURL] ?? dstURL
         guard let item = item.item(components: srcURL.pathComponents) else {
@@ -68,25 +69,59 @@ final class MockFileSystem: FileSystem, @unchecked Sendable {
         self.item.update(item: item, at: dstURL.pathComponents)
     }
 
-    func createSymbolicLink(at url: URL, withDestinationURL destURL: URL) throws {
+    public func createSymbolicLink(at url: URL, withDestinationURL destURL: URL) throws {
         symbolicLink[url] = destURL
     }
 
-    func destinationOfSymbolicLink(atPath path: String) throws -> String {
+    public func destinationOfSymbolicLink(atPath path: String) throws -> String {
         guard let result = symbolicLink[URL(fileURLWithPath: path)] else {
             throw MockFileSystemError.fileNotFound
         }
         return result.path()
     }
 
-    func fileExists(atPath path: String) -> Bool {
+    public func fileExists(atPath path: String) -> Bool {
         let originalURL = URL(filePath: path)
         let url = symbolicLink[originalURL] ?? originalURL
         let components = url.pathComponents
         return item.item(components: components) != nil
     }
 
-    func data(at url: URL) throws -> Data {
+    public func unzip(
+        at sourceURL: URL,
+        to destinationURL: URL,
+        skipCRC32: Bool,
+        allowUncontainedSymlinks: Bool,
+        progress: Progress?,
+        pathEncoding: String.Encoding?
+    ) throws {
+        let sourceURL = symbolicLink[sourceURL] ?? sourceURL
+        let destinationURL = symbolicLink[destinationURL] ?? destinationURL
+        try createDirectory(at: destinationURL, withIntermediateDirectories: true)
+
+        guard let data = try? self.data(at: sourceURL) else {
+            return
+        }
+        let archive = try Archive(data: data, accessMode: .update)
+
+        try archive
+            .filter { $0.type == .directory }
+            .map(\.path)
+            .forEach { directory in
+                try createDirectory(at: destinationURL.appending(path: directory), withIntermediateDirectories: true)
+            }
+
+        try archive.filter { $0.type == .file }
+            .forEach { entry in
+                var data = Data()
+                _ = try archive.extract(entry) { chunk in
+                    data += chunk
+                }
+                try write(data, to: destinationURL.appending(path: entry.path))
+            }
+    }
+
+    public func data(at url: URL) throws -> Data {
         let url = symbolicLink[url] ?? url
         let components = url.pathComponents
         switch item.item(components: components) {
@@ -95,21 +130,21 @@ final class MockFileSystem: FileSystem, @unchecked Sendable {
         }
     }
 
-    func write(_ data: Data, to url: URL) throws {
+    public func write(_ data: Data, to url: URL) throws {
         let components = url.pathComponents
         item.update(item: .file(data: data), at: components)
     }
 }
 
 extension MockFileSystem {
-    func printStructure() {
+    public func printStructure() {
         item.printStructure()
         for (sourceURL, destinationURL) in symbolicLink {
             print("\(sourceURL.path()) -> \(destinationURL.path())")
         }
     }
 
-    enum MockFileSystemError: Error {
+    public enum MockFileSystemError: Error {
         case fileNotFound
     }
 }
