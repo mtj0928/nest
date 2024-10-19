@@ -18,12 +18,20 @@ struct BootstrapCommand: AsyncParsableCommand {
 
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
-
         let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestPath: nestfile.nestPath)
+
+        if nestfile.targets.contains(where: { $0.isDeprecatedZIP }) {
+            logger.warning("""
+                ⚠️ The format `- {URL}` for targets is deprecated and will be removed in a future release.
+                Please update to thew new format `- zipURL: {URL}`.
+                """, metadata: .color(.yellow)
+            )
+        }
 
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
+            let checksum = targetInfo.resolveChecksum()
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):
@@ -43,11 +51,12 @@ struct BootstrapCommand: AsyncParsableCommand {
                 executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
                     at: gitURL,
                     version: version,
-                    artifactBundleZipFileName: targetInfo.resolveAssetName()
+                    artifactBundleZipFileName: targetInfo.resolveAssetName(),
+                    checksum: checksum
                 )
             case .artifactBundle(let url):
                 logger.info("🔎 Start \(url.absoluteString)")
-                executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url)
+                executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url, checksum: checksum)
             }
 
             for binary in executableBinaries {
@@ -71,6 +80,11 @@ extension Nestfile.Target {
             }
             return .success(parsedTarget)
         case .zip(let zipURL):
+            guard let parsedTarget = InstallTarget(argument: zipURL.zipURL) else {
+                return .failure(ParseError(contents: zipURL.zipURL))
+            }
+            return .success(parsedTarget)
+        case .deprecatedZIP(let zipURL):
             guard let parsedTarget = InstallTarget(argument: zipURL.url) else {
                 return .failure(ParseError(contents: zipURL.url))
             }
@@ -82,7 +96,7 @@ extension Nestfile.Target {
         switch self {
         case .repository(let repository):
             return repository.version
-        case .zip:
+        case .zip, .deprecatedZIP:
             return nil
         }
     }
@@ -90,7 +104,15 @@ extension Nestfile.Target {
     func resolveAssetName() -> String? {
         switch self {
         case .repository(let repository): repository.assetName
-        case .zip: nil
+        case .zip, .deprecatedZIP: nil
+        }
+    }
+
+    func resolveChecksum() -> String? {
+        switch self {
+        case .repository(let repository): repository.checksum
+        case .zip(let zipURL): zipURL.checksum
+        case .deprecatedZIP: nil
         }
     }
 }

@@ -30,10 +30,11 @@ struct InstallCommand: AsyncParsableCommand {
                 try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
                     at: gitURL,
                     version: version,
-                    artifactBundleZipFileName: nil
+                    artifactBundleZipFileName: nil,
+                    checksum: nil
                 )
             case .artifactBundle(let url):
-                try await executableBinaryPreparer.fetchArtifactBundle(at: url)
+                try await executableBinaryPreparer.fetchArtifactBundle(at: url, checksum: nil)
             }
 
             for binary in executableBinaries {

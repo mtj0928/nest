@@ -1,7 +1,7 @@
 import Foundation
 import Logging
 
-public struct SwiftCommand {
+public struct SwiftCommand: Sendable {
     private let executor: any ProcessExecutor
 
     public init(executor: some ProcessExecutor) {

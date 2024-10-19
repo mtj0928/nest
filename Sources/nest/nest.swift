@@ -36,7 +36,14 @@ extension Configuration {
         return Configuration(
             httpClient: httpClient,
             fileSystem: fileSystem,
-            fileDownloader: NestFileDownloader(httpClient: httpClient, fileSystem: fileSystem),
+            fileDownloader: NestFileDownloader(
+                httpClient: httpClient,
+                fileSystem: fileSystem,
+                checksumCalculator: SwiftChecksumCalculator(swift: SwiftCommand(
+                    executor: NestProcessExecutor(logger: logger)
+                )),
+                logger: logger
+            ),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),

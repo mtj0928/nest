@@ -36,11 +36,13 @@ public struct ArtifactBundleFetcher {
     ///   - url: A url of a git repository
     ///   - version: A version which should be
     ///   - artifactBundleZipFileName: A name of artifact bundle ZIP file.
+    ///   - checksum: An expected checksum for the downloaded zip file.
     ///   When it is `nil`, this function tries to resolve a file name by accessing Web API.
     public func fetchArtifactBundleFromGitRepository(
         for gitURL: URL,
         version: GitVersion,
-        artifactBundleZipFileName: String?
+        artifactBundleZipFileName: String?,
+        checksum: String?
     ) async throws -> [ExecutableBinary] {
         let resolvedAsset = try await resolveAsset(
             from: gitURL,
@@ -61,7 +63,7 @@ public struct ArtifactBundleFetcher {
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle of \(gitURL.lastPathComponent)...")
-        try await fileDownloader.download(url: resolvedAsset.zipURL, to: repositoryDirectory)
+        try await fileDownloader.download(url: resolvedAsset.zipURL, checksum: checksum, to: repositoryDirectory)
         logger.info("✅ Success to download the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
@@ -77,7 +79,7 @@ public struct ArtifactBundleFetcher {
             .flatMap { bundle in try bundle.binaries(of: triple) }
     }
 
-    public func downloadArtifactBundle(url: URL) async throws -> [ExecutableBinary] {
+    public func downloadArtifactBundle(url: URL, checksum: String?) async throws -> [ExecutableBinary] {
         let nestInfo = nestInfoController.getInfo()
         if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: url, in: nestInfo) {
             throw NestCLIError.alreadyInstalled
@@ -88,7 +90,7 @@ public struct ArtifactBundleFetcher {
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle at \(url.absoluteString)...")
-        try await fileDownloader.download(url: url, to: directory)
+        try await fileDownloader.download(url: url, checksum: checksum, to: directory)
         logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.

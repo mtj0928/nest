@@ -35,7 +35,7 @@ struct NestfileTests {
             version: "0.1.0",
             assetName: "nest-macos.artifactbundle.zip"
         )))
-        #expect(nest.targets[1] == .zip(Nestfile.ZIPURL(
+        #expect(nest.targets[1] == .deprecatedZIP(Nestfile.DeprecatedZIPURL(
             url: "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
         )))
     }
