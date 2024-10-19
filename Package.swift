@@ -40,8 +40,7 @@ let package = Package(
         .testTarget(
             name: "NestCLITests",
             dependencies: ["NestCLI", "NestTestHelpers"],
-            exclude: ["Resources/Fixtures"],
-            resources: [.copy("Resources/Fixtures")]
+            exclude: ["Resources/Fixtures"]
         ),
         .testTarget(name: "NestKitTests", dependencies: ["NestKit", "NestTestHelpers"]),
     ]
