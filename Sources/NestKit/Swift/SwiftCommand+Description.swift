@@ -22,7 +22,7 @@ public struct SwiftPackageDescription: Decodable {
 }
 
 extension SwiftPackageDescription {
-    public struct Product: Decodable {
+    public struct Product: Decodable, Equatable {
         public var name: String
         public var type: ProductType
 
