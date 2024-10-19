@@ -1,4 +1,5 @@
 import Foundation
+import ZIPFoundation
 
 public protocol FileSystem: Sendable {
     var homeDirectoryForCurrentUser: URL { get }
@@ -15,14 +16,14 @@ public protocol FileSystem: Sendable {
     func copyItem(at srcURL: URL, to dstURL: URL) throws
     func createSymbolicLink(at url: URL, withDestinationURL destURL: URL) throws
     func destinationOfSymbolicLink(atPath path: String) throws -> String
-    func unzipItem(
+    func unzip(
         at sourceURL: URL,
         to destinationURL: URL,
         skipCRC32: Bool,
         allowUncontainedSymlinks: Bool,
         progress: Progress?,
         pathEncoding: String.Encoding?
-    )
+    ) throws
     func fileExists(atPath path: String) -> Bool
     func data(at url: URL) throws -> Data
     func write(_ data: Data, to url: URL) throws
@@ -36,21 +37,14 @@ extension FileSystem {
         try createDirectory(at: url, withIntermediateDirectories: createIntermediates, attributes: nil)
     }
 
-    public func unzipItem(
-        at sourceURL: URL,
-        to destinationURL: URL,
-        skipCRC32: Bool = false,
-        allowUncontainedSymlinks: Bool = false,
-        progress: Progress? = nil,
-        pathEncoding: String.Encoding? = nil
-    ) {
-        self.unzipItem(
+    public func unzip(at sourceURL: URL, to destinationURL: URL) throws {
+        try unzip(
             at: sourceURL,
             to: destinationURL,
-            skipCRC32: skipCRC32,
-            allowUncontainedSymlinks: allowUncontainedSymlinks,
-            progress: progress,
-            pathEncoding: pathEncoding
+            skipCRC32: false,
+            allowUncontainedSymlinks: false,
+            progress: nil,
+            pathEncoding: nil
         )
     }
 
@@ -87,5 +81,23 @@ extension FileManager: FileSystem {
 
     public func write(_ data: Data, to url: URL) throws {
         try data.write(to: url)
+    }
+
+    public func unzip(
+        at sourceURL: URL,
+        to destinationURL: URL,
+        skipCRC32: Bool,
+        allowUncontainedSymlinks: Bool,
+        progress: Progress?,
+        pathEncoding: String.Encoding?
+    ) throws {
+        try self.unzipItem(
+            at: sourceURL,
+            to: destinationURL,
+            skipCRC32: skipCRC32,
+            allowUncontainedSymlinks: allowUncontainedSymlinks,
+            progress: progress,
+            pathEncoding: pathEncoding
+        )
     }
 }

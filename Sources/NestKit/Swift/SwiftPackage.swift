@@ -4,11 +4,14 @@ import Logging
 /// A data structure representing Swift Package.
 public struct SwiftPackage {
     let rootDirectory: URL
-    let logger: Logger
+    let executorBuilder: any ProcessExecutorBuilder
 
-    public init(at rootDirectory: URL, logger: Logger) {
+    public init(
+        at rootDirectory: URL,
+        executorBuilder: any ProcessExecutorBuilder
+    ) {
         self.rootDirectory = rootDirectory
-        self.logger = logger
+        self.executorBuilder = executorBuilder
     }
 
     /// Returns a URL representing executable file.
@@ -18,11 +21,15 @@ public struct SwiftPackage {
 
     /// Build the package for release.
     public func buildForRelease() async throws {
-        try await SwiftCommand(currentDirectoryURL: rootDirectory, logger: logger).buildForRelease()
+        try await swift.buildForRelease()
     }
 
     /// Executes describe command of Swift Package.
     public func description() async throws -> SwiftPackageDescription {
-        try await SwiftCommand(currentDirectoryURL: rootDirectory, logger: logger).description()
+        try await swift.description()
+    }
+
+    private var swift: SwiftCommand {
+        SwiftCommand(executor: executorBuilder.build(currentDirectory: rootDirectory))
     }
 }

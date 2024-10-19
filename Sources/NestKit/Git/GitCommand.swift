@@ -2,15 +2,15 @@ import Foundation
 import Logging
 
 public struct GitCommand {
-    private let executor: ProcessExecutor
+    private let executor: any ProcessExecutor
 
-    public init(currentDirectoryURL: URL? = nil, logger: Logger) {
-        self.executor = ProcessExecutor(currentDirectory: currentDirectoryURL, logger: logger)
+    public init(executor: any ProcessExecutor) {
+        self.executor = executor
     }
 
     func run(_ argument: String...) async throws -> String {
         let swift = try await executor.which("git")
-        return try await executor.executeAndWait(command: swift, argument)
+        return try await executor.execute(command: swift, argument)
     }
 }
 

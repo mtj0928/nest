@@ -4,8 +4,8 @@ import Logging
 public struct TripleDetector {
     private let swiftCommand: SwiftCommand
 
-    public init(logger: Logger) {
-        self.swiftCommand = SwiftCommand(logger: logger)
+    public init(swiftCommand: SwiftCommand) {
+        self.swiftCommand = swiftCommand
     }
 
     public func detect() async throws -> String {

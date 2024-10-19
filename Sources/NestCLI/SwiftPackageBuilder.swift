@@ -3,8 +3,8 @@ import Logging
 import NestKit
 
 public struct SwiftPackageBuilder {
-
     private let workingDirectory: URL
+    private let executorBuilder: any ProcessExecutorBuilder
     private let fileSystem: any FileSystem
     private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
@@ -12,12 +12,14 @@ public struct SwiftPackageBuilder {
 
     public init(
         workingDirectory: URL,
+        executorBuilder: any ProcessExecutorBuilder,
         fileSystem: some FileSystem,
         nestInfoController: NestInfoController,
         repositoryClientBuilder: GitRepositoryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
+        self.executorBuilder = executorBuilder
         self.fileSystem = fileSystem
         self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
@@ -40,14 +42,20 @@ public struct SwiftPackageBuilder {
 
         // Clone the repository.
         logger.info("🔄 Cloning \(gitURL.repositoryName)...")
-        try await GitCommand(logger: logger).clone(repositoryURL: gitURL, tag: tagOrVersion, to: repositoryDirectory)
+        try await GitCommand(executor: executorBuilder.build()).clone(
+            repositoryURL: gitURL,
+            tag: tagOrVersion,
+            to: repositoryDirectory
+        )
 
         // Get the current branch.
-        let branch = try await GitCommand(currentDirectoryURL: repositoryDirectory, logger: logger).currentBranch()
+        let branch = try await GitCommand(
+            executor: executorBuilder.build(currentDirectory: repositoryDirectory)
+        ).currentBranch()
 
         // Build the repository
         logger.info("🔨 Building \(gitURL.repositoryName) for \(tagOrVersion ?? branch)...")
-        let swiftPackage = SwiftPackage(at: repositoryDirectory, logger: logger)
+        let swiftPackage = SwiftPackage(at: repositoryDirectory, executorBuilder: executorBuilder)
         try await swiftPackage.buildForRelease()
 
         // Extract the built binaries.

@@ -2,14 +2,14 @@ import Foundation
 import Logging
 
 public struct SwiftCommand {
-    private let executor: ProcessExecutor
+    private let executor: any ProcessExecutor
 
-    public init(currentDirectoryURL: URL? = nil, logger: Logger) {
-        self.executor = ProcessExecutor(currentDirectory: currentDirectoryURL, logger: logger)
+    public init(executor: some ProcessExecutor) {
+        self.executor = executor
     }
 
     func run(_ argument: String...) async throws -> String {
         let swift = try await executor.which("swift")
-        return try await executor.executeAndWait(command: swift, argument)
+        return try await executor.execute(command: swift, argument)
     }
 }

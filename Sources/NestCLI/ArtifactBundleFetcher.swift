@@ -4,14 +4,17 @@ import NestKit
 
 public struct ArtifactBundleFetcher {
     private let workingDirectory: URL
+    private let executorBuilder: any ProcessExecutorBuilder
     private let fileSystem: any FileSystem
     private let fileDownloader: any FileDownloader
     private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
+    private let tripleDetector: TripleDetector
     private let logger: Logger
 
     public init(
         workingDirectory: URL,
+        executorBuilder: some ProcessExecutorBuilder,
         fileSystem: some FileSystem,
         fileDownloader: some FileDownloader,
         nestInfoController: NestInfoController,
@@ -19,10 +22,12 @@ public struct ArtifactBundleFetcher {
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
+        self.executorBuilder = executorBuilder
         self.fileSystem = fileSystem
         self.fileDownloader = fileDownloader
         self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
+        self.tripleDetector = TripleDetector(swiftCommand: SwiftCommand(executor: executorBuilder.build()))
         self.logger = logger
     }
     
@@ -60,7 +65,7 @@ public struct ArtifactBundleFetcher {
         logger.info("✅ Success to download the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
-        let triple = try await TripleDetector(logger: logger).detect()
+        let triple = try await tripleDetector.detect()
         logger.debug("The current triple is \(triple)")
 
         return try fileSystem.child(extension: "artifactbundle", at: repositoryDirectory)
@@ -87,7 +92,7 @@ public struct ArtifactBundleFetcher {
         logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
-        let triple = try await TripleDetector(logger: logger).detect()
+        let triple = try await tripleDetector.detect()
         logger.debug("The current triple is \(triple)")
 
         return try fileSystem.child(extension: "artifactbundle", at: directory)

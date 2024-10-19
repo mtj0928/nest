@@ -14,7 +14,7 @@ public struct AssetInformation: Sendable {
     }
 }
 
-public struct Asset: Sendable {
+public struct Asset: Sendable, Equatable {
     public var fileName: String
     public var url: URL
 

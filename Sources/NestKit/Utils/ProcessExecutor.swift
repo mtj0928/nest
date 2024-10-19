@@ -1,20 +1,31 @@
 import Foundation
 import Logging
+import os
 
-struct ProcessExecutor {
+public protocol ProcessExecutor: Sendable {
+    func execute(command: String, _ arguments: [String]) async throws -> String
+}
+
+extension ProcessExecutor {
+    public func execute(command: String, _ arguments: String...) async throws -> String {
+        try await execute(command: command, arguments)
+    }
+
+    public func which(_ command: String) async throws -> String {
+        try await execute(command: "/usr/bin/which", command)
+    }
+}
+
+public struct NestProcessExecutor: ProcessExecutor {
     let currentDirectoryURL: URL?
-    let logger: Logger
+    let logger: Logging.Logger
 
-    init(currentDirectory: URL? = nil, logger: Logger) {
+    public init(currentDirectory: URL? = nil, logger: Logging.Logger) {
         self.currentDirectoryURL = currentDirectory
         self.logger = logger
     }
 
-    func executeAndWait(command: String, _ arguments: String...) async throws -> String {
-        try await executeAndWait(command: command, arguments)
-    }
-
-    func executeAndWait(command: String, _ arguments: [String]) async throws -> String {
+    public func execute(command: String, _ arguments: [String]) async throws -> String {
         let elements = try await _execute(command: command, arguments.map { $0 })
         return elements.compactMap { element in
             switch element {
@@ -24,16 +35,12 @@ struct ProcessExecutor {
         }.joined()
     }
 
-    func which(_ command: String) async throws -> String {
-        try await executeAndWait(command: "/usr/bin/which", command)
-    }
-
     private func _execute(command: String, _ arguments: [String]) async throws -> [StreamElement] {
         logger.debug("$ \(command) \(arguments.joined(separator: " "))")
         return try await withCheckedThrowingContinuation { continuous in
             let executableURL = URL(fileURLWithPath: command)
             do {
-                let results = ThreadSafe<[StreamElement]>(value: [])
+                let results = OSAllocatedUnfairLock(initialState: [StreamElement]())
 
                 let process = Process()
                 process.currentDirectoryURL = currentDirectoryURL
@@ -52,7 +59,7 @@ struct ProcessExecutor {
                         return
                     }
                     logger.debug("\(string)")
-                    results.value += [.output(string)]
+                    results.withLock { $0 += [.output(string)] }
                 }
 
                 let errorPipe = Pipe()
@@ -66,7 +73,7 @@ struct ProcessExecutor {
                         return
                     }
                     logger.debug("\(string)", metadata: .color(.red))
-                    results.value += [.error(string)]
+                    results.withLock { $0 += [.error(string)] }
                 }
 
                 try process.run()
@@ -76,7 +83,8 @@ struct ProcessExecutor {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     let result = process.terminationReason == .exit && process.terminationStatus == 0
                     if result {
-                        continuous.resume(returning: results.value)
+                        let returnedValue = results.withLock { $0 }
+                        continuous.resume(returning: returnedValue)
                     } else {
                         continuous.resume(throwing: ProcessExecutorError.failed)
                     }

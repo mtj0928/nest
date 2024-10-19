@@ -24,7 +24,7 @@ public struct NestFileDownloader: FileDownloader {
         }
 
         if url.needsUnzip {
-            fileSystem.unzipItem(at: downloadedFilePath, to: destinationPath)
+            try fileSystem.unzip(at: downloadedFilePath, to: destinationPath)
         } else {
             try fileSystem.copyItem(at: downloadedFilePath, to: destinationPath)
         }
