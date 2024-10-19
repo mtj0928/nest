@@ -1,5 +1,6 @@
 import Foundation
 import Logging
+import os
 
 public protocol ProcessExecutor: Sendable {
     func execute(command: String, _ arguments: [String]) async throws -> String
@@ -17,9 +18,9 @@ extension ProcessExecutor {
 
 public struct NestProcessExecutor: ProcessExecutor {
     let currentDirectoryURL: URL?
-    let logger: Logger
+    let logger: Logging.Logger
 
-    public init(currentDirectory: URL? = nil, logger: Logger) {
+    public init(currentDirectory: URL? = nil, logger: Logging.Logger) {
         self.currentDirectoryURL = currentDirectory
         self.logger = logger
     }
@@ -39,7 +40,7 @@ public struct NestProcessExecutor: ProcessExecutor {
         return try await withCheckedThrowingContinuation { continuous in
             let executableURL = URL(fileURLWithPath: command)
             do {
-                let results = ThreadSafe<[StreamElement]>(value: [])
+                let results = OSAllocatedUnfairLock(initialState: [StreamElement]())
 
                 let process = Process()
                 process.currentDirectoryURL = currentDirectoryURL
@@ -58,7 +59,7 @@ public struct NestProcessExecutor: ProcessExecutor {
                         return
                     }
                     logger.debug("\(string)")
-                    results.value += [.output(string)]
+                    results.withLock { $0 += [.output(string)] }
                 }
 
                 let errorPipe = Pipe()
@@ -72,7 +73,7 @@ public struct NestProcessExecutor: ProcessExecutor {
                         return
                     }
                     logger.debug("\(string)", metadata: .color(.red))
-                    results.value += [.error(string)]
+                    results.withLock { $0 += [.error(string)] }
                 }
 
                 try process.run()
@@ -82,7 +83,8 @@ public struct NestProcessExecutor: ProcessExecutor {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     let result = process.terminationReason == .exit && process.terminationStatus == 0
                     if result {
-                        continuous.resume(returning: results.value)
+                        let returnedValue = results.withLock { $0 }
+                        continuous.resume(returning: returnedValue)
                     } else {
                         continuous.resume(throwing: ProcessExecutorError.failed)
                     }
