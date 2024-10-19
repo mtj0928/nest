@@ -19,7 +19,7 @@ extension Configuration {
             workingDirectory: workingDirectory,
             executorBuilder: NestProcessExecutorBuilder(logger: logger),
             fileSystem: fileSystem,
-            fileDownloader: NestFileDownloader(httpClient: httpClient, fileSystem: fileSystem),
+            fileDownloader: NestFileDownloader(httpClient: httpClient),
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
             repositoryClientBuilder: GitRepositoryClientBuilder(httpClient: httpClient, logger: logger),
             logger: logger

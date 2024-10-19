@@ -13,17 +13,28 @@ struct BootstrapCommand: AsyncParsableCommand {
     @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
+    @Flag(name: .shortAndLong, help: "Skip checksum validation for downloaded artifactbundles.")
+    var skipChecksumValidation = false
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
-
         let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestPath: nestfile.nestPath)
+
+        if nestfile.targets.contains(where: { $0.isDeprecatedZIP }) {
+            logger.warning("""
+                ⚠️ The format `- {URL}` for targets is deprecated and will be removed in a future release.
+                Please update to thew new format `- zipURL: {URL}`.
+                """, metadata: .color(.yellow)
+            )
+        }
 
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
+            let checksumOption = checksumOption(expectedChecksum: targetInfo.resolveChecksum(), logger: logger)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):
@@ -43,17 +54,30 @@ struct BootstrapCommand: AsyncParsableCommand {
                 executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
                     at: gitURL,
                     version: version,
-                    artifactBundleZipFileName: targetInfo.resolveAssetName()
+                    artifactBundleZipFileName: targetInfo.resolveAssetName(),
+                    checksum: checksumOption
                 )
             case .artifactBundle(let url):
                 logger.info("🔎 Start \(url.absoluteString)")
-                executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url)
+                executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url, checksum: checksumOption)
             }
 
             for binary in executableBinaries {
                 try artifactBundleManager.install(binary)
                 logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
             }
+        }
+    }
+
+    private func checksumOption(expectedChecksum: String?, logger: Logger) -> ChecksumOption {
+        if skipChecksumValidation {
+            return .skip
+        }
+        if let expectedChecksum {
+            return .needsCheck(expected: expectedChecksum)
+        }
+        return .printActual { checksum in
+            logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
         }
     }
 }
@@ -71,6 +95,11 @@ extension Nestfile.Target {
             }
             return .success(parsedTarget)
         case .zip(let zipURL):
+            guard let parsedTarget = InstallTarget(argument: zipURL.zipURL) else {
+                return .failure(ParseError(contents: zipURL.zipURL))
+            }
+            return .success(parsedTarget)
+        case .deprecatedZIP(let zipURL):
             guard let parsedTarget = InstallTarget(argument: zipURL.url) else {
                 return .failure(ParseError(contents: zipURL.url))
             }
@@ -82,7 +111,7 @@ extension Nestfile.Target {
         switch self {
         case .repository(let repository):
             return repository.version
-        case .zip:
+        case .zip, .deprecatedZIP:
             return nil
         }
     }
@@ -90,7 +119,15 @@ extension Nestfile.Target {
     func resolveAssetName() -> String? {
         switch self {
         case .repository(let repository): repository.assetName
-        case .zip: nil
+        case .zip, .deprecatedZIP: nil
+        }
+    }
+
+    func resolveChecksum() -> String? {
+        switch self {
+        case .repository(let repository): repository.checksum
+        case .zip(let zipURL): zipURL.checksum
+        case .deprecatedZIP: nil
         }
     }
 }

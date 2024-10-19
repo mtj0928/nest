@@ -82,8 +82,10 @@ targets:
   - reference: mtj0928/nest # or htpps://github.com/mtj0928/nest
     version: 0.1.0 # (Optional) When a version is not specified, the latest release will be used.
     assetName: nest-macos.artifactbundle.zip # (Optional) When a name is not specified, it will be resolved by GitHub API.
+    checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
   # Example 2 Specify zip URL directly
-  - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
+  - zipURL: https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
+    checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
 ```
 
 Finally run `bootstrap` command. The command installs all bundles in the configuration file at once.

@@ -81,4 +81,8 @@ extension FileSystemItem: ExpressibleByDictionaryLiteral {
             partialResult[pair.0] = pair.1
         }))
     }
+
+    public static var directory: Self {
+        .directory(children: [:])
+    }
 }

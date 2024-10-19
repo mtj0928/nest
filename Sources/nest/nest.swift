@@ -36,7 +36,7 @@ extension Configuration {
         return Configuration(
             httpClient: httpClient,
             fileSystem: fileSystem,
-            fileDownloader: NestFileDownloader(httpClient: httpClient, fileSystem: fileSystem),
+            fileDownloader: NestFileDownloader(httpClient: httpClient),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),

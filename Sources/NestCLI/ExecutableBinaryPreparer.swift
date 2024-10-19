@@ -20,7 +20,8 @@ public struct ExecutableBinaryPreparer {
     public func fetchOrBuildBinariesFromGitRepository(
         at gitURL: GitURL,
         version: GitVersion,
-        artifactBundleZipFileName: String?
+        artifactBundleZipFileName: String?,
+        checksum: ChecksumOption
     ) async throws -> [ExecutableBinary] {
         switch gitURL {
         case .url(let url):
@@ -28,7 +29,8 @@ public struct ExecutableBinaryPreparer {
                 return try await artifactBundleFetcher.fetchArtifactBundleFromGitRepository(
                     for: url,
                     version: version,
-                    artifactBundleZipFileName: artifactBundleZipFileName
+                    artifactBundleZipFileName: artifactBundleZipFileName,
+                    checksum: checksum
                 )
             } catch ArtifactBundleFetcherError.noCandidates {
                 logger.info("🪹 No artifact bundles in the repository.")
@@ -56,9 +58,9 @@ public struct ExecutableBinaryPreparer {
         }
     }   
 
-    public func fetchArtifactBundle(at url: URL) async throws -> [ExecutableBinary] {
+    public func fetchArtifactBundle(at url: URL, checksum: ChecksumOption) async throws -> [ExecutableBinary] {
         do {
-            return try await artifactBundleFetcher.downloadArtifactBundle(url: url)
+            return try await artifactBundleFetcher.downloadArtifactBundle(url: url, checksum: checksum)
         }
         catch NestCLIError.alreadyInstalled {
             logger.info("🪺 The artifact bundle has been already installed.")

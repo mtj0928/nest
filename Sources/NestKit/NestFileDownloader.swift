@@ -1,33 +1,27 @@
 import Foundation
+import Logging
 import HTTPTypes
 import HTTPTypesFoundation
 import ZIPFoundation
 
 public protocol FileDownloader: Sendable {
-    func download(url: URL, to destinationPath: URL) async throws
+    func download(url: URL) async throws -> URL
 }
 
 public struct NestFileDownloader: FileDownloader {
     let httpClient: any HTTPClient
-    let fileSystem: any FileSystem
 
-    public init(httpClient: some HTTPClient, fileSystem: some FileSystem) {
+    public init(httpClient: some HTTPClient) {
         self.httpClient = httpClient
-        self.fileSystem = fileSystem
     }
 
-    public func download(url: URL, to destinationPath: URL) async throws {
+    public func download(url: URL) async throws -> URL {
         let request = HTTPRequest(url: url)
         let (downloadedFilePath, response) = try await httpClient.download(for: request)
         if response.status == .notFound {
             throw FileDownloaderError.notFound(url: url)
         }
-
-        if url.needsUnzip {
-            try fileSystem.unzip(at: downloadedFilePath, to: destinationPath)
-        } else {
-            try fileSystem.copyItem(at: downloadedFilePath, to: destinationPath)
-        }
+        return downloadedFilePath
     }
 }
 

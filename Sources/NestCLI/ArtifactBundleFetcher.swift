@@ -9,6 +9,7 @@ public struct ArtifactBundleFetcher {
     private let fileDownloader: any FileDownloader
     private let nestInfoController: NestInfoController
     private let repositoryClientBuilder: GitRepositoryClientBuilder
+    private let checksumCalculator: any ChecksumCalculator
     private let tripleDetector: TripleDetector
     private let logger: Logger
 
@@ -27,6 +28,7 @@ public struct ArtifactBundleFetcher {
         self.fileDownloader = fileDownloader
         self.nestInfoController = nestInfoController
         self.repositoryClientBuilder = repositoryClientBuilder
+        self.checksumCalculator = SwiftChecksumCalculator(swift: SwiftCommand(executor: executorBuilder.build()))
         self.tripleDetector = TripleDetector(swiftCommand: SwiftCommand(executor: executorBuilder.build()))
         self.logger = logger
     }
@@ -36,11 +38,13 @@ public struct ArtifactBundleFetcher {
     ///   - url: A url of a git repository
     ///   - version: A version which should be
     ///   - artifactBundleZipFileName: A name of artifact bundle ZIP file.
+    ///   - checksum: An option for checksum validation.
     ///   When it is `nil`, this function tries to resolve a file name by accessing Web API.
     public func fetchArtifactBundleFromGitRepository(
         for gitURL: URL,
         version: GitVersion,
-        artifactBundleZipFileName: String?
+        artifactBundleZipFileName: String?,
+        checksum: ChecksumOption
     ) async throws -> [ExecutableBinary] {
         let resolvedAsset = try await resolveAsset(
             from: gitURL,
@@ -61,7 +65,7 @@ public struct ArtifactBundleFetcher {
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle of \(gitURL.lastPathComponent)...")
-        try await fileDownloader.download(url: resolvedAsset.zipURL, to: repositoryDirectory)
+        try await downloadZIPFile(from: resolvedAsset.zipURL, to: repositoryDirectory, checksum: checksum)
         logger.info("✅ Success to download the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
@@ -77,7 +81,7 @@ public struct ArtifactBundleFetcher {
             .flatMap { bundle in try bundle.binaries(of: triple) }
     }
 
-    public func downloadArtifactBundle(url: URL) async throws -> [ExecutableBinary] {
+    public func downloadArtifactBundle(url: URL, checksum: ChecksumOption) async throws -> [ExecutableBinary] {
         let nestInfo = nestInfoController.getInfo()
         if ArtifactDuplicatedDetector.isAlreadyInstalled(zipURL: url, in: nestInfo) {
             throw NestCLIError.alreadyInstalled
@@ -88,7 +92,7 @@ public struct ArtifactBundleFetcher {
 
         // Download the artifact bundle
         logger.info("🌐 Downloading the artifact bundle at \(url.absoluteString)...")
-        try await fileDownloader.download(url: url, to: directory)
+        try await downloadZIPFile(from: url, to: directory, checksum: checksum)
         logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
@@ -131,6 +135,40 @@ public struct ArtifactBundleFetcher {
             fileName: selectedAsset.fileName,
             tagName: assetInfo.tagName
         )
+    }
+
+    private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws  {
+        let downloadedFilePath = try await fileDownloader.download(url: url)
+        if !url.needsUnzip {
+            try fileSystem.copyItem(at: downloadedFilePath, to: destination)
+            return
+        }
+        let downloadedZipFilePath = fileSystem.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
+        try fileSystem.removeItemIfExists(at: downloadedZipFilePath)
+        try fileSystem.copyItem(at: downloadedFilePath, to: downloadedZipFilePath)
+
+        try fileSystem.unzip(at: downloadedFilePath, to: destination)
+
+        switch checksum {
+        case .needsCheck(let expectedChecksum):
+            let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
+            if expectedChecksum == calculatedChecksum {
+                break
+            }
+            logger.warning(
+                """
+                ⚠️ The checksum of the downloaded file does not match the expected checksum.
+                expected: \(expectedChecksum)
+                actual:   \(calculatedChecksum)
+                """,
+                metadata: .color(.yellow)
+            )
+        case .printActual(let handler):
+            let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
+            handler(calculatedChecksum)
+        case .skip:
+            break
+        }
     }
 }
 
@@ -175,4 +213,10 @@ struct ResolvedAsset {
     public var zipURL: URL
     public var fileName: String
     public var tagName: String
+}
+
+public enum ChecksumOption {
+    case needsCheck(expected: String)
+    case printActual(handler: (String) -> Void)
+    case skip
 }

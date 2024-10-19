@@ -2,7 +2,7 @@ import Foundation
 import Logging
 
 /// A data structure representing Swift Package.
-public struct SwiftPackage {
+public struct SwiftPackage: Sendable {
     let rootDirectory: URL
     let executorBuilder: any ProcessExecutorBuilder
 
