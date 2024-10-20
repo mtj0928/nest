@@ -111,9 +111,9 @@ struct ArtfactBundleFetcherTests {
     }
 }
 
-private let fixturePath = URL(fileURLWithPath: #filePath)
+let fixturePath = URL(fileURLWithPath: #filePath)
     .deletingLastPathComponent()
     .appendingPathComponent("Resources")
     .appendingPathComponent("Fixtures")
 
-private let artifactBundlePath = fixturePath.appendingPathComponent("foo.artifactbundle.zip")
+let artifactBundlePath = fixturePath.appendingPathComponent("foo.artifactbundle.zip")
