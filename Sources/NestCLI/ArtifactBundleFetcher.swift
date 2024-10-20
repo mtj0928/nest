@@ -112,22 +112,20 @@ public struct ArtifactBundleFetcher {
         version: GitVersion,
         artifactBundleZipFileName fileName: String?
     ) async throws -> ResolvedAsset {
-        if let fileName {
-            guard case .tag(let version) = version else {
-                logger.debug("\(fileName) is specified but the version is not a tag.", metadata: .color(.red))
-                throw ArtifactBundleFetcherError.noTagSpecified
-            }
-
+        if let fileName, case .tag(let version) = version {
             let artifactBundleZipURL = GitHubURLBuilder.assetDownloadURL(url, version: version, fileName: fileName)
             logger.debug("Resolved artifact bundle zip URL: \(artifactBundleZipURL.absoluteString).")
-            let asset = ResolvedAsset( zipURL: artifactBundleZipURL, fileName: fileName, tagName: version)
+            let asset = ResolvedAsset(zipURL: artifactBundleZipURL, fileName: fileName, tagName: version)
             return asset
         }
 
         let repositoryClient = repositoryClientBuilder.build(for: url)
         let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
         // Choose an asset which may be an artifact bundle.
-        guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(from: assetInfo.assets) else {
+        guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(
+            from: assetInfo.assets,
+            fileName: fileName
+        ) else {
             throw ArtifactBundleFetcherError.noCandidates
         }
         return ResolvedAsset(

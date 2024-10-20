@@ -2,16 +2,16 @@ import Foundation
 import NestKit
 import Yams
 
-public struct Nestfile: Codable {
-    public let nestPath: String?
-    public let targets: [Target]
+public struct Nestfile: Codable, Sendable {
+    public var nestPath: String?
+    public var targets: [Target]
 
     public init(nestPath: String?, targets: [Target]) {
         self.nestPath = nestPath
         self.targets = targets
     }
 
-    public enum Target: Codable, Equatable {
+    public enum Target: Codable, Equatable, Sendable {
         case repository(Repository)
         case deprecatedZIP(DeprecatedZIPURL)
         case zip(ZIPURL)
@@ -29,6 +29,18 @@ public struct Nestfile: Codable {
             }
         }
 
+        public func encode(to encoder: any Encoder) throws {
+            var container = encoder.singleValueContainer()
+            switch self {
+            case .repository(let repository):
+                try container.encode(repository)
+            case .deprecatedZIP(let deprecatedZIPURL):
+                try container.encode(deprecatedZIPURL)
+            case .zip(let zipURL):
+                try container.encode(zipURL)
+            }
+        }
+
         public var isDeprecatedZIP: Bool {
             switch self {
             case .deprecatedZIP: return true
@@ -37,7 +49,7 @@ public struct Nestfile: Codable {
         }
     }
 
-    public struct Repository: Codable, Equatable {
+    public struct Repository: Codable, Equatable, Sendable {
         /// A reference to a repository.
         ///
         /// The acceptable formats are the followings
@@ -60,7 +72,7 @@ public struct Nestfile: Codable {
         }
     }
 
-    public struct DeprecatedZIPURL: Codable, Equatable {
+    public struct DeprecatedZIPURL: Codable, Equatable, Sendable {
         public var url: String
 
         public init(url: String) {
@@ -71,9 +83,14 @@ public struct Nestfile: Codable {
             let container = try decoder.singleValueContainer()
             self.url = try container.decode(String.self)
         }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.singleValueContainer()
+            try container.encode(url)
+        }
     }
 
-    public struct ZIPURL: Codable, Equatable {
+    public struct ZIPURL: Codable, Equatable, Sendable {
         public var zipURL: String
         public var checksum: String?
 
@@ -90,6 +107,12 @@ public struct Nestfile: Codable {
 }
 
 extension Nestfile {
+    public func write(to path: String, fileSystem: some FileSystem) throws {
+        let url = URL(fileURLWithPath: path)
+        let data = try YAMLEncoder().encode(self)
+        try fileSystem.write(data.data(using: .utf8)!, to: url)
+    }
+
     public static func load(from path: String, fileSystem: some FileSystem) throws -> Nestfile {
         let url = URL(fileURLWithPath: path)
         let data = try fileSystem.data(at: url)

@@ -1,7 +1,7 @@
 import Foundation
 import Logging
 
-public struct GitRepositoryClientBuilder {
+public struct GitRepositoryClientBuilder: Sendable {
     private let httpClient: any HTTPClient
     private let logger: Logger
 

@@ -16,6 +16,7 @@ let package = Package(
         .package(url: "https://github.com/weichsel/ZIPFoundation", from: "0.9.0"),
         .package(url: "https://github.com/onevcat/Rainbow", from: "4.0.1"),
         .package(url: "https://github.com/jpsim/Yams.git", from: "5.1.3"),
+        .package(url: "https://github.com/mtj0928/swift-async-operations", from: "0.2.2"),
     ],
     targets: [
         .executableTarget(name: "nest", dependencies: [
@@ -25,6 +26,7 @@ let package = Package(
 
         .target(name: "NestCLI", dependencies: [
             "NestKit",
+            .product(name: "AsyncOperations", package: "swift-async-operations"),
             .product(name: "Yams", package: "Yams")
         ]),
         .target(name: "NestTestHelpers", dependencies: ["NestKit"]),
