@@ -5,10 +5,12 @@ import Logging
 
 public struct GitHubRepositoryClient: GitRepositoryClient {
     private let httpClient: any HTTPClient
+    private let authToken: String?
     private let logger: Logger
 
-    public init(httpClient: some HTTPClient, logger: Logger) {
+    public init(httpClient: some HTTPClient, authToken: String?, logger: Logger) {
         self.httpClient = httpClient
+        self.authToken = authToken
         self.logger = logger
     }
 
@@ -17,9 +19,18 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
         var request = HTTPRequest(url: assetURL)
         request.headerFields = [
             .accept: "application/vnd.github+json",
-            .gitHubAPIVersion: "2022-11-28"
+            .gitHubAPIVersion: "2022-11-28",
         ]
+        if let authToken {
+            request.headerFields[.authorization] = "Bearer \(authToken)"
+        }
+
+        logger.debug("Request: \(repositoryURL)")
+        logger.debug("Request: \(request.headerFields)")
         let (data, response) = try await httpClient.data(for: request)
+        logger.debug("Response: \(data.humanReadableJSONString() ?? "No data")")
+        logger.debug("Status: \(response.status)")
+
         if response.status == .notFound {
             throw GitRepositoryClientError.notFound
         }
@@ -33,4 +44,13 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
 
 extension HTTPField.Name {
     static let gitHubAPIVersion = HTTPField.Name("X-GitHub-Api-Version")!
+}
+
+extension Data {
+    fileprivate func humanReadableJSONString() -> String? {
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: self, options: []),
+              let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted)
+        else { return nil }
+        return String(data: prettyPrintedData, encoding: .utf8)
+    }
 }

@@ -21,7 +21,11 @@ extension Configuration {
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
-            repositoryClientBuilder: GitRepositoryClientBuilder(httpClient: httpClient, logger: logger),
+            repositoryClientBuilder: GitRepositoryClientBuilder(
+                httpClient: httpClient,
+                authToken: ProcessInfo.processInfo.ghToken,
+                logger: logger
+            ),
             logger: logger
         )
     }
@@ -32,7 +36,11 @@ extension Configuration {
             executorBuilder: NestProcessExecutorBuilder(logger: logger),
             fileSystem: fileSystem,
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
-            repositoryClientBuilder: GitRepositoryClientBuilder(httpClient: httpClient, logger: logger),
+            repositoryClientBuilder: GitRepositoryClientBuilder(
+                httpClient: httpClient,
+                authToken: ProcessInfo.processInfo.ghToken,
+                logger: logger
+            ),
             logger: logger
         )
     }

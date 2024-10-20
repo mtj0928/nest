@@ -33,7 +33,11 @@ struct GitHubRepositoryClientTests {
             """
             return (json.data(using: .utf8)!, HTTPResponse(status: .ok))
         }
-        let gitHubRepositoryClient: GitHubRepositoryClient = GitHubRepositoryClient(httpClient: httpClient, logger: .init(label: "Test"))
+        let gitHubRepositoryClient: GitHubRepositoryClient = GitHubRepositoryClient(
+            httpClient: httpClient,
+            authToken: nil,
+            logger: .init(label: "Test")
+        )
         let assets = try await gitHubRepositoryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
         #expect(assets.assets == [Asset(fileName: "foo.zip", url: assetURL)])
     }

@@ -13,7 +13,9 @@ struct Nest: AsyncParsableCommand {
             ListCommand.self,
             SwitchCommand.self,
             BootstrapCommand.self,
-            GenerateNestfileCommand.self
+            GenerateNestfileCommand.self,
+            UpdateNestfileCommand.self,
+            ResolveNestfileCommand.self
         ]
     )
 }
@@ -54,5 +56,9 @@ extension FileSystem {
 extension ProcessInfo {
     var nestPath: String? {
         environment["NEST_PATH"]
+    }
+
+    var ghToken: String? {
+        environment["GH_TOKEN"]
     }
 }
