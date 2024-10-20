@@ -66,17 +66,18 @@ If multiple versions for a command are ionstalled, you can switch the linked ver
 $ nest switch swiftlint 0.55.0 // swiftlint 0.55.0 are selected.
 ```
 
-## Configuration file.
-`nest` supports to install multiple packages at once with a configuration file, 
+## Configuration file
+`nest` supports to install multiple packages at once with a configuration file which is called nestfile,
 and the file needs to be written in YAML.
 
-`generate-nestfile` command generates the basic configuration file in the current directory.
+`generate-nestfile` command generates the basic nestfile in the current directory.
 ```sh
 $ nest generate-nestfile
 ```
-And update the file based on your requirements.
+Then add references to targets.
 
 ```yaml
+nestPath: ./.nest
 targets:
   # Example 1: Specify a repository
   - reference: mtj0928/nest # or htpps://github.com/mtj0928/nest
@@ -88,10 +89,22 @@ targets:
     checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
 ```
 
-Finally run `bootstrap` command. The command installs all bundles in the configuration file at once.
+Finally run `bootstrap` command. The command installs all artifact bundles in the nestfile at once.
 ```sh
 $ nest bootstrap nestfile.yaml
 ```
+
+### Update nestfile
+nest provides two utility commands, `update-nestfile` and `resolve-nestfile`.
+
+`update-nestfile` command overwrites the nestfile by updating the version and filling in the checksum and the asset name. 
+
+```sh
+$ nest update-nestfile nestfile.yaml
+```
+
+`resolve-nestfile` is a similar command but it doesn't update the version when one is specified.
+
 ## Cache directory
 `nest` stores artifacts at `~/.nest` as a default. 
 If you want change the directory,
