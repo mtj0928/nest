@@ -24,7 +24,13 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
         if let authToken {
             request.headerFields[.authorization] = "Bearer \(authToken)"
         }
+
+        logger.debug("Request: \(repositoryURL)")
+        logger.debug("Request: \(request.headerFields)")
         let (data, response) = try await httpClient.data(for: request)
+        logger.debug("Response: \(data.humanReadableJSONString() ?? "No data")")
+        logger.debug("Status: \(response.status)")
+
         if response.status == .notFound {
             throw GitRepositoryClientError.notFound
         }
@@ -38,4 +44,13 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
 
 extension HTTPField.Name {
     static let gitHubAPIVersion = HTTPField.Name("X-GitHub-Api-Version")!
+}
+
+extension Data {
+    fileprivate func humanReadableJSONString() -> String? {
+        guard let jsonObject = try? JSONSerialization.jsonObject(with: self, options: []),
+              let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted)
+        else { return nil }
+        return String(data: prettyPrintedData, encoding: .utf8)
+    }
 }
