@@ -36,6 +36,7 @@ extension UpdateNestfileCommand {
         let updater = NestfileUpdater(
             repositoryClientBuilder: GitRepositoryClientBuilder(
                 httpClient: configuration.httpClient,
+                authToken: ProcessInfo.processInfo.ghToken,
                 logger: configuration.logger
             ),
             fileSystem: configuration.fileSystem,

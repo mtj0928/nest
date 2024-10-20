@@ -56,4 +56,8 @@ extension ProcessInfo {
     var nestPath: String? {
         environment["NEST_PATH"]
     }
+
+    var ghToken: String? {
+        environment["GH_TOKEN"]
+    }
 }
