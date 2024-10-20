@@ -14,7 +14,8 @@ struct Nest: AsyncParsableCommand {
             SwitchCommand.self,
             BootstrapCommand.self,
             GenerateNestfileCommand.self,
-            UpdateNestfileCommand.self
+            UpdateNestfileCommand.self,
+            ResolveNestfileCommand.self
         ]
     )
 }

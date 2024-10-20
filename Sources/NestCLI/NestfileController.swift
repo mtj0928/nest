@@ -2,7 +2,7 @@ import AsyncOperations
 import Foundation
 import NestKit
 
-public struct NestfileUpdater: Sendable {
+public struct NestfileController: Sendable {
     private let repositoryClientBuilder: GitRepositoryClientBuilder
     private let fileSystem: any FileSystem
     private let fileDownloader: any FileDownloader
@@ -23,15 +23,26 @@ public struct NestfileUpdater: Sendable {
     public func update(_ nestfile: Nestfile) async throws -> Nestfile {
         var nestfile = nestfile
         nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
-            try await updateTarget(target)
+            try await updateTarget(target, versionResolution: .update)
         }
         return nestfile
     }
 
-    private func updateTarget(_ target: Nestfile.Target) async throws -> Nestfile.Target {
+    public func resolve(_ nestfile: Nestfile) async throws -> Nestfile {
+        var nestfile = nestfile
+        nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
+            try await updateTarget(target, versionResolution: .specific)
+        }
+        return nestfile
+    }
+
+    private func updateTarget(
+        _ target: Nestfile.Target,
+        versionResolution: VersionResolution
+    ) async throws -> Nestfile.Target {
         switch target {
         case .repository(let repository):
-            let newRepository = try await updateRepository(repository)
+            let newRepository = try await updateRepository(repository, versionResolution: versionResolution)
             return .repository(newRepository)
         case .zip(let zipURL):
             guard let url = URL(string: zipURL.zipURL) else { return target }
@@ -46,13 +57,17 @@ public struct NestfileUpdater: Sendable {
         }
     }
 
-    private func updateRepository(_ repository: Nestfile.Repository) async throws -> Nestfile.Repository {
+    private func updateRepository(
+        _ repository: Nestfile.Repository,
+        versionResolution: VersionResolution
+    ) async throws -> Nestfile.Repository {
         guard let gitURL = GitURL.parse(string: repository.reference),
               case .url(let url) = gitURL
         else { return repository }
 
         let repositoryClient = repositoryClientBuilder.build(for: url)
-        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: .latestRelease)
+        let version = resolveVersion(repository: repository, resolution: versionResolution)
+        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
         let selector = ArtifactBundleAssetSelector()
         guard let selectedAsset = selector.selectArtifactBundle(from: assetInfo.assets, fileName: repository.assetName) else {
             return Nestfile.Repository(
@@ -95,4 +110,25 @@ public struct NestfileUpdater: Sendable {
         let checksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
         return checksum
     }
+
+    private func resolveVersion(repository: Nestfile.Repository, resolution: VersionResolution) -> GitVersion {
+        switch resolution {
+        case .update: return .latestRelease
+        case .specific:
+            if let repositoryVersion = repository.version {
+                return .tag(repositoryVersion)
+            } else {
+                return .latestRelease
+            }
+        }
+    }
+}
+
+private enum VersionResolution {
+    /// A case indicating using the latest version for all repositories.
+    case update
+
+    /// A case indicating using the latest version for repository whose version is not specified.
+    /// If a version is specified, the versions is used.
+    case specific
 }
