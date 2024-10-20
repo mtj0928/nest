@@ -9,6 +9,10 @@ public struct SwiftChecksumCalculator: ChecksumCalculator {
         self.swift = swift
     }
 
+    public init(processExecutor: ProcessExecutor) {
+        self.swift = SwiftCommand(executor: processExecutor)
+    }
+
     public func calculate(_ path: String) async throws -> String {
         try await swift.computeCheckSum(path: path)
     }
