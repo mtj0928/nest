@@ -53,9 +53,9 @@ struct NestfileTests {
           - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
         registries:
           github.com:
-            token: "github-com-token"
+            tokenEnvironmentVariable: "GH_TOKEN"
           my-ghe.example.com:
-            token: "my-ghe-token"
+            tokenEnvironmentVariable: "MY_GHE_TOKEN"
         """
 
         fileSystem.item = [
@@ -81,9 +81,9 @@ struct NestfileTests {
         #expect(registries.count == 2)
 
         let githubRegistry = try #require(registries["github.com"])
-        #expect(githubRegistry.token == "github-com-token")
+        #expect(githubRegistry.tokenEnvironmentVariable == "GH_TOKEN")
 
         let gheRegistry = try #require(registries["my-ghe.example.com"])
-        #expect(gheRegistry.token == "my-ghe-token")
+        #expect(gheRegistry.tokenEnvironmentVariable == "MY_GHE_TOKEN")
     }
 }

@@ -108,7 +108,7 @@ public struct Nestfile: Codable, Sendable {
 
     public typealias GitHubHost = String
     public struct GitHubServerConfiguration: Codable, Equatable, Sendable {
-        public var token: String
+        public var tokenEnvironmentVariable: String
     }
 }
 
