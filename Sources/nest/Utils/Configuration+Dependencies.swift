@@ -23,7 +23,7 @@ extension Configuration {
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
             repositoryClientBuilder: GitRepositoryClientBuilder(
                 httpClient: httpClient,
-                authToken: ProcessInfo.processInfo.ghToken,
+                serverConfigs: serverConfigs,
                 logger: logger
             ),
             logger: logger
@@ -38,7 +38,7 @@ extension Configuration {
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
             repositoryClientBuilder: GitRepositoryClientBuilder(
                 httpClient: httpClient,
-                authToken: ProcessInfo.processInfo.ghToken,
+                serverConfigs: serverConfigs,
                 logger: logger
             ),
             logger: logger

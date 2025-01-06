@@ -5,12 +5,12 @@ import Logging
 
 public struct GitHubRepositoryClient: GitRepositoryClient {
     private let httpClient: any HTTPClient
-    private let authToken: String?
+    private let serverConfigs: GitHubServerConfigs?
     private let logger: Logger
 
-    public init(httpClient: some HTTPClient, authToken: String?, logger: Logger) {
+    public init(httpClient: some HTTPClient, serverConfigs: GitHubServerConfigs?, logger: Logger) {
         self.httpClient = httpClient
-        self.authToken = authToken
+        self.serverConfigs = serverConfigs
         self.logger = logger
     }
 
@@ -21,7 +21,7 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
             .accept: "application/vnd.github+json",
             .gitHubAPIVersion: "2022-11-28",
         ]
-        if let authToken {
+        if let authToken = serverConfigs?.resolveToken(for: assetURL) {
             request.headerFields[.authorization] = "Bearer \(authToken)"
         }
 

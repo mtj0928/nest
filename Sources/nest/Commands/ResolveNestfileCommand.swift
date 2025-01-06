@@ -36,7 +36,7 @@ extension ResolveNestfileCommand {
         let controller = NestfileController(
             repositoryClientBuilder: GitRepositoryClientBuilder(
                 httpClient: configuration.httpClient,
-                authToken: ProcessInfo.processInfo.ghToken,
+                serverConfigs: .init(servers: []),
                 logger: configuration.logger
             ),
             fileSystem: configuration.fileSystem,
