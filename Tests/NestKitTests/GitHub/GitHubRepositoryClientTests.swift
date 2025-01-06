@@ -35,7 +35,7 @@ struct GitHubRepositoryClientTests {
         }
         let gitHubRepositoryClient: GitHubRepositoryClient = GitHubRepositoryClient(
             httpClient: httpClient,
-            serverConfigs: nil,
+            serverConfigs: .default,
             logger: .init(label: "Test")
         )
         let assets = try await gitHubRepositoryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))

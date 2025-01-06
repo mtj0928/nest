@@ -40,7 +40,7 @@ extension Configuration {
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
-            serverConfigs: GitHubServerConfigs(servers: []),
+            serverConfigs: .default,
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
