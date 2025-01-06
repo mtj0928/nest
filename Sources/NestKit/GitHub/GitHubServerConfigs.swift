@@ -38,6 +38,8 @@ public struct GitHubServerConfigs: Sendable {
     }
 
     /// Resolve server configurations from environment variable names.
+    /// If GH_TOKEN environment variable is set, the token for GitHub.com will be that.
+    /// If other values are set on environmentVariableNames, the value will be overwritten.
     /// - Parameters environmentVariableNames A dictionary of environment variable names with hostname as key.
     /// - Parameters environmentVariables A container of environment variables.
     /// - Returns A new server configuration.
@@ -45,14 +47,22 @@ public struct GitHubServerConfigs: Sendable {
         environmentVariableNames: [String: String],
         environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
     ) -> GitHubServerConfigs {
-        let servers: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (servers, pair) in
+        let defaultGitHubTokenEnvironmentVariableName = "GH_TOKEN"
+        let defaultConfigs: [Host: Config] = if let environmentVariableGitHubToken = environmentVariables[defaultGitHubTokenEnvironmentVariableName] {
+            [.githubCom: Config(token: environmentVariableGitHubToken)]
+        } else {
+            [:]
+        }
+
+        let loadedConfigs: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (servers, pair) in
             let (host, environmentVariableName) = pair
             if let token = environmentVariables[environmentVariableName] {
                 let host = Host(host)
                 servers[host] = Config(token: token)
             }
         }
-        return .init(servers: servers)
+        let overwrittenConfigs = defaultConfigs.merging(loadedConfigs, uniquingKeysWith: { $1 })
+        return .init(servers: overwrittenConfigs)
     }
 
     private var servers: [Host: Config]
