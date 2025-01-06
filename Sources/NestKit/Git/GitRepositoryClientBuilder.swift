@@ -3,7 +3,7 @@ import Logging
 
 public struct GitRepositoryClientBuilder: Sendable {
     private let httpClient: any HTTPClient
-    private let serverConfigs: GitHubServerConfigs?
+    private let serverConfigs: GitHubServerConfigs
     private let logger: Logger
 
     public init(httpClient: some HTTPClient, serverConfigs: GitHubServerConfigs, logger: Logger) {

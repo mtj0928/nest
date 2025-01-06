@@ -5,7 +5,7 @@ import Yams
 public struct Nestfile: Codable, Sendable {
     public var nestPath: String?
     public var targets: [Target]
-    public var registries: [GitHubHost: GitHubServerConfiguration]?
+    public var servers: [GitHubHost: GitHubServerConfiguration]?
 
     public init(nestPath: String?, targets: [Target]) {
         self.nestPath = nestPath

@@ -39,11 +39,11 @@ struct NestfileTests {
         #expect(nest.targets[1] == .deprecatedZIP(Nestfile.DeprecatedZIPURL(
             url: "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
         )))
-        #expect(nest.registries == nil)
+        #expect(nest.servers == nil)
     }
 
     @Test
-    func loadFileWithRegistries() async throws {
+    func loadFileWithServers() async throws {
         let nestFile = """
         nestPath: "aaa"
         targets:
@@ -51,7 +51,7 @@ struct NestfileTests {
             version: 0.1.0
             assetName: nest-macos.artifactbundle.zip
           - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
-        registries:
+        servers:
           github.com:
             tokenEnvironmentVariable: "GH_TOKEN"
           my-ghe.example.com:
@@ -77,13 +77,13 @@ struct NestfileTests {
         #expect(nest.targets[1] == .deprecatedZIP(Nestfile.DeprecatedZIPURL(
             url: "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
         )))
-        let registries = try #require(nest.registries)
-        #expect(registries.count == 2)
+        let servers = try #require(nest.servers)
+        #expect(servers.count == 2)
 
-        let githubRegistry = try #require(registries["github.com"])
-        #expect(githubRegistry.tokenEnvironmentVariable == "GH_TOKEN")
+        let githubServer = try #require(servers["github.com"])
+        #expect(githubServer.tokenEnvironmentVariable == "GH_TOKEN")
 
-        let gheRegistry = try #require(registries["my-ghe.example.com"])
-        #expect(gheRegistry.tokenEnvironmentVariable == "MY_GHE_TOKEN")
+        let gheServer = try #require(servers["my-ghe.example.com"])
+        #expect(gheServer.tokenEnvironmentVariable == "MY_GHE_TOKEN")
     }
 }

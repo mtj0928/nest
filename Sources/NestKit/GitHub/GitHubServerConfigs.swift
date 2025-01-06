@@ -11,6 +11,8 @@ struct SystemEnvironmentVariableStorage: EnvironmentVariableStorage {
 }
 
 public struct GitHubServerConfigs: Sendable {
+    public static let `default`: Self = .init(servers: [])
+
     public struct Config: Sendable {
         var host: String
         var tokenEnvironmentVariableName: String
