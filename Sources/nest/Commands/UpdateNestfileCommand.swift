@@ -36,7 +36,7 @@ extension UpdateNestfileCommand {
         let controller = NestfileController(
             repositoryClientBuilder: GitRepositoryClientBuilder(
                 httpClient: configuration.httpClient,
-                serverConfigs: .init(servers: []),
+                serverConfigs: .resolve(environmentVariableNames: [:]),
                 logger: configuration.logger
             ),
             fileSystem: configuration.fileSystem,

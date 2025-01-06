@@ -40,7 +40,7 @@ extension Configuration {
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
-            serverConfigs: .default,
+            serverConfigs: .resolve(environmentVariableNames: [:]),
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
@@ -59,7 +59,7 @@ extension ProcessInfo {
         environment["NEST_PATH"]
     }
 
-    var ghToken: String? {
+    fileprivate var ghToken: String? {
         environment["GH_TOKEN"]
     }
 }

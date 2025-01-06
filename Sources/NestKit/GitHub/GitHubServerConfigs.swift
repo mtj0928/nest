@@ -4,33 +4,64 @@ public protocol EnvironmentVariableStorage {
     subscript(_ key: String) -> String? { get }
 }
 
-struct SystemEnvironmentVariableStorage: EnvironmentVariableStorage {
-    subscript(_ key: String) -> String? {
+public struct SystemEnvironmentVariableStorage: EnvironmentVariableStorage {
+    public subscript(_ key: String) -> String? {
         ProcessInfo.processInfo.environment[key]
     }
+
+    public init() { }
 }
 
+/// A container of GitHub server configurations.
 public struct GitHubServerConfigs: Sendable {
-    public static let `default`: Self = .init(servers: [])
+    /// An enum value to represent GitHub sever host
+    public enum Host: Hashable, Sendable {
+        /// A value indicates github.com
+        case githubCom
 
-    public struct Config: Sendable {
-        var host: String
-        var tokenEnvironmentVariableName: String
+        /// A value indicates an GitHub Enterprise Server
+        case custom(String)
+
+        init(_ host: String) {
+            switch host {
+            case "github.com": self = .githubCom
+            default: self = .custom(host)
+            }
+        }
+
     }
-    private var servers: [Config]
 
-    public init(servers: [Config]) {
+    struct Config : Sendable {
+        var token: String
+    }
+
+    /// Resolve server configurations from environment variable names.
+    /// @params environmentVariableNames A dictionary of environment variable names with hostname as key.
+    /// @params environmentVariables A container of Environment Variables.
+    /// @return A new server configuration.
+    public static func resolve(
+        environmentVariableNames: [Host: String],
+        environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
+    ) -> GitHubServerConfigs {
+        let servers: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (servers, pair) in
+            if let token = environmentVariables[pair.value] {
+                servers[pair.key] = Config(token: token)
+            }
+        }
+        return .init(servers: servers)
+    }
+
+    private var servers: [Host: Config]
+
+    private init(servers: [Host: Config]) {
         self.servers = servers
     }
 
-    func resolveToken(for url: URL, environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> String? {
-        if let host = url.host(), let name = resolveEnvironmentVariable(for: host) {
-            return environmentVariables[name]
+    /// Get the server configuration for URL. It will be resolved from its host.
+    func config(for url: URL, environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> Config? {
+        if let hostString = url.host() {
+            return servers[Host(hostString)]
         }
         return nil
-    }
-
-    private func resolveEnvironmentVariable(for host: String) -> String? {
-        servers.first { $0.host == host }?.tokenEnvironmentVariableName
     }
 }
