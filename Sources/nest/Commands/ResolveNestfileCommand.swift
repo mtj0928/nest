@@ -31,6 +31,7 @@ extension ResolveNestfileCommand {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
             nestPath: nestfile.nestPath ?? ProcessInfo.processInfo.nestPath,
+            serverTokenEnvironmentVariableNames: nestfile.serverTokenEnvironmentVariableNames,
             logLevel: verbose ? .trace : .info
         )
         let controller = NestfileController(

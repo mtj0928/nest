@@ -38,6 +38,7 @@ extension ListCommand {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
             nestPath: ProcessInfo.processInfo.nestPath,
+            serverTokenEnvironmentVariableNames: [:],
             logLevel: verbose ? .trace : .info
         )
 

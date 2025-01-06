@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import NestKit
+import NestCLI
 import Logging
 
 @main
@@ -23,6 +24,7 @@ struct Nest: AsyncParsableCommand {
 extension Configuration {
     static func make(
         nestPath: String?,
+        serverTokenEnvironmentVariableNames: [Nestfile.GitHubHost: String],
         logLevel: Logger.Level,
         httpClient: some HTTPClient = URLSession.shared,
         fileSystem: some FileSystem = FileManager.default

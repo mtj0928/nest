@@ -141,6 +141,7 @@ extension BootstrapCommand {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
             nestPath: nestPath ?? ProcessInfo.processInfo.nestPath,
+            serverTokenEnvironmentVariableNames: [:],
             logLevel: verbose ? .trace : .info
         )
 

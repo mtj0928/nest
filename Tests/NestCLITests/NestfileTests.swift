@@ -53,9 +53,9 @@ struct NestfileTests {
           - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
         servers:
           github.com:
-            tokenEnvironmentVariable: "GH_TOKEN"
+            tokenEnvironmentVariableName: "GH_TOKEN"
           my-ghe.example.com:
-            tokenEnvironmentVariable: "MY_GHE_TOKEN"
+            tokenEnvironmentVariableName: "MY_GHE_TOKEN"
         """
 
         fileSystem.item = [
@@ -81,9 +81,9 @@ struct NestfileTests {
         #expect(servers.count == 2)
 
         let githubServer = try #require(servers["github.com"])
-        #expect(githubServer.tokenEnvironmentVariable == "GH_TOKEN")
+        #expect(githubServer.tokenEnvironmentVariableName == "GH_TOKEN")
 
         let gheServer = try #require(servers["my-ghe.example.com"])
-        #expect(gheServer.tokenEnvironmentVariable == "MY_GHE_TOKEN")
+        #expect(gheServer.tokenEnvironmentVariableName == "MY_GHE_TOKEN")
     }
 }

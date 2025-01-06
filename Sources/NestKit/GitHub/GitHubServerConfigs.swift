@@ -40,12 +40,14 @@ public struct GitHubServerConfigs: Sendable {
     /// @params environmentVariables A container of Environment Variables.
     /// @return A new server configuration.
     public static func resolve(
-        environmentVariableNames: [Host: String],
+        environmentVariableNames: [String: String],
         environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
     ) -> GitHubServerConfigs {
         let servers: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (servers, pair) in
-            if let token = environmentVariables[pair.value] {
-                servers[pair.key] = Config(token: token)
+            let (host, environmentVariableName) = pair
+            if let token = environmentVariables[environmentVariableName] {
+                let host = Host(host)
+                servers[host] = Config(token: token)
             }
         }
         return .init(servers: servers)
