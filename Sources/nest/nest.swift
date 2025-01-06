@@ -42,7 +42,7 @@ extension Configuration {
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
-            serverConfigs: .resolve(environmentVariableNames: [:]),
+            serverConfigs: .resolve(environmentVariableNames: serverTokenEnvironmentVariableNames),
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
