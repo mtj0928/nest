@@ -14,12 +14,12 @@ public struct SystemEnvironmentVariableStorage: EnvironmentVariableStorage {
 
 /// A container of GitHub server configurations.
 public struct GitHubServerConfigs: Sendable {
-    /// An enum value to represent GitHub sever host
+    /// An enum value to represent GitHub sever host.
     public enum Host: Hashable, Sendable {
         /// A value indicates github.com
         case githubCom
 
-        /// A value indicates an GitHub Enterprise Server
+        /// A value indicates an GitHub Enterprise Server.
         case custom(String)
 
         init(_ host: String) {
@@ -31,14 +31,16 @@ public struct GitHubServerConfigs: Sendable {
 
     }
 
+    /// A struct to contain the server configuration.
     struct Config : Sendable {
+        /// GitHub API token
         var token: String
     }
 
     /// Resolve server configurations from environment variable names.
-    /// @params environmentVariableNames A dictionary of environment variable names with hostname as key.
-    /// @params environmentVariables A container of Environment Variables.
-    /// @return A new server configuration.
+    /// - Parameters environmentVariableNames A dictionary of environment variable names with hostname as key.
+    /// - Parameters environmentVariables A container of environment variables.
+    /// - Returns A new server configuration.
     public static func resolve(
         environmentVariableNames: [String: String],
         environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
@@ -60,6 +62,9 @@ public struct GitHubServerConfigs: Sendable {
     }
 
     /// Get the server configuration for URL. It will be resolved from its host.
+    /// - Parameters url An URL.
+    /// - Parameters environmentVariables A container of environment variables.
+    /// - Returns A config for the host.
     func config(for url: URL, environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> Config? {
         if let hostString = url.host() {
             return servers[Host(hostString)]
