@@ -5,6 +5,7 @@ import Yams
 public struct Nestfile: Codable, Sendable {
     public var nestPath: String?
     public var targets: [Target]
+    public var registries: [GitHubHost: GitHubServerConfiguration]?
 
     public init(nestPath: String?, targets: [Target]) {
         self.nestPath = nestPath
@@ -103,6 +104,11 @@ public struct Nestfile: Codable, Sendable {
             case zipURL = "zipURL"
             case checksum
         }
+    }
+
+    public typealias GitHubHost = String
+    public struct GitHubServerConfiguration: Codable, Equatable, Sendable {
+        public var token: String
     }
 }
 
