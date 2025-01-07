@@ -14,33 +14,25 @@ extension Configuration {
         )
     }
 
-    var artifactBundleFetcher: ArtifactBundleFetcher {
+    private var artifactBundleFetcher: ArtifactBundleFetcher {
         ArtifactBundleFetcher(
             workingDirectory: workingDirectory,
             executorBuilder: NestProcessExecutorBuilder(logger: logger),
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
-            repositoryClientBuilder: GitRepositoryClientBuilder(
-                httpClient: httpClient,
-                serverConfigs: serverConfigs,
-                logger: logger
-            ),
+            repositoryClientBuilder: gitRepositoryClientBuilder,
             logger: logger
         )
     }
 
-    var swiftPackageBuilder: SwiftPackageBuilder {
+    private var swiftPackageBuilder: SwiftPackageBuilder {
         SwiftPackageBuilder(
             workingDirectory: workingDirectory,
             executorBuilder: NestProcessExecutorBuilder(logger: logger),
             fileSystem: fileSystem,
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
-            repositoryClientBuilder: GitRepositoryClientBuilder(
-                httpClient: httpClient,
-                serverConfigs: serverConfigs,
-                logger: logger
-            ),
+            repositoryClientBuilder: gitRepositoryClientBuilder,
             logger: logger
         )
     }

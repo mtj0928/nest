@@ -37,12 +37,20 @@ extension Configuration {
         logger.logLevel = logLevel
         logger.debug("NEST_PATH: \(nestDirectory.rootDirectory.path()).")
 
+        let serverConfigs = GitHubServerConfigs.resolve(environmentVariableNames: serverTokenEnvironmentVariableNames)
+
+        let gitRepositoryClientBuilder = GitRepositoryClientBuilder(
+            httpClient: httpClient,
+            serverConfigs: serverConfigs,
+            logger: logger
+        )
+
         return Configuration(
             httpClient: httpClient,
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
-            serverConfigs: .resolve(environmentVariableNames: serverTokenEnvironmentVariableNames),
+            gitRepositoryClientBuilder: gitRepositoryClientBuilder,
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
