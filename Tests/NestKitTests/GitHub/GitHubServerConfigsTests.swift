@@ -2,19 +2,6 @@
 import Foundation
 import Testing
 
-private struct TestingEnvironmentVariable: EnvironmentVariableStorage {
-    private var environmentVariables: [String: String]
-
-    init(environmentVariables: [String : String?]) {
-        self.environmentVariables = environmentVariables.compactMapValues { $0 }
-    }
-
-    subscript(_ key: String) -> String? {
-        environmentVariables[key]
-    }
-
-}
-
 @Suite
 struct GitHubServerConfigsTests {
     struct Fixture: CustomTestStringConvertible {
@@ -68,7 +55,7 @@ struct GitHubServerConfigsTests {
 
     @Test(arguments: fixtures)
     func resolve(fixture: Fixture) async throws {
-        let environmentVariables = TestingEnvironmentVariable(environmentVariables: fixture.environmentVariables)
+        let environmentVariables = TestingEnvironmentVariables(environmentVariables: fixture.environmentVariables)
         let configs = GitHubServerConfigs.resolve(
             environmentVariableNames: fixture.serverTokenEnvironmentVariableNames,
             environmentVariables: environmentVariables
