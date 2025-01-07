@@ -21,14 +21,14 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
             .accept: "application/vnd.github+json",
             .gitHubAPIVersion: "2022-11-28",
         ]
-        guard let host = assetURL.host else {
+        guard let repositoryHost = repositoryURL.host() else {
             fatalError("Unknown host")
         }
-        if let config = serverConfigs?.config(for: assetURL) {
-            logger.debug("GitHub token for \(host) is passed.")
+        if let config = serverConfigs?.config(for: repositoryURL) {
+            logger.debug("GitHub token for \(repositoryHost) is passed.")
             request.headerFields[.authorization] = "Bearer \(config.token)"
         } else {
-            logger.debug("GitHub token for \(host) is not provided.")
+            logger.debug("GitHub token for \(repositoryHost) is not provided.")
         }
 
         logger.debug("Request: \(repositoryURL)")
