@@ -25,7 +25,7 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
             fatalError("Unknown host")
         }
         if let config = serverConfigs?.config(for: repositoryURL) {
-            logger.debug("GitHub token for \(repositoryHost) is passed.")
+            logger.debug("GitHub token for \(repositoryHost) is passed from \(config.environmentVariable)")
             request.headerFields[.authorization] = "Bearer \(config.token)"
         } else {
             logger.debug("GitHub token for \(repositoryHost) is not provided.")

@@ -33,7 +33,9 @@ public struct GitHubServerConfigs: Sendable {
 
     /// A struct to contain the server configuration.
     struct Config : Sendable {
-        /// GitHub API token
+        /// Where the token come from.
+        var environmentVariable: String
+        /// GitHub API token.
         var token: String
     }
 
@@ -47,22 +49,14 @@ public struct GitHubServerConfigs: Sendable {
         environmentVariableNames: [String: String],
         environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
     ) -> GitHubServerConfigs {
-        let defaultGitHubTokenEnvironmentVariableName = "GH_TOKEN"
-        let defaultConfigs: [Host: Config] = if let environmentVariableGitHubToken = environmentVariables[defaultGitHubTokenEnvironmentVariableName] {
-            [.githubCom: Config(token: environmentVariableGitHubToken)]
-        } else {
-            [:]
-        }
-
         let loadedConfigs: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (servers, pair) in
             let (host, environmentVariableName) = pair
             if let token = environmentVariables[environmentVariableName] {
                 let host = Host(host)
-                servers[host] = Config(token: token)
+                servers[host] = Config(environmentVariable: environmentVariableName, token: token)
             }
         }
-        let overwrittenConfigs = defaultConfigs.merging(loadedConfigs, uniquingKeysWith: { $1 })
-        return .init(servers: overwrittenConfigs)
+        return .init(servers: loadedConfigs)
     }
 
     private var servers: [Host: Config]
@@ -76,8 +70,11 @@ public struct GitHubServerConfigs: Sendable {
     /// - Parameters environmentVariables A container of environment variables.
     /// - Returns A config for the host.
     func config(for url: URL, environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> Config? {
-        if let hostString = url.host() {
-            return servers[Host(hostString)]
+        let defaultEnvironmentVariableName = "GH_TOKEN"
+        if let hostString = url.host(), let configuredToken = servers[Host(hostString)] {
+            return configuredToken
+        } else if let defaultToken = environmentVariables[defaultEnvironmentVariableName] {
+            return Config(environmentVariable: defaultEnvironmentVariableName, token: defaultToken)
         }
         return nil
     }

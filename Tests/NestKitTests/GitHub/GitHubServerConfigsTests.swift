@@ -40,10 +40,10 @@ struct GitHubServerConfigsTests {
             ["github.com": nil]
         ),
         .init(
-            "Can resolve GitHub.com token from the default environment variable",
-            ["ghe.example.com": "MY_GHE_TOKEN"],
-            ["MY_GHE_TOKEN": "my-ghe-token", "GH_TOKEN": "github-com-token"],
-            ["github.com": "github-com-token", "ghe.example.com": "my-ghe-token"]
+            "Can resolve any GitHub server tokens from `GH_TOKEN`",
+            [:],
+            ["GH_TOKEN": "default-token"],
+            ["github.com": "default-token", "ghe.example.com": "default-token"]
         ),
         .init(
             "Can overwrite GitHub.com token by the configuration",
@@ -60,9 +60,10 @@ struct GitHubServerConfigsTests {
             environmentVariableNames: fixture.serverTokenEnvironmentVariableNames,
             environmentVariables: environmentVariables
         )
-        for (host, expectedValue) in fixture.expectedTokens {
+        for (host, expectedToken) in fixture.expectedTokens {
             let url = try #require(makeURL(from: host))
-            #expect(expectedValue == configs.config(for: url)?.token, "\(fixture.testDescription)", sourceLocation: fixture.sourceLocation)
+            let resolvedToken = configs.config(for: url, environmentVariables: environmentVariables)?.token
+            #expect(resolvedToken == expectedToken, "\(fixture.testDescription)", sourceLocation: fixture.sourceLocation)
         }
     }
 

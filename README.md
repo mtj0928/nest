@@ -89,7 +89,7 @@ targets:
     checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
 servers:
   my-github-enterprise.example.com:
-    tokenEnvironmentVariable: "GHE_TOKEN"
+    tokenEnvironmentVariable: "MY_GHE_TOKEN"
 ```
 
 Finally run `bootstrap` command. The command installs all artifact bundles in the nestfile at once.
@@ -119,7 +119,10 @@ Fetching releases sometimes fails due to API limit, so we recommended to pass a 
 
 ### Use `GH_TOKEN` environment variable
 
-The simplest way is the passing `GH_TOKEN` environment variable. nest uses the token for github.com.
+The simplest way is the passing `GH_TOKEN` environment variable. nest uses the token for all GitHub servers.
+
+> [!WARNING]
+> If you want to install a packages from multiple GitHub servers, this way will not work because the all servers share the same token.
 
 ### Use `servers` in Nestfile
 
@@ -134,6 +137,8 @@ servers:
   my-github-enterprise.example.com:
     tokenEnvironmentVariable: "MY_GHE_TOKEN"
 ```
+
+If the value is not set, uses `GH_TOKEN` instead if available.
 
 ## Why is the name `nest`?
 A nest is place where Swift birds store their crafts.
