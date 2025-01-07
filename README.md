@@ -89,7 +89,7 @@ targets:
     checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
 servers:
   my-github-enterprise.example.com:
-    tokenEnvironmentVariableName: "GHE_TOKEN"
+    tokenEnvironmentVariable: "GHE_TOKEN"
 ```
 
 Finally run `bootstrap` command. The command installs all artifact bundles in the nestfile at once.
@@ -130,9 +130,9 @@ nest will automatically resolve the environment variables to fetch from each ser
 ```yaml
 servers:
   github.com:
-    tokenEnvironmentVariableName: "MY_GH_TOKEN"
+    tokenEnvironmentVariable: "MY_GH_TOKEN"
   my-github-enterprise.example.com:
-    tokenEnvironmentVariableName: "MY_GHE_TOKEN"
+    tokenEnvironmentVariable: "MY_GHE_TOKEN"
 ```
 
 ## Why is the name `nest`?

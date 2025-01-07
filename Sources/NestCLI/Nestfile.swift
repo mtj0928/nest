@@ -108,7 +108,7 @@ public struct Nestfile: Codable, Sendable {
 
     public typealias GitHubHost = String
     public struct GitHubServerConfig: Codable, Equatable, Sendable {
-        public var tokenEnvironmentVariableName: String
+        public var tokenEnvironmentVariable: String
     }
 }
 
@@ -128,6 +128,6 @@ extension Nestfile {
 
 extension Nestfile {
     public var serverTokenEnvironmentVariableNames: [GitHubHost: String] {
-        servers?.reduce(into: [:]) { $0[$1.key] = $1.value.tokenEnvironmentVariableName } ?? [:]
+        servers?.reduce(into: [:]) { $0[$1.key] = $1.value.tokenEnvironmentVariable } ?? [:]
     }
 }
