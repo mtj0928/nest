@@ -36,7 +36,7 @@ public struct ExecutableBinaryPreparer {
                 logger.info("🪹 No artifact bundles in the repository.")
             } catch ArtifactBundleFetcherError.unsupportedTriple {
                 logger.info("🪹 No binaries corresponding to the current triple.")
-            } catch GitRepositoryClientError.notFound {
+            } catch AssetRegistryClientError.notFound {
                 logger.info("🪹 No releases in the repository.")
             } catch NestCLIError.alreadyInstalled {
                 logger.info("🪺 The artifact bundle has been already installed.")

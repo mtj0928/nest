@@ -1,6 +1,6 @@
 import Foundation
 
-public protocol GitRepositoryClient: Sendable {
+public protocol AssetRegistryClient: Sendable {
     func fetchAssets(repositoryURL: URL, version: GitVersion) async throws -> AssetInformation
 }
 
@@ -26,7 +26,7 @@ public struct Asset: Sendable, Equatable {
 
 // MARK: - Errors
 
-public enum GitRepositoryClientError: LocalizedError, Hashable, Sendable {
+public enum AssetRegistryClientError: LocalizedError, Hashable, Sendable {
     case notFound
 
     public var errorDescription: String? {

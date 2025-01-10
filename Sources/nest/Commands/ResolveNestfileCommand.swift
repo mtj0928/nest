@@ -34,7 +34,7 @@ extension ResolveNestfileCommand {
             logLevel: verbose ? .trace : .info
         )
         let controller = NestfileController(
-            repositoryClientBuilder: GitRepositoryClientBuilder(
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: configuration.httpClient,
                 authToken: ProcessInfo.processInfo.ghToken,
                 logger: configuration.logger

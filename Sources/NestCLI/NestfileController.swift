@@ -3,18 +3,18 @@ import Foundation
 import NestKit
 
 public struct NestfileController: Sendable {
-    private let repositoryClientBuilder: GitRepositoryClientBuilder
+    private let assetRegistryClientBuilder: AssetRegistryClientBuilder
     private let fileSystem: any FileSystem
     private let fileDownloader: any FileDownloader
     private let checksumCalculator: any ChecksumCalculator
 
     public init(
-        repositoryClientBuilder: GitRepositoryClientBuilder,
+        assetRegistryClientBuilder: AssetRegistryClientBuilder,
         fileSystem: some FileSystem,
         fileDownloader: some FileDownloader,
         checksumCalculator: some ChecksumCalculator
     ) {
-        self.repositoryClientBuilder = repositoryClientBuilder
+        self.assetRegistryClientBuilder = assetRegistryClientBuilder
         self.fileSystem = fileSystem
         self.fileDownloader = fileDownloader
         self.checksumCalculator = checksumCalculator
@@ -65,9 +65,9 @@ public struct NestfileController: Sendable {
               case .url(let url) = gitURL
         else { return repository }
 
-        let repositoryClient = repositoryClientBuilder.build(for: url)
+        let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
         let version = resolveVersion(repository: repository, resolution: versionResolution)
-        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
+        let assetInfo = try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
         let selector = ArtifactBundleAssetSelector()
         guard let selectedAsset = selector.selectArtifactBundle(from: assetInfo.assets, fileName: repository.assetName) else {
             return Nestfile.Repository(

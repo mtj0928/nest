@@ -1,7 +1,7 @@
 import Foundation
 import Logging
 
-public struct GitRepositoryClientBuilder: Sendable {
+public struct AssetRegistryClientBuilder: Sendable {
     private let httpClient: any HTTPClient
     private let authToken: String?
     private let logger: Logger
@@ -11,13 +11,19 @@ public struct GitRepositoryClientBuilder: Sendable {
         self.authToken = authToken
         self.logger = logger
     }
-
-    public func build(for url: GitURL) -> any GitRepositoryClient {
+    
+    /// Build AssetRegistryClient based on the given git url.
+    ///
+    /// > Note: This function currently supports only GitHub.
+    public func build(for url: GitURL) -> any AssetRegistryClient {
         // Only GitHub is supported now.
         GitHubRepositoryClient(httpClient: httpClient, authToken: authToken, logger: logger)
     }
 
-    public func build(for url: URL) -> any GitRepositoryClient {
+    /// Build AssetRegistryClient based on the given url.
+    ///
+    /// > Note: This function currently supports only GitHub.
+    public func build(for url: URL) -> any AssetRegistryClient {
         build(for: .url(url))
     }
 }

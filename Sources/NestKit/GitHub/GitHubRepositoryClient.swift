@@ -3,7 +3,7 @@ import HTTPTypes
 import HTTPTypesFoundation
 import Logging
 
-public struct GitHubRepositoryClient: GitRepositoryClient {
+public struct GitHubRepositoryClient: AssetRegistryClient {
     private let httpClient: any HTTPClient
     private let authToken: String?
     private let logger: Logger
@@ -32,7 +32,7 @@ public struct GitHubRepositoryClient: GitRepositoryClient {
         logger.debug("Status: \(response.status)")
 
         if response.status == .notFound {
-            throw GitRepositoryClientError.notFound
+            throw AssetRegistryClientError.notFound
         }
         let assetResponse = try JSONDecoder().decode(GitHubAssetResponse.self, from: data)
         let assets = assetResponse.assets.map { asset in
