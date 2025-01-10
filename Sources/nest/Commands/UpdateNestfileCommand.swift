@@ -31,13 +31,13 @@ extension UpdateNestfileCommand {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
             nestPath: nestfile.nestPath ?? ProcessInfo.processInfo.nestPath,
-            serverTokenEnvironmentVariableNames: nestfile.serverTokenEnvironmentVariableNames,
+            serverTokenEnvironmentVariableNames: nestfile.servers?.githubServerTokenEnvironmentVariableNames ?? [:],
             logLevel: verbose ? .trace : .info
         )
         let controller = NestfileController(
             repositoryClientBuilder: GitRepositoryClientBuilder(
                 httpClient: configuration.httpClient,
-                serverConfigs: .resolve(environmentVariableNames: nestfile.serverTokenEnvironmentVariableNames),
+                serverConfigs: .resolve(environmentVariableNames: nestfile.servers?.githubServerTokenEnvironmentVariableNames ?? [:]),
                 logger: configuration.logger
             ),
             fileSystem: configuration.fileSystem,

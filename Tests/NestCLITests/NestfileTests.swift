@@ -52,10 +52,11 @@ struct NestfileTests {
             assetName: nest-macos.artifactbundle.zip
           - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
         servers:
-          github.com:
-            tokenEnvironmentVariable: "GH_TOKEN"
-          my-ghe.example.com:
-            tokenEnvironmentVariable: "MY_GHE_TOKEN"
+          github:
+            - host: github.com
+              tokenEnvironmentVariable: "GH_TOKEN"
+            - host: my-ghe.example.com
+              tokenEnvironmentVariable: "MY_GHE_TOKEN"
         """
 
         fileSystem.item = [
@@ -77,13 +78,13 @@ struct NestfileTests {
         #expect(nest.targets[1] == .deprecatedZIP(Nestfile.DeprecatedZIPURL(
             url: "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
         )))
-        let servers = try #require(nest.servers)
-        #expect(servers.count == 2)
+        let githubInfo = try #require(nest.servers?.github)
+        #expect(githubInfo.count == 2)
 
-        let githubServer = try #require(servers["github.com"])
+        let githubServer = try #require(githubInfo.first { $0.host == "github.com" })
         #expect(githubServer.tokenEnvironmentVariable == "GH_TOKEN")
 
-        let gheServer = try #require(servers["my-ghe.example.com"])
+        let gheServer = try #require(githubInfo.first { $0.host == "my-ghe.example.com" })
         #expect(gheServer.tokenEnvironmentVariable == "MY_GHE_TOKEN")
     }
 }

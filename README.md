@@ -89,7 +89,7 @@ targets:
     checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
 servers:
   github:
-    my-github-enterprise.example.com:
+    - host: my-github-enterprise.example.com
       tokenEnvironmentVariable: "MY_GHE_TOKEN"
 ```
 
@@ -131,9 +131,9 @@ nest will automatically resolve the environment variables to fetch from each ser
 ```yaml
 servers:
   github:
-    github.com:
+    - host: github.com
       tokenEnvironmentVariable: "MY_GH_TOKEN"
-    my-github-enterprise.example.com:
+    - host: my-github-enterprise.example.com
       tokenEnvironmentVariable: "MY_GHE_TOKEN"
 ```
 

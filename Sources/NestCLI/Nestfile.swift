@@ -5,7 +5,7 @@ import Yams
 public struct Nestfile: Codable, Sendable {
     public var nestPath: String?
     public var targets: [Target]
-    public var servers: [GitHubHost: GitHubServerConfig]?
+    public var servers: ServerConfigs?
 
     public init(nestPath: String?, targets: [Target]) {
         self.nestPath = nestPath
@@ -106,9 +106,13 @@ public struct Nestfile: Codable, Sendable {
         }
     }
 
-    public typealias GitHubHost = String
-    public struct GitHubServerConfig: Codable, Equatable, Sendable {
-        public var tokenEnvironmentVariable: String
+    public struct ServerConfigs: Codable, Sendable {
+        public var github: [GitHubInfo]
+
+        public struct GitHubInfo: Codable, Sendable {
+            public var host: String
+            public var tokenEnvironmentVariable: String
+        }
     }
 }
 
@@ -126,8 +130,9 @@ extension Nestfile {
     }
 }
 
-extension Nestfile {
-    public var serverTokenEnvironmentVariableNames: [GitHubHost: String] {
-        servers?.reduce(into: [:]) { $0[$1.key] = $1.value.tokenEnvironmentVariable } ?? [:]
+extension Nestfile.ServerConfigs {
+    public typealias GitHubHost = String
+    public var githubServerTokenEnvironmentVariableNames: [GitHubHost: String] {
+        github.reduce(into: [:]) { $0[$1.host] = $1.tokenEnvironmentVariable }
     }
 }
