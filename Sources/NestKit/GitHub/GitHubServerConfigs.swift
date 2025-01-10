@@ -70,12 +70,26 @@ public struct GitHubServerConfigs: Sendable {
     /// - Parameters environmentVariables A container of environment variables.
     /// - Returns A config for the host.
     func config(for url: URL, environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> Config? {
-        let defaultEnvironmentVariableName = "GH_TOKEN"
-        if let hostString = url.host(), let configuredToken = servers[Host(hostString)] {
-            return configuredToken
-        } else if let defaultToken = environmentVariables[defaultEnvironmentVariableName] {
-            return Config(environmentVariable: defaultEnvironmentVariableName, token: defaultToken)
+        guard let hostString = url.host() else {
+            return nil
         }
-        return nil
+        let host = Host(hostString)
+        switch host {
+        case .githubCom:
+            return servers[host] ?? Config(environmentVariableName: "GH_TOKEN", environmentVariablesStorage: environmentVariables)
+        case .custom:
+            return servers[host] ?? Config(environmentVariableName: "GHE_TOKEN", environmentVariablesStorage: environmentVariables)
+        }
+    }
+}
+
+extension GitHubServerConfigs.Config {
+    fileprivate init?(environmentVariableName: String, environmentVariablesStorage: some EnvironmentVariableStorage) {
+        if let environmentVariableValue = environmentVariablesStorage[environmentVariableName] {
+            self.environmentVariable = environmentVariableName
+            self.token = environmentVariableValue
+        } else {
+            return nil
+        }   
     }
 }

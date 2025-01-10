@@ -40,10 +40,10 @@ struct GitHubServerConfigsTests {
             ["github.com": nil]
         ),
         .init(
-            "Can resolve any GitHub server tokens from `GH_TOKEN`",
+            "Can resolve any GitHub server tokens from `GHE_TOKEN`",
             [:],
-            ["GH_TOKEN": "default-token"],
-            ["github.com": "default-token", "ghe.example.com": "default-token"]
+            ["GHE_TOKEN": "default-enterprise-token"],
+            ["github.com": nil, "ghe.example.com": "default-enterprise-token"]
         ),
         .init(
             "Can overwrite GitHub.com token by the configuration",

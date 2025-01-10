@@ -68,8 +68,4 @@ extension ProcessInfo {
     var nestPath: String? {
         environment["NEST_PATH"]
     }
-
-    fileprivate var ghToken: String? {
-        environment["GH_TOKEN"]
-    }
 }
