@@ -78,7 +78,7 @@ struct GitHubRepositoryClientTests {
                 "github.com": "GITHUB_COM_TOKEN",
                 "known-server.example.com": "KNOWN_SERVER_TOKEN",
             ],
-            environmentVariables: environmentVariables
+            environmentVariablesStorage: environmentVariables
         )
         let gitHubRepositoryClient: GitHubRepositoryClient = GitHubRepositoryClient(
             httpClient: httpClient,

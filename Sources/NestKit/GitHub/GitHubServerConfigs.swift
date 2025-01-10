@@ -39,19 +39,22 @@ public struct GitHubServerConfigs: Sendable {
         var token: String
     }
 
+    public typealias GitHubServerHostName = String
+    public typealias EnvironmentVariableName = String
+
     /// Resolve server configurations from environment variable names.
     /// If GH_TOKEN environment variable is set, the token for GitHub.com will be that.
     /// If other values are set on environmentVariableNames, the value will be overwritten.
     /// - Parameters environmentVariableNames A dictionary of environment variable names with hostname as key.
-    /// - Parameters environmentVariables A container of environment variables.
+    /// - Parameters environmentVariablesStorage A container of environment variables.
     /// - Returns A new server configuration.
     public static func resolve(
-        environmentVariableNames: [String: String],
-        environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
+        environmentVariableNames: [GitHubServerHostName: EnvironmentVariableName],
+        environmentVariablesStorage: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
     ) -> GitHubServerConfigs {
         let loadedConfigs: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (servers, pair) in
             let (host, environmentVariableName) = pair
-            if let token = environmentVariables[environmentVariableName] {
+            if let token = environmentVariablesStorage[environmentVariableName] {
                 let host = Host(host)
                 servers[host] = Config(environmentVariable: environmentVariableName, token: token)
             }
@@ -67,18 +70,18 @@ public struct GitHubServerConfigs: Sendable {
 
     /// Get the server configuration for URL. It will be resolved from its host.
     /// - Parameters url An URL.
-    /// - Parameters environmentVariables A container of environment variables.
+    /// - Parameters environmentVariablesStorage A container of environment variables.
     /// - Returns A config for the host.
-    func config(for url: URL, environmentVariables: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> Config? {
+    func config(for url: URL, environmentVariablesStorage: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> Config? {
         guard let hostString = url.host() else {
             return nil
         }
         let host = Host(hostString)
         switch host {
         case .githubCom:
-            return servers[host] ?? Config(environmentVariableName: "GH_TOKEN", environmentVariablesStorage: environmentVariables)
+            return servers[host] ?? Config(environmentVariableName: "GH_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
         case .custom:
-            return servers[host] ?? Config(environmentVariableName: "GHE_TOKEN", environmentVariablesStorage: environmentVariables)
+            return servers[host] ?? Config(environmentVariableName: "GHE_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
         }
     }
 }

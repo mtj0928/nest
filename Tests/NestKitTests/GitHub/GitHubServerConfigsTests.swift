@@ -58,11 +58,11 @@ struct GitHubServerConfigsTests {
         let environmentVariables = TestingEnvironmentVariables(environmentVariables: fixture.environmentVariables)
         let configs = GitHubServerConfigs.resolve(
             environmentVariableNames: fixture.serverTokenEnvironmentVariableNames,
-            environmentVariables: environmentVariables
+            environmentVariablesStorage: environmentVariables
         )
         for (host, expectedToken) in fixture.expectedTokens {
             let url = try #require(makeURL(from: host))
-            let resolvedToken = configs.config(for: url, environmentVariables: environmentVariables)?.token
+            let resolvedToken = configs.config(for: url, environmentVariablesStorage: environmentVariables)?.token
             #expect(resolvedToken == expectedToken, "\(fixture.testDescription)", sourceLocation: fixture.sourceLocation)
         }
     }
