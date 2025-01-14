@@ -41,7 +41,7 @@ struct NestfileControllerTests {
         ]
 
         let controller = NestfileController(
-            repositoryClientBuilder: GitRepositoryClientBuilder(
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: httpClient,
                 authToken: nil,
                 logger: Logger(label: "Test")
@@ -93,7 +93,7 @@ struct NestfileControllerTests {
         ]
 
         let controller = NestfileController(
-            repositoryClientBuilder: GitRepositoryClientBuilder(
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: httpClient,
                 authToken: nil,
                 logger: Logger(label: "Test")

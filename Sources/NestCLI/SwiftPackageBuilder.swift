@@ -7,7 +7,7 @@ public struct SwiftPackageBuilder {
     private let executorBuilder: any ProcessExecutorBuilder
     private let fileSystem: any FileSystem
     private let nestInfoController: NestInfoController
-    private let repositoryClientBuilder: GitRepositoryClientBuilder
+    private let assetRegistryClientBuilder: AssetRegistryClientBuilder
     private let logger: Logger
 
     public init(
@@ -15,14 +15,14 @@ public struct SwiftPackageBuilder {
         executorBuilder: any ProcessExecutorBuilder,
         fileSystem: some FileSystem,
         nestInfoController: NestInfoController,
-        repositoryClientBuilder: GitRepositoryClientBuilder,
+        assetRegistryClientBuilder: AssetRegistryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
         self.executorBuilder = executorBuilder
         self.fileSystem = fileSystem
         self.nestInfoController = nestInfoController
-        self.repositoryClientBuilder = repositoryClientBuilder
+        self.assetRegistryClientBuilder = assetRegistryClientBuilder
         self.logger = logger
     }
 
@@ -74,8 +74,8 @@ public struct SwiftPackageBuilder {
     private func resolveTagOrVersion(gitURL: GitURL, version: GitVersion) async throws -> String? {
         switch (gitURL, version) {
         case (.url(let url), .latestRelease):
-            let repositoryClient = repositoryClientBuilder.build(for: url)
-            return try? await repositoryClient.fetchAssets(repositoryURL: url, version: .latestRelease).tagName
+            let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
+            return try? await assetRegistryClient.fetchAssets(repositoryURL: url, version: .latestRelease).tagName
 
         case (.ssh, .latestRelease):
             return nil

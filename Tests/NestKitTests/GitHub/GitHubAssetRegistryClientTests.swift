@@ -4,7 +4,7 @@ import Foundation
 import HTTPTypes
 import Testing
 
-struct GitHubRepositoryClientTests {
+struct GitHubAssetRegistryClientTests {
     let fileSystem = MockFileSystem(
         homeDirectoryForCurrentUser: URL(filePath: "/User"),
         temporaryDirectory: URL(filePath: "/tmp")
@@ -33,12 +33,12 @@ struct GitHubRepositoryClientTests {
             """
             return (json.data(using: .utf8)!, HTTPResponse(status: .ok))
         }
-        let gitHubRepositoryClient: GitHubRepositoryClient = GitHubRepositoryClient(
+        let gitHubAssetRegistryClient = GitHubAssetRegistryClient(
             httpClient: httpClient,
             authToken: nil,
             logger: .init(label: "Test")
         )
-        let assets = try await gitHubRepositoryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
+        let assets = try await gitHubAssetRegistryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
         #expect(assets.assets == [Asset(fileName: "foo.zip", url: assetURL)])
     }
 }
