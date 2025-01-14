@@ -1,6 +1,13 @@
 import Foundation
 
+/// A client that fetches information of assets which may contain an artifact bundle.
 public protocol AssetRegistryClient: Sendable {
+
+    /// Fetches information of assets in the repository which may contain an artifact bundle corresponding to the version
+    /// - Parameters:
+    ///   - repositoryURL: A url of a repository.
+    ///   - version: A version of asset you want.
+    /// - Returns: An asset information.
     func fetchAssets(repositoryURL: URL, version: GitVersion) async throws -> AssetInformation
 }
 
@@ -15,7 +22,10 @@ public struct AssetInformation: Sendable {
 }
 
 public struct Asset: Sendable, Equatable {
+    /// A file name of this asset.
     public var fileName: String
+
+    /// A url indicating a place of this asset.
     public var url: URL
 
     public init(fileName: String, url: URL) {
