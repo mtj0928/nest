@@ -17,7 +17,7 @@ public struct AssetRegistryClientBuilder: Sendable {
     /// > Note: This function currently supports only GitHub.
     public func build(for url: GitURL) -> any AssetRegistryClient {
         // Only GitHub is supported now.
-        GitHubRepositoryClient(httpClient: httpClient, authToken: authToken, logger: logger)
+        GitHubAssetRegistryClient(httpClient: httpClient, authToken: authToken, logger: logger)
     }
 
     /// Build AssetRegistryClient based on the given url.

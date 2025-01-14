@@ -3,7 +3,7 @@ import HTTPTypes
 import HTTPTypesFoundation
 import Logging
 
-public struct GitHubRepositoryClient: AssetRegistryClient {
+public struct GitHubAssetRegistryClient: AssetRegistryClient {
     private let httpClient: any HTTPClient
     private let authToken: String?
     private let logger: Logger
