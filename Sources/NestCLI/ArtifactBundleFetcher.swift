@@ -8,7 +8,7 @@ public struct ArtifactBundleFetcher {
     private let fileSystem: any FileSystem
     private let fileDownloader: any FileDownloader
     private let nestInfoController: NestInfoController
-    private let repositoryClientBuilder: GitRepositoryClientBuilder
+    private let assetRegistryClientBuilder: AssetRegistryClientBuilder
     private let checksumCalculator: any ChecksumCalculator
     private let tripleDetector: TripleDetector
     private let logger: Logger
@@ -19,7 +19,7 @@ public struct ArtifactBundleFetcher {
         fileSystem: some FileSystem,
         fileDownloader: some FileDownloader,
         nestInfoController: NestInfoController,
-        repositoryClientBuilder: GitRepositoryClientBuilder,
+        assetRegistryClientBuilder: AssetRegistryClientBuilder,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
@@ -27,7 +27,7 @@ public struct ArtifactBundleFetcher {
         self.fileSystem = fileSystem
         self.fileDownloader = fileDownloader
         self.nestInfoController = nestInfoController
-        self.repositoryClientBuilder = repositoryClientBuilder
+        self.assetRegistryClientBuilder = assetRegistryClientBuilder
         self.checksumCalculator = SwiftChecksumCalculator(swift: SwiftCommand(executor: executorBuilder.build()))
         self.tripleDetector = TripleDetector(swiftCommand: SwiftCommand(executor: executorBuilder.build()))
         self.logger = logger
@@ -119,8 +119,8 @@ public struct ArtifactBundleFetcher {
             return asset
         }
 
-        let repositoryClient = repositoryClientBuilder.build(for: url)
-        let assetInfo = try await repositoryClient.fetchAssets(repositoryURL: url, version: version)
+        let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
+        let assetInfo = try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
         // Choose an asset which may be an artifact bundle.
         guard let selectedAsset = ArtifactBundleAssetSelector().selectArtifactBundle(
             from: assetInfo.assets,

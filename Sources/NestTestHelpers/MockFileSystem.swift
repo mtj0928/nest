@@ -29,44 +29,52 @@ public final class MockFileSystem: FileSystem, Sendable {
         withIntermediateDirectories createIntermediates: Bool,
         attributes: [FileAttributeKey: Any]?
     ) throws {
-        if createIntermediates {
-            let components = url.pathComponents
-            var currentComponents: [String] = []
-            for component in components {
-                currentComponents.append(component)
-                if item.item(components: currentComponents) != nil {
-                    continue
+        lockedItem.withLock { item in
+            if createIntermediates {
+                let components = url.pathComponents
+                var currentComponents: [String] = []
+                for component in components {
+                    currentComponents.append(component)
+                    if item.item(components: currentComponents) != nil {
+                        continue
+                    }
+                    item.update(item: .directory(children: [:]), at: currentComponents)
                 }
-                item.update(item: .directory(children: [:]), at: currentComponents)
+            } else {
+                item.update(item: .directory(children: [:]), at: url.pathComponents)
             }
-        } else {
-            item.update(item: .directory(children: [:]), at: url.pathComponents)
         }
     }
 
     public func contentsOfDirectory(atPath path: String) throws -> [String] {
-        let originalURL = URL(fileURLWithPath: path)
-        let url = symbolicLink[originalURL] ?? originalURL
+        try lockedItem.withLock { item in
+            let originalURL = URL(fileURLWithPath: path)
+            let url = symbolicLink[originalURL] ?? originalURL
 
-        guard case .directory(let children) = item.item(components: url.pathComponents) else {
-            throw MockFileSystemError.fileNotFound
+            guard case .directory(let children) = item.item(components: url.pathComponents) else {
+                throw MockFileSystemError.fileNotFound
+            }
+            return children.keys.map { $0 }
         }
-        return children.keys.map { $0 }
     }
 
     public func removeItem(at originalURL: URL) throws {
-        let url = symbolicLink[originalURL] ?? originalURL
-        item.remove(at: url.pathComponents)
-        symbolicLink.removeValue(forKey: originalURL)
+        lockedItem.withLock { item in
+            let url = symbolicLink[originalURL] ?? originalURL
+            item.remove(at: url.pathComponents)
+            symbolicLink.removeValue(forKey: originalURL)
+        }
     }
 
     public func copyItem(at srcURL: URL, to dstURL: URL) throws {
-        let srcURL = symbolicLink[srcURL] ?? srcURL
-        let dstURL = symbolicLink[dstURL] ?? dstURL
-        guard let item = item.item(components: srcURL.pathComponents) else {
-            throw MockFileSystemError.fileNotFound
+        try lockedItem.withLock { item in
+            let srcURL = self.symbolicLink[srcURL] ?? srcURL
+            let dstURL = self.symbolicLink[dstURL] ?? dstURL
+            guard let sourceItem = item.item(components: srcURL.pathComponents) else {
+                throw MockFileSystemError.fileNotFound
+            }
+            item.update(item: sourceItem, at: dstURL.pathComponents)
         }
-        self.item.update(item: item, at: dstURL.pathComponents)
     }
 
     public func createSymbolicLink(at url: URL, withDestinationURL destURL: URL) throws {
@@ -81,10 +89,12 @@ public final class MockFileSystem: FileSystem, Sendable {
     }
 
     public func fileExists(atPath path: String) -> Bool {
-        let originalURL = URL(filePath: path)
-        let url = symbolicLink[originalURL] ?? originalURL
-        let components = url.pathComponents
-        return item.item(components: components) != nil
+        lockedItem.withLock { item in
+            let originalURL = URL(filePath: path)
+            let url = symbolicLink[originalURL] ?? originalURL
+            let components = url.pathComponents
+            return item.item(components: components) != nil
+        }
     }
 
     public func unzip(
@@ -122,17 +132,21 @@ public final class MockFileSystem: FileSystem, Sendable {
     }
 
     public func data(at url: URL) throws -> Data {
-        let url = symbolicLink[url] ?? url
-        let components = url.pathComponents
-        switch item.item(components: components) {
-        case .file(let data): return data
-        default: throw MockFileSystemError.fileNotFound
+        try lockedItem.withLock { item in
+            let url = symbolicLink[url] ?? url
+            let components = url.pathComponents
+            switch item.item(components: components) {
+            case .file(let data): return data
+            default: throw MockFileSystemError.fileNotFound
+            }
         }
     }
 
     public func write(_ data: Data, to url: URL) throws {
-        let components = url.pathComponents
-        item.update(item: .file(data: data), at: components)
+        lockedItem.withLock { item in
+            let components = url.pathComponents
+            item.update(item: .file(data: data), at: components)
+        }
     }
 }
 

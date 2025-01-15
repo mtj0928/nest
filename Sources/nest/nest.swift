@@ -39,7 +39,7 @@ extension Configuration {
 
         let serverConfigs = GitHubServerConfigs.resolve(environmentVariableNames: serverTokenEnvironmentVariableNames)
 
-        let gitRepositoryClientBuilder = GitRepositoryClientBuilder(
+        let assetRegistryClientBuilder = AssetRegistryClientBuilder(
             httpClient: httpClient,
             serverConfigs: serverConfigs,
             logger: logger
@@ -50,7 +50,7 @@ extension Configuration {
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
-            gitRepositoryClientBuilder: gitRepositoryClientBuilder,
+            assetRegistryClientBuilder: assetRegistryClientBuilder,
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
