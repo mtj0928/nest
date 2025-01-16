@@ -6,6 +6,7 @@ public struct Configuration: Sendable {
     public var fileSystem: any FileSystem
     public var fileDownloader: any FileDownloader
     public var workingDirectory: URL
+    public var assetRegistryClientBuilder: AssetRegistryClientBuilder
     public var nestDirectory: NestDirectory
     public var artifactBundleManager: ArtifactBundleManager
     public var logger: Logger
@@ -15,6 +16,7 @@ public struct Configuration: Sendable {
         fileSystem: any FileSystem,
         fileDownloader: some FileDownloader,
         workingDirectory: URL,
+        assetRegistryClientBuilder: AssetRegistryClientBuilder,
         nestDirectory: NestDirectory,
         artifactBundleManager: ArtifactBundleManager,
         logger: Logger
@@ -23,6 +25,7 @@ public struct Configuration: Sendable {
         self.fileSystem = fileSystem
         self.fileDownloader = fileDownloader
         self.workingDirectory = workingDirectory
+        self.assetRegistryClientBuilder = assetRegistryClientBuilder
         self.nestDirectory = nestDirectory
         self.artifactBundleManager = artifactBundleManager
         self.logger = logger

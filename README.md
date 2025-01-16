@@ -87,6 +87,10 @@ targets:
   # Example 2 Specify zip URL directly
   - zipURL: https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
     checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
+registries:
+  github:
+    - host: my-github-enterprise.example.com
+      tokenEnvironmentVariable: "MY_GHE_TOKEN"
 ```
 
 Finally run `bootstrap` command. The command installs all artifact bundles in the nestfile at once.
@@ -109,6 +113,31 @@ $ nest update-nestfile nestfile.yaml
 `nest` stores artifacts at `~/.nest` as a default. 
 If you want change the directory,
 please update `$NEST_PATH` or specify `nestPath` in a configuration file (only `bootstrap`).
+
+## Use GitHub API token to fetch Artifact Bundles
+
+Fetching releases sometimes fails due to API limit, so we recommended to pass a GitHub API token.
+
+### Use `GH_TOKEN` environment variable
+
+The simplest way is the passing `GH_TOKEN` or `GHE_TOKEN` environment variable. nest uses the token for GitHub.com or any other GitHub Enterprise servers.
+
+### Use `registries` in Nestfile
+
+If you want to use a token for GitHub Enterprise, you can specify the names of environment variables in the `registries` section in the Nestfile.
+
+nest will automatically resolve the environment variables to fetch from each server.
+
+```yaml
+registries:
+  github:
+    - host: github.com
+      tokenEnvironmentVariable: "MY_GH_TOKEN"
+    - host: my-github-enterprise.example.com
+      tokenEnvironmentVariable: "MY_GHE_TOKEN"
+```
+
+If the value is not set, uses `GH_TOKEN` instead if available.
 
 ## Why is the name `nest`?
 A nest is place where Swift birds store their crafts.

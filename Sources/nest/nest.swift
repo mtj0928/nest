@@ -1,6 +1,7 @@
 import ArgumentParser
 import Foundation
 import NestKit
+import NestCLI
 import Logging
 
 @main
@@ -23,6 +24,7 @@ struct Nest: AsyncParsableCommand {
 extension Configuration {
     static func make(
         nestPath: String?,
+        registryTokenEnvironmentVariableNames: [Nestfile.RegistryConfigs.GitHubHost: String] = [:],
         logLevel: Logger.Level,
         httpClient: some HTTPClient = URLSession.shared,
         fileSystem: some FileSystem = FileManager.default
@@ -35,11 +37,20 @@ extension Configuration {
         logger.logLevel = logLevel
         logger.debug("NEST_PATH: \(nestDirectory.rootDirectory.path()).")
 
+        let githubRegistryConfigs = GitHubRegistryConfigs.resolve(environmentVariableNames: registryTokenEnvironmentVariableNames)
+
+        let assetRegistryClientBuilder = AssetRegistryClientBuilder(
+            httpClient: httpClient,
+            registryConfigs: RegistryConfigs(github: githubRegistryConfigs),
+            logger: logger
+        )
+
         return Configuration(
             httpClient: httpClient,
             fileSystem: fileSystem,
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
+            assetRegistryClientBuilder: assetRegistryClientBuilder,
             nestDirectory: nestDirectory,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
@@ -56,9 +67,5 @@ extension FileSystem {
 extension ProcessInfo {
     var nestPath: String? {
         environment["NEST_PATH"]
-    }
-
-    var ghToken: String? {
-        environment["GH_TOKEN"]
     }
 }

@@ -21,7 +21,7 @@ struct BootstrapCommand: AsyncParsableCommand {
 
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
-        let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestPath: nestfile.nestPath)
+        let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestfile: nestfile)
 
         if nestfile.targets.contains(where: { $0.isDeprecatedZIP }) {
             logger.warning("""
@@ -133,14 +133,15 @@ extension Nestfile.Target {
 }
 
 extension BootstrapCommand {
-    private func setUp(nestPath: String?) -> (
+    private func setUp(nestfile: Nestfile) -> (
         ExecutableBinaryPreparer,
         ArtifactBundleManager,
         Logger
     ) {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
-            nestPath: nestPath ?? ProcessInfo.processInfo.nestPath,
+            nestPath: nestfile.nestPath ?? ProcessInfo.processInfo.nestPath,
+            registryTokenEnvironmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:],
             logLevel: verbose ? .trace : .info
         )
 

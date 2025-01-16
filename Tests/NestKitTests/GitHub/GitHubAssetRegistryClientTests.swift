@@ -35,11 +35,57 @@ struct GitHubAssetRegistryClientTests {
         }
         let gitHubAssetRegistryClient = GitHubAssetRegistryClient(
             httpClient: httpClient,
-            authToken: nil,
+            registryConfigs: nil,
             logger: .init(label: "Test")
         )
         let assets = try await gitHubAssetRegistryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
         #expect(assets.assets == [Asset(fileName: "foo.zip", url: assetURL)])
+    }
+
+    @Test(arguments: [
+        ("https://github.com/owner/repo", "github-com-token"),
+        ("https://known-server.example.com/owner/repo", "known-token"),
+        ("https://unknown-server.example.com/owner/repo", nil),
+    ])
+    func fetchAssetsCanReceiveValidAuthorization(repositoryURLString: String, expectedAuthorization: String?) async throws {
+        let repositoryURL = try #require(URL(string: repositoryURLString))
+        let assetURL = try #require(URL(string: "https://example.com/foo.zip"))
+        let httpClient = GitHubMockHTTPClient(fileSystem: fileSystem) { request in
+            if let expectedAuthorization {
+                #expect(request.headerFields[.authorization] == "Bearer \(expectedAuthorization)")
+            } else {
+                #expect(request.headerFields[.authorization] == nil)
+            }
+            let json = """
+            {
+                "tag_name": "1.2.3",
+                "assets": [
+                    {
+                        "name": "foo.zip",
+                        "browser_download_url": "\(assetURL.absoluteString)"
+                    }
+                ]
+            }
+            """
+            return (json.data(using: .utf8)!, HTTPResponse(status: .ok))
+        }
+        let environmentVariables = TestingEnvironmentVariables(environmentVariables: [
+            "GITHUB_COM_TOKEN": "github-com-token",
+            "KNOWN_SERVER_TOKEN": "known-token",
+        ])
+        let registryConfigs = GitHubRegistryConfigs.resolve(
+            environmentVariableNames: [
+                "github.com": "GITHUB_COM_TOKEN",
+                "known-server.example.com": "KNOWN_SERVER_TOKEN",
+            ],
+            environmentVariablesStorage: environmentVariables
+        )
+        let githubRegistryClient: AssetRegistryClient = GitHubAssetRegistryClient(
+            httpClient: httpClient,
+            registryConfigs: registryConfigs,
+            logger: .init(label: "Test")
+        )
+        let _ = try await githubRegistryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
     }
 }
 

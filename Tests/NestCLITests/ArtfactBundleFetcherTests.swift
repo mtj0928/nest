@@ -45,7 +45,7 @@ struct ArtfactBundleFetcherTests {
             fileSystem: fileSystem,
             fileDownloader: fileDownloader,
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
-            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, authToken: nil, logger: logger),
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: logger),
             logger: logger
         )
         let result = try await fetcher.downloadArtifactBundle(url: zipURL, checksum: .skip)
@@ -86,7 +86,7 @@ struct ArtfactBundleFetcherTests {
             fileSystem: fileSystem,
             fileDownloader: fileDownloader,
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
-            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, authToken: nil, logger: logger),
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: logger),
             logger: logger
         )
         let gitRepositoryURL = try #require(URL(string: "https://github.com/owner/repo"))

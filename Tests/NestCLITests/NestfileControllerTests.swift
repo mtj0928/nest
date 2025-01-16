@@ -43,7 +43,7 @@ struct NestfileControllerTests {
         let controller = NestfileController(
             assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: httpClient,
-                authToken: nil,
+                registryConfigs: nil,
                 logger: Logger(label: "Test")
             ),
             fileSystem: fileSystem,
@@ -95,7 +95,7 @@ struct NestfileControllerTests {
         let controller = NestfileController(
             assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: httpClient,
-                authToken: nil,
+                registryConfigs: nil,
                 logger: Logger(label: "Test")
             ),
             fileSystem: fileSystem,

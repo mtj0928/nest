@@ -31,12 +31,13 @@ extension ResolveNestfileCommand {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
             nestPath: nestfile.nestPath ?? ProcessInfo.processInfo.nestPath,
+            registryTokenEnvironmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:],
             logLevel: verbose ? .trace : .info
         )
         let controller = NestfileController(
             assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: configuration.httpClient,
-                authToken: ProcessInfo.processInfo.ghToken,
+                registryConfigs: RegistryConfigs(github: GitHubRegistryConfigs.resolve(environmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:])),
                 logger: configuration.logger
             ),
             fileSystem: configuration.fileSystem,
