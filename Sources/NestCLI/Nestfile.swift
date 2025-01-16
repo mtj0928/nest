@@ -5,7 +5,7 @@ import Yams
 public struct Nestfile: Codable, Sendable {
     public var nestPath: String?
     public var targets: [Target]
-    public var servers: ServerConfigs?
+    public var registries: ServerConfigs?
 
     public init(nestPath: String?, targets: [Target]) {
         self.nestPath = nestPath

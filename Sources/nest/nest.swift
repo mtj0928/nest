@@ -24,7 +24,7 @@ struct Nest: AsyncParsableCommand {
 extension Configuration {
     static func make(
         nestPath: String?,
-        serverTokenEnvironmentVariableNames: [Nestfile.ServerConfigs.GitHubHost: String] = [:],
+        registryTokenEnvironmentVariableNames: [Nestfile.ServerConfigs.GitHubHost: String] = [:],
         logLevel: Logger.Level,
         httpClient: some HTTPClient = URLSession.shared,
         fileSystem: some FileSystem = FileManager.default
@@ -37,7 +37,7 @@ extension Configuration {
         logger.logLevel = logLevel
         logger.debug("NEST_PATH: \(nestDirectory.rootDirectory.path()).")
 
-        let serverConfigs = GitHubServerConfigs.resolve(environmentVariableNames: serverTokenEnvironmentVariableNames)
+        let serverConfigs = GitHubServerConfigs.resolve(environmentVariableNames: registryTokenEnvironmentVariableNames)
 
         let assetRegistryClientBuilder = AssetRegistryClientBuilder(
             httpClient: httpClient,

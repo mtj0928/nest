@@ -87,7 +87,7 @@ targets:
   # Example 2 Specify zip URL directly
   - zipURL: https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
     checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # (Optional) This is recommended to add it.
-servers:
+registries:
   github:
     - host: my-github-enterprise.example.com
       tokenEnvironmentVariable: "MY_GHE_TOKEN"
@@ -122,14 +122,14 @@ Fetching releases sometimes fails due to API limit, so we recommended to pass a 
 
 The simplest way is the passing `GH_TOKEN` or `GHE_TOKEN` environment variable. nest uses the token for GitHub.com or any other GitHub Enterprise servers.
 
-### Use `servers` in Nestfile
+### Use `registries` in Nestfile
 
-If you want to use a token for GitHub Enterprise, you can specify the names of environment variables in the `servers` section in the Nestfile.
+If you want to use a token for GitHub Enterprise, you can specify the names of environment variables in the `registries` section in the Nestfile.
 
 nest will automatically resolve the environment variables to fetch from each server.
 
 ```yaml
-servers:
+registries:
   github:
     - host: github.com
       tokenEnvironmentVariable: "MY_GH_TOKEN"

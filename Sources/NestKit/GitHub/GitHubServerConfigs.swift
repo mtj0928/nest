@@ -52,20 +52,20 @@ public struct GitHubServerConfigs: Sendable {
         environmentVariableNames: [GitHubServerHostName: EnvironmentVariableName],
         environmentVariablesStorage: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
     ) -> GitHubServerConfigs {
-        let loadedConfigs: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (servers, pair) in
+        let loadedConfigs: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (registries, pair) in
             let (host, environmentVariableName) = pair
             if let token = environmentVariablesStorage[environmentVariableName] {
                 let host = Host(host)
-                servers[host] = Config(environmentVariable: environmentVariableName, token: token)
+                registries[host] = Config(environmentVariable: environmentVariableName, token: token)
             }
         }
-        return .init(servers: loadedConfigs)
+        return .init(registries: loadedConfigs)
     }
 
-    private var servers: [Host: Config]
+    private var registries: [Host: Config]
 
-    private init(servers: [Host: Config]) {
-        self.servers = servers
+    private init(registries: [Host: Config]) {
+        self.registries = registries
     }
 
     /// Get the server configuration for URL. It will be resolved from its host.
@@ -79,9 +79,9 @@ public struct GitHubServerConfigs: Sendable {
         let host = Host(hostString)
         switch host {
         case .githubCom:
-            return servers[host] ?? Config(environmentVariableName: "GH_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
+            return registries[host] ?? Config(environmentVariableName: "GH_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
         case .custom:
-            return servers[host] ?? Config(environmentVariableName: "GHE_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
+            return registries[host] ?? Config(environmentVariableName: "GHE_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
         }
     }
 }

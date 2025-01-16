@@ -6,14 +6,14 @@ import Testing
 struct GitHubServerConfigsTests {
     struct Fixture: CustomTestStringConvertible {
         let testDescription: String
-        let serverTokenEnvironmentVariableNames: [String: String]
+        let registryTokenEnvironmentVariableNames: [String: String]
         let environmentVariables: [String: String?]
         let expectedTokens: [String: String?]
         let sourceLocation: SourceLocation
 
-        init(_ testDescription: String, _ serverTokenEnvironmentVariableNames: [String : String], _ environmentVariables: [String : String?], _ expectedTokens: [String : String?], sourceLocation: SourceLocation = #_sourceLocation) {
+        init(_ testDescription: String, _ registryTokenEnvironmentVariableNames: [String : String], _ environmentVariables: [String : String?], _ expectedTokens: [String : String?], sourceLocation: SourceLocation = #_sourceLocation) {
             self.testDescription = testDescription
-            self.serverTokenEnvironmentVariableNames = serverTokenEnvironmentVariableNames
+            self.registryTokenEnvironmentVariableNames = registryTokenEnvironmentVariableNames
             self.environmentVariables = environmentVariables
             self.expectedTokens = expectedTokens
             self.sourceLocation = sourceLocation
@@ -40,7 +40,7 @@ struct GitHubServerConfigsTests {
             ["github.com": nil]
         ),
         .init(
-            "Can resolve any GitHub server tokens from `GHE_TOKEN`",
+            "Can resolve any GitHub registry tokens from `GHE_TOKEN`",
             [:],
             ["GHE_TOKEN": "default-enterprise-token"],
             ["github.com": nil, "ghe.example.com": "default-enterprise-token"]
@@ -57,7 +57,7 @@ struct GitHubServerConfigsTests {
     func resolve(fixture: Fixture) async throws {
         let environmentVariables = TestingEnvironmentVariables(environmentVariables: fixture.environmentVariables)
         let configs = GitHubServerConfigs.resolve(
-            environmentVariableNames: fixture.serverTokenEnvironmentVariableNames,
+            environmentVariableNames: fixture.registryTokenEnvironmentVariableNames,
             environmentVariablesStorage: environmentVariables
         )
         for (host, expectedToken) in fixture.expectedTokens {

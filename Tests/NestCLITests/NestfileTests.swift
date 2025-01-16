@@ -39,7 +39,7 @@ struct NestfileTests {
         #expect(nest.targets[1] == .deprecatedZIP(Nestfile.DeprecatedZIPURL(
             url: "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
         )))
-        #expect(nest.servers == nil)
+        #expect(nest.registries == nil)
     }
 
     @Test
@@ -51,7 +51,7 @@ struct NestfileTests {
             version: 0.1.0
             assetName: nest-macos.artifactbundle.zip
           - https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
-        servers:
+        registries:
           github:
             - host: github.com
               tokenEnvironmentVariable: "GH_TOKEN"
@@ -78,7 +78,7 @@ struct NestfileTests {
         #expect(nest.targets[1] == .deprecatedZIP(Nestfile.DeprecatedZIPURL(
             url: "https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip"
         )))
-        let githubInfo = try #require(nest.servers?.github)
+        let githubInfo = try #require(nest.registries?.github)
         #expect(githubInfo.count == 2)
 
         let githubServer = try #require(githubInfo.first { $0.host == "github.com" })
