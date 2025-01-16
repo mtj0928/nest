@@ -119,7 +119,7 @@ public struct Nestfile: Codable, Sendable {
             }
         }
 
-        init(github: [GitHubInfo]) {
+        public init(github: [GitHubInfo]) {
             self.github = github
         }
     }
