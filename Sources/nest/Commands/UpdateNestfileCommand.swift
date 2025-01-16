@@ -37,7 +37,7 @@ extension UpdateNestfileCommand {
         let controller = NestfileController(
             assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: configuration.httpClient,
-                serverConfigs: .resolve(environmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:]),
+                registryConfigs: .resolve(environmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:]),
                 logger: configuration.logger
             ),
             fileSystem: configuration.fileSystem,

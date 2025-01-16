@@ -3,7 +3,7 @@ import Foundation
 import Testing
 
 @Suite
-struct GitHubServerConfigsTests {
+struct GitHubRegistryConfigsTests {
     struct Fixture: CustomTestStringConvertible {
         let testDescription: String
         let registryTokenEnvironmentVariableNames: [String: String]
@@ -56,7 +56,7 @@ struct GitHubServerConfigsTests {
     @Test(arguments: fixtures)
     func resolve(fixture: Fixture) async throws {
         let environmentVariables = TestingEnvironmentVariables(environmentVariables: fixture.environmentVariables)
-        let configs = GitHubServerConfigs.resolve(
+        let configs = GitHubRegistryConfigs.resolve(
             environmentVariableNames: fixture.registryTokenEnvironmentVariableNames,
             environmentVariablesStorage: environmentVariables
         )

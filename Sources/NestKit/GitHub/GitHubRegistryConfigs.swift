@@ -13,7 +13,7 @@ public struct SystemEnvironmentVariableStorage: EnvironmentVariableStorage {
 }
 
 /// A container of GitHub server configurations.
-public struct GitHubServerConfigs: Sendable {
+public struct GitHubRegistryConfigs: Sendable {
     /// An enum value to represent GitHub sever host.
     public enum Host: Hashable, Sendable {
         /// A value indicates github.com
@@ -51,7 +51,7 @@ public struct GitHubServerConfigs: Sendable {
     public static func resolve(
         environmentVariableNames: [GitHubServerHostName: EnvironmentVariableName],
         environmentVariablesStorage: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
-    ) -> GitHubServerConfigs {
+    ) -> GitHubRegistryConfigs {
         let loadedConfigs: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (registries, pair) in
             let (host, environmentVariableName) = pair
             if let token = environmentVariablesStorage[environmentVariableName] {
@@ -86,7 +86,7 @@ public struct GitHubServerConfigs: Sendable {
     }
 }
 
-extension GitHubServerConfigs.Config {
+extension GitHubRegistryConfigs.Config {
     fileprivate init?(environmentVariableName: String, environmentVariablesStorage: some EnvironmentVariableStorage) {
         if let environmentVariableValue = environmentVariablesStorage[environmentVariableName] {
             self.environmentVariable = environmentVariableName

@@ -5,12 +5,12 @@ import Logging
 
 public struct GitHubAssetRegistryClient: AssetRegistryClient {
     private let httpClient: any HTTPClient
-    private let serverConfigs: GitHubServerConfigs?
+    private let registryConfigs: GitHubRegistryConfigs?
     private let logger: Logger
 
-    public init(httpClient: some HTTPClient, serverConfigs: GitHubServerConfigs?, logger: Logger) {
+    public init(httpClient: some HTTPClient, registryConfigs: GitHubRegistryConfigs?, logger: Logger) {
         self.httpClient = httpClient
-        self.serverConfigs = serverConfigs
+        self.registryConfigs = registryConfigs
         self.logger = logger
     }
 
@@ -24,7 +24,7 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
         guard let repositoryHost = repositoryURL.host() else {
             fatalError("Unknown host")
         }
-        if let config = serverConfigs?.config(for: repositoryURL) {
+        if let config = registryConfigs?.config(for: repositoryURL) {
             logger.debug("GitHub token for \(repositoryHost) is passed from \(config.environmentVariable)")
             request.headerFields[.authorization] = "Bearer \(config.token)"
         } else {

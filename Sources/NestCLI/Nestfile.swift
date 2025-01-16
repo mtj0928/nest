@@ -5,7 +5,7 @@ import Yams
 public struct Nestfile: Codable, Sendable {
     public var nestPath: String?
     public var targets: [Target]
-    public var registries: ServerConfigs?
+    public var registries: RegistryConfigs?
 
     public init(nestPath: String?, targets: [Target]) {
         self.nestPath = nestPath
@@ -106,7 +106,7 @@ public struct Nestfile: Codable, Sendable {
         }
     }
 
-    public struct ServerConfigs: Codable, Sendable {
+    public struct RegistryConfigs: Codable, Sendable {
         public var github: [GitHubInfo]
 
         public struct GitHubInfo: Codable, Sendable {
@@ -130,7 +130,7 @@ extension Nestfile {
     }
 }
 
-extension Nestfile.ServerConfigs {
+extension Nestfile.RegistryConfigs {
     public typealias GitHubHost = String
     public var githubServerTokenEnvironmentVariableNames: [GitHubHost: String] {
         github.reduce(into: [:]) { $0[$1.host] = $1.tokenEnvironmentVariable }

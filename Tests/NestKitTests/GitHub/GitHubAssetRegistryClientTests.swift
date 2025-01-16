@@ -35,7 +35,7 @@ struct GitHubAssetRegistryClientTests {
         }
         let gitHubAssetRegistryClient = GitHubAssetRegistryClient(
             httpClient: httpClient,
-            serverConfigs: nil,
+            registryConfigs: nil,
             logger: .init(label: "Test")
         )
         let assets = try await gitHubAssetRegistryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
@@ -73,7 +73,7 @@ struct GitHubAssetRegistryClientTests {
             "GITHUB_COM_TOKEN": "github-com-token",
             "KNOWN_SERVER_TOKEN": "known-token",
         ])
-        let serverConfigs = GitHubServerConfigs.resolve(
+        let registryConfigs = GitHubRegistryConfigs.resolve(
             environmentVariableNames: [
                 "github.com": "GITHUB_COM_TOKEN",
                 "known-server.example.com": "KNOWN_SERVER_TOKEN",
@@ -82,7 +82,7 @@ struct GitHubAssetRegistryClientTests {
         )
         let githubRegistryClient: AssetRegistryClient = GitHubAssetRegistryClient(
             httpClient: httpClient,
-            serverConfigs: serverConfigs,
+            registryConfigs: registryConfigs,
             logger: .init(label: "Test")
         )
         let _ = try await githubRegistryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
