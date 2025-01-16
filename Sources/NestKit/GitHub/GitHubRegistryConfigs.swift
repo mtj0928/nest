@@ -12,6 +12,14 @@ public struct SystemEnvironmentVariableStorage: EnvironmentVariableStorage {
     public init() { }
 }
 
+public struct RegistryConfigs: Sendable {
+    public var github: GitHubRegistryConfigs?
+
+    public init(github: GitHubRegistryConfigs?) {
+        self.github = github
+    }
+}
+
 /// A container of GitHub server configurations.
 public struct GitHubRegistryConfigs: Sendable {
     /// An enum value to represent GitHub sever host.

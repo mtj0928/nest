@@ -3,10 +3,10 @@ import Logging
 
 public struct AssetRegistryClientBuilder: Sendable {
     private let httpClient: any HTTPClient
-    private let registryConfigs: GitHubRegistryConfigs?
+    private let registryConfigs: RegistryConfigs?
     private let logger: Logger
 
-    public init(httpClient: some HTTPClient, registryConfigs: GitHubRegistryConfigs?, logger: Logger) {
+    public init(httpClient: some HTTPClient, registryConfigs: RegistryConfigs?, logger: Logger) {
         self.httpClient = httpClient
         self.registryConfigs = registryConfigs
         self.logger = logger
@@ -17,7 +17,7 @@ public struct AssetRegistryClientBuilder: Sendable {
     /// > Note: This function currently supports only GitHub.
     public func build(for url: GitURL) -> any AssetRegistryClient {
         // Only GitHub is supported now.
-        GitHubAssetRegistryClient(httpClient: httpClient, registryConfigs: registryConfigs, logger: logger)
+        GitHubAssetRegistryClient(httpClient: httpClient, registryConfigs: registryConfigs?.github, logger: logger)
     }
 
     /// Build AssetRegistryClient based on the given url.

@@ -37,11 +37,11 @@ extension Configuration {
         logger.logLevel = logLevel
         logger.debug("NEST_PATH: \(nestDirectory.rootDirectory.path()).")
 
-        let registryConfigs = GitHubRegistryConfigs.resolve(environmentVariableNames: registryTokenEnvironmentVariableNames)
+        let githubRegistryConfigs = GitHubRegistryConfigs.resolve(environmentVariableNames: registryTokenEnvironmentVariableNames)
 
         let assetRegistryClientBuilder = AssetRegistryClientBuilder(
             httpClient: httpClient,
-            registryConfigs: registryConfigs,
+            registryConfigs: RegistryConfigs(github: githubRegistryConfigs),
             logger: logger
         )
 
