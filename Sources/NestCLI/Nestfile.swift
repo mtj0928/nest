@@ -112,6 +112,15 @@ public struct Nestfile: Codable, Sendable {
         public struct GitHubInfo: Codable, Sendable {
             public var host: String
             public var tokenEnvironmentVariable: String
+
+            public init(host: String, tokenEnvironmentVariable: String) {
+                self.host = host
+                self.tokenEnvironmentVariable = tokenEnvironmentVariable
+            }
+        }
+
+        init(github: [GitHubInfo]) {
+            self.github = github
         }
     }
 }
