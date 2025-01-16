@@ -1,5 +1,4 @@
 # This workflow will build a Swift project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-swift
 name: Release
 
 on: 
@@ -8,14 +7,12 @@ on:
 
 jobs:
   build-and-release:
-    runs-on: macos-latest
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_16.2.app/Contents/Developer"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - uses: SwiftyLab/setup-swift@latest
-        with:
-          swift-version: 6.0.0
 
       - name: Build Swift package
         run: swift build -c release --arch arm64 --arch x86_64  
@@ -31,6 +28,5 @@ jobs:
         with:
           files: |
             nest-macos.artifactbundle.zip
-            pkl/Nestfile.pkl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

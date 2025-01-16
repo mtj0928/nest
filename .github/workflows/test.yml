@@ -7,12 +7,12 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-    runs-on: macos-latest
-    steps:
-    - uses: SwiftyLab/setup-swift@latest
-      with:
-        swift-version: 6.0.0
+  test:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: "/Applications/Xcode_16.2.app/Contents/Developer"
     - uses: actions/checkout@v4
     - name: Run tests
       run: swift test
+    - name: Release build
+      run: swift build -c release --arch arm64 --arch x86_64  
