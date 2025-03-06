@@ -30,8 +30,11 @@ struct ArtfactBundleFetcherTests {
         ]
     }
 
-    @Test
-    func fetchArtifactBundleWithZIPURL() async throws {
+    @Test(arguments: [
+        (artifactBundlePath: artifactBundlePath, expectedBinaryPath: URL(filePath: "/tmp/nest/artifactbundle/foo.artifactbundle/foo-1.0.0-macosx/bin/foo")),
+        (artifactBundlePath: withoutArtifactBundleFolderPath, expectedBinaryPath: URL(filePath: "/tmp/nest/artifactbundle/foo-1.0.0-macosx/bin/foo"))
+    ])
+    func fetchArtifactBundleWithZIPURL(artifactBundlePath: URL, expectedBinaryPath: URL) async throws {
         let workingDirectory = URL(filePath: "/tmp/nest")
 
         let zipURL = try #require(URL(string: "https://example.com/artifactbundle.zip"))
@@ -51,14 +54,17 @@ struct ArtfactBundleFetcherTests {
         let result = try await fetcher.downloadArtifactBundle(url: zipURL, checksum: .skip)
         #expect(result == [ExecutableBinary(
             commandName: "foo",
-            binaryPath: URL(filePath: "/tmp/nest/artifactbundle/foo.artifactbundle/foo-1.0.0-macosx/bin/foo"),
+            binaryPath: expectedBinaryPath,
             version: "1.0.0",
             manufacturer: .artifactBundle(sourceInfo: ArtifactBundleSourceInfo(zipURL: zipURL, repository: nil))
         )])
     }
 
-    @Test
-    func fetchArtifactBundleFromGitRepository() async throws {
+    @Test(arguments: [
+        (artifactBundlePath: artifactBundlePath, expectedBinaryPath: URL(filePath: "/tmp/nest/repo/foo.artifactbundle/foo-1.0.0-macosx/bin/foo")),
+        (artifactBundlePath: withoutArtifactBundleFolderPath, expectedBinaryPath: URL(filePath: "/tmp/nest/repo/foo-1.0.0-macosx/bin/foo"))
+    ])
+    func fetchArtifactBundleFromGitRepository(artifactBundlePath: URL, expectedBinaryPath: URL) async throws {
         let workingDirectory = URL(filePath: "/tmp/nest")
 
         let zipURL = try #require(URL(string: "https://example.com/artifactbundle.zip"))
@@ -100,7 +106,7 @@ struct ArtfactBundleFetcherTests {
         )
         let expected = [ExecutableBinary(
             commandName: "foo",
-            binaryPath: URL(filePath: "/tmp/nest/repo/foo.artifactbundle/foo-1.0.0-macosx/bin/foo"),
+            binaryPath: expectedBinaryPath,
             version: "1.0.0",
             manufacturer: .artifactBundle(sourceInfo: ArtifactBundleSourceInfo(
                 zipURL: zipURL,
@@ -117,3 +123,4 @@ let fixturePath = URL(fileURLWithPath: #filePath)
     .appendingPathComponent("Fixtures")
 
 let artifactBundlePath = fixturePath.appendingPathComponent("foo.artifactbundle.zip")
+let withoutArtifactBundleFolderPath = fixturePath.appendingPathComponent("without.artifactbundle.folder.artifactbundle.zip")
