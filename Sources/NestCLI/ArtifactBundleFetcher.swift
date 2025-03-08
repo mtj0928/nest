@@ -72,13 +72,19 @@ public struct ArtifactBundleFetcher {
         let triple = try await tripleDetector.detect()
         logger.debug("The current triple is \(triple)")
 
-        return try fileSystem.child(extension: "artifactbundle", at: repositoryDirectory)
-            .map { artifactBundlePath in
-                let repository = Repository(reference: .url(gitURL), version: resolvedAsset.tagName)
-                let sourceInfo = ArtifactBundleSourceInfo(zipURL: resolvedAsset.zipURL, repository: repository)
-                return try ArtifactBundle.load(at: artifactBundlePath, sourceInfo: sourceInfo, fileSystem: fileSystem)
-            }
-            .flatMap { bundle in try bundle.binaries(of: triple) }
+        let repository = Repository(reference: .url(gitURL), version: resolvedAsset.tagName)
+        let sourceInfo = ArtifactBundleSourceInfo(zipURL: resolvedAsset.zipURL, repository: repository)
+        let artifactBundlePaths = try fileSystem.child(extension: "artifactbundle", at: repositoryDirectory)
+
+        guard !artifactBundlePaths.isEmpty else {
+            logger.warning("⚠️ The zip file of \(gitURL.lastPathComponent) doesn't follow the artifact bundle spec (SE-0305), so nest tries to install it using fallback behavior. Please contact the repository owner if possible.")
+            // If Info.json and executable file exist, nest will attempt to install executable file.
+            let bundle = try ArtifactBundle.load(at: repositoryDirectory, sourceInfo: sourceInfo, fileSystem: fileSystem)
+            return try bundle.binaries(of: triple)
+        }
+        return try artifactBundlePaths
+            .map { try ArtifactBundle.load(at: $0, sourceInfo: sourceInfo, fileSystem: fileSystem) }
+            .flatMap { try $0.binaries(of: triple) }
     }
 
     public func downloadArtifactBundle(url: URL, checksum: ChecksumOption) async throws -> [ExecutableBinary] {
@@ -99,12 +105,18 @@ public struct ArtifactBundleFetcher {
         let triple = try await tripleDetector.detect()
         logger.debug("The current triple is \(triple)")
 
-        return try fileSystem.child(extension: "artifactbundle", at: directory)
-            .compactMap { artifactBundlePath in
-                let sourceInfo = ArtifactBundleSourceInfo(zipURL: url, repository: nil)
-                return try ArtifactBundle.load(at: artifactBundlePath, sourceInfo: sourceInfo, fileSystem: fileSystem)
-            }
-            .flatMap { bundle in try bundle.binaries(of: triple) }
+        let sourceInfo = ArtifactBundleSourceInfo(zipURL: url, repository: nil)
+        let artifactBundlePaths = try fileSystem.child(extension: "artifactbundle", at: directory)
+
+        guard !artifactBundlePaths.isEmpty else {
+            logger.warning("⚠️ \(url.lastPathComponent) doesn't follow the artifact bundle spec (SE-0305), so nest tries to install it using fallback behavior. Please contact the zip file owner if possible.")
+            // If Info.json and executable file exist, nest will attempt to install executable file.
+            let bundle = try ArtifactBundle.load(at: directory, sourceInfo: sourceInfo, fileSystem: fileSystem)
+            return try bundle.binaries(of: triple)
+        }
+        return try artifactBundlePaths
+            .map { try ArtifactBundle.load(at: $0, sourceInfo: sourceInfo, fileSystem: fileSystem) }
+            .flatMap { try $0.binaries(of: triple) }
     }
 
     private func resolveAsset(
