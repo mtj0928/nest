@@ -77,6 +77,8 @@ public struct ArtifactBundleFetcher {
         let artifactBundlePaths = try fileSystem.child(extension: "artifactbundle", at: repositoryDirectory)
 
         guard !artifactBundlePaths.isEmpty else {
+            logger.warning("⚠️ The zip file of \(gitURL.lastPathComponent) doesn't follow the artifact bundle spec (SE-0305), so nest tries to install it using fallback behavior. Please contact the repository owner if possible.")
+            // If Info.json and executable file exist, nest will attempt to install executable file.
             let bundle = try ArtifactBundle.load(at: repositoryDirectory, sourceInfo: sourceInfo, fileSystem: fileSystem)
             return try bundle.binaries(of: triple)
         }
@@ -107,6 +109,8 @@ public struct ArtifactBundleFetcher {
         let artifactBundlePaths = try fileSystem.child(extension: "artifactbundle", at: directory)
 
         guard !artifactBundlePaths.isEmpty else {
+            logger.warning("⚠️ \(url.lastPathComponent) doesn't follow the artifact bundle spec (SE-0305), so nest tries to install it using fallback behavior. Please contact the zip file owner if possible.")
+            // If Info.json and executable file exist, nest will attempt to install executable file.
             let bundle = try ArtifactBundle.load(at: directory, sourceInfo: sourceInfo, fileSystem: fileSystem)
             return try bundle.binaries(of: triple)
         }
