@@ -1,0 +1,27 @@
+name: Test Install Script
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  install:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: install
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        export PATH="$HOME/.nest/bin:$PATH"
+        if !(type nest > /dev/null 2>&1); then
+          echo "nest is not installed. Installing..."
+          SCRIPT_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/${GITHUB_HEAD_REF}/Scripts/install.sh"
+          echo "Script URL: $SCRIPT_URL"
+          curl -s $SCRIPT_URL | bash
+        fi
+        echo $PATH
+        ls -la $HOME
+        nest
