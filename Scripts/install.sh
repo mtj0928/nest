@@ -15,7 +15,7 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-./extracted_files/nest.artifactbundle/nest-$VERSION-macos/bin/nest install mtj0928/nest > /dev/null
+./extracted_files/nest.artifactbundle/nest-$VERSION-macos/bin/nest install $ASSET_URL > /dev/null
 rm -rf extracted_files
 echo "🪺 nest was installed at ~/.nest/bin"
 echo "🪺 Please add it to \$PATH"
