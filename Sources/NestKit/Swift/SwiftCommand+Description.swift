@@ -3,7 +3,21 @@ import Foundation
 extension SwiftCommand {
     public func description() async throws -> SwiftPackageDescription {
         let json = try await run("package", "describe", "--type", "json")
-        return try JSONDecoder().decode(SwiftPackageDescription.self, from: json.data(using: .utf8)!)
+
+        // WORKAROUND
+        // The outputs of describe command sometime contains warning like this message.
+        // https://github.com/swiftlang/swift-package-manager/blob/db9fef21d000dd475816951d52f8d32077939e81/Sources/PackageLoading/TargetSourcesBuilder.swift#L193
+        // To address the issue, string until "{" is removed here.
+        let cleanedJson = removePrefixUpToFirstBrace(json)
+        return try JSONDecoder().decode(SwiftPackageDescription.self, from: cleanedJson.data(using: .utf8)!)
+    }
+
+    private func removePrefixUpToFirstBrace(_ input: String) -> String {
+        if let index = input.firstIndex(of: "{") {
+            String(input[index...])
+        } else {
+            input
+        }
     }
 }
 
