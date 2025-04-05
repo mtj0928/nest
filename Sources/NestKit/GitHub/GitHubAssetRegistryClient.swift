@@ -15,7 +15,7 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
     }
 
     public func fetchAssets(repositoryURL: URL, version: GitVersion) async throws -> AssetInformation {
-        let assetURL = try GitHubURLBuilder.assetURL(repositoryURL, version: version)
+        let assetURL = try GitHubURLBuilder.assetURL(repositoryURL, version: version, hasExcludedVersion: false)
         var request = HTTPRequest(url: assetURL)
         request.headerFields = [
             .accept: "application/vnd.github+json",
@@ -45,6 +45,43 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
             Asset(fileName: asset.name, url: asset.browserDownloadURL)
         }
         return AssetInformation(tagName: assetResponse.tagName, assets: assets)
+    }
+
+    public func fetchAssetsApplyingExcludedVersions(repositoryURL: URL, version: GitVersion, excludingVersions: [String]) async throws -> AssetInformation {
+        let assetURL = try GitHubURLBuilder.assetURL(repositoryURL, version: version, hasExcludedVersion: true)
+        var request = HTTPRequest(url: assetURL)
+        request.headerFields = [
+            .accept: "application/vnd.github+json",
+            .gitHubAPIVersion: "2022-11-28",
+        ]
+        guard let repositoryHost = repositoryURL.host() else {
+            fatalError("Unknown host")
+        }
+        if let config = registryConfigs?.config(for: repositoryURL) {
+            logger.debug("GitHub token for \(repositoryHost) is passed from \(config.environmentVariable)")
+            request.headerFields[.authorization] = "Bearer \(config.token)"
+        } else {
+            logger.debug("GitHub token for \(repositoryHost) is not provided.")
+        }
+
+        logger.debug("Request: \(repositoryURL)")
+        logger.debug("Request: \(request.headerFields)")
+        let (data, response) = try await httpClient.data(for: request)
+        logger.debug("Response: \(data.humanReadableJSONString() ?? "No data")")
+        logger.debug("Status: \(response.status)")
+
+        if response.status == .notFound {
+            throw AssetRegistryClientError.notFound
+        }
+        let assetResponses = try JSONDecoder().decode([GitHubAssetResponse].self, from: data)
+
+        guard let matchedAssetResponse = assetResponses.first(where: { !excludingVersions.contains($0.tagName) }) else {
+            throw AssetRegistryClientError.noMatchApplyingExcludedVersion
+        }
+
+        let assets = matchedAssetResponse.assets
+            .map { Asset(fileName: $0.name, url: $0.browserDownloadURL) }
+        return AssetInformation(tagName: matchedAssetResponse.tagName, assets: assets)
     }
 }
 

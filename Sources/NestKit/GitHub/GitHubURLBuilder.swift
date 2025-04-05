@@ -10,7 +10,7 @@ public enum GitHubURLBuilder {
         url.appending(components: "releases", "download", version, fileName)
     }
 
-    static func assetURL(_ url: URL, version: GitVersion) throws -> URL {
+    static func assetURL(_ url: URL, version: GitVersion, hasExcludedVersion: Bool) throws -> URL {
         guard url.pathComponents.count >= 3 else {
             throw InvalidURLError(url: url)
         }
@@ -21,10 +21,12 @@ public enum GitHubURLBuilder {
             throw InvalidURLError(url: url)
         }
 
-        switch version {
-        case .latestRelease:
+        switch (version, hasExcludedVersion) {
+        case (.latestRelease, true):
+            return baseURL.appending(components: "repos", owner, repository, "releases")
+        case (.latestRelease, false):
             return baseURL.appending(components: "repos", owner, repository, "releases", "latest")
-        case .tag(let string):
+        case (.tag(let string), _):
             return baseURL.appending(components: "repos", owner, repository, "releases", "tags", string)
         }
     }
