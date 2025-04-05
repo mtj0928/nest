@@ -59,7 +59,63 @@ struct NestfileControllerTests {
             )),
             .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: nil))
         ])
-        let newNestfile = try await controller.update(nestfile)
+        let newNestfile = try await controller.update(nestfile, excludedVersions: [])
+        #expect(newNestfile.nestPath == nestfile.nestPath)
+        #expect(newNestfile.targets.count == 2)
+        #expect(newNestfile.targets == [
+            .repository(Nestfile.Repository(
+                reference: "foo/bar",
+                version: "0.1.0",
+                assetName: "foo.artifactbundle.zip",
+                checksum: "aaa"
+            )),
+            .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: "aaa"))
+        ])
+    }
+
+    @Test
+    func updateWithExcludedVersion() async throws {
+        let zipFileURL = try #require(URL(string: "https://example.com/foo.artifacatbundle.zip"))
+        let barLatestReleaseURL = try #require(URL(string: "https://api.github.com/repos/foo/bar/releases"))
+        let assetResponses = [
+            GitHubAssetResponse(
+                assets: [GitHubAsset(name: "foo.artifactbundle.zip", browserDownloadURL: zipFileURL)],
+                tagName: "0.1.1"
+            ),
+            GitHubAssetResponse(
+                assets: [GitHubAsset(name: "foo.artifactbundle.zip", browserDownloadURL: zipFileURL)],
+                tagName: "0.1.0"
+            ),
+            GitHubAssetResponse(
+                assets: [GitHubAsset(name: "foo.artifactbundle.zip", browserDownloadURL: zipFileURL)],
+                tagName: "0.0.1"
+            )
+        ]
+        httpClient.dummyData = try [
+            barLatestReleaseURL: JSONEncoder().encode(assetResponses),
+            zipFileURL: Data(contentsOf: artifactBundlePath)
+        ]
+
+        let controller = NestfileController(
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(
+                httpClient: httpClient,
+                registryConfigs: nil,
+                logger: Logger(label: "Test")
+            ),
+            fileSystem: fileSystem,
+            fileDownloader: NestFileDownloader(httpClient: httpClient),
+            checksumCalculator: SwiftChecksumCalculator(processExecutor: processExecutor)
+        )
+        let nestfile = Nestfile(nestPath: "./.nest", targets: [
+            .repository(Nestfile.Repository(
+                reference: "foo/bar",
+                version: "0.0.1",
+                assetName: nil,
+                checksum: nil
+            )),
+            .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: nil))
+        ])
+        let newNestfile = try await controller.update(nestfile, excludedVersions: [.init(reference: "foo/bar", version: "0.1.1")])
         #expect(newNestfile.nestPath == nestfile.nestPath)
         #expect(newNestfile.targets.count == 2)
         #expect(newNestfile.targets == [
