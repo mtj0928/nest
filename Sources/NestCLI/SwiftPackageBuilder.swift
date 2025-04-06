@@ -76,6 +76,7 @@ public struct SwiftPackageBuilder {
         case (.url(let url), .latestRelease):
             let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
             return try? await assetRegistryClient.fetchAssets(repositoryURL: url, version: .latestRelease).tagName
+
         case (.ssh, .latestRelease):
             return nil
 

@@ -1,3 +1,4 @@
+/// {owner}/{repo} and (optional) version pairs to exclude
 public struct ExcludedVersion: Equatable, Sendable {
     /// A reference to a repository.
     /// {owner}/{repo}
@@ -13,10 +14,6 @@ public struct ExcludedVersion: Equatable, Sendable {
     init(reference: String, version: String?) {
         self.reference = reference
         self.version = version
-    }
-
-    public var isOnlyReference: Bool {
-        version == nil
     }
 }
 

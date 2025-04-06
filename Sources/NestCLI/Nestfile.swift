@@ -59,6 +59,7 @@ public struct Nestfile: Codable, Sendable {
         /// - SSH URL.
         public var reference: String
         public var version: String?
+
         /// Specify an asset file name of an artifact bundle.
         /// If the name is not specified, the tool fetch the name by GitHub API.
         public var assetName: String?

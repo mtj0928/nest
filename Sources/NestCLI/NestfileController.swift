@@ -69,7 +69,7 @@ public struct NestfileController: Sendable {
     ) async throws -> Nestfile.Repository {
         let excludedVersionsMatchingReference = excludedVersions
             .filter { $0.reference == repository.reference }
-        guard excludedVersionsMatchingReference.filter({ $0.isOnlyReference }).isEmpty else {
+        guard excludedVersionsMatchingReference.filter({ $0.version == nil }).isEmpty else {
             return repository
         }
 
@@ -79,7 +79,6 @@ public struct NestfileController: Sendable {
 
         let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
         let version = resolveVersion(repository: repository, resolution: versionResolution)
-
         let assetInfo = switch (version, excludedVersionsMatchingReference.isEmpty) {
         case (.latestRelease, true):
             try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
