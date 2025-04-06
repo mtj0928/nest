@@ -80,7 +80,7 @@ public struct NestfileController: Sendable {
         let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
         let version = resolveVersion(repository: repository, resolution: versionResolution)
         let assetInfo = switch (version, excludedVersionsMatchingReference.isEmpty) {
-        case (.latestRelease, true):
+        case (.latestRelease, true), (.tag, _):
             try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
         case (.latestRelease, false):
             try await assetRegistryClient.fetchAssetsApplyingExcludedVersions(
@@ -88,8 +88,6 @@ public struct NestfileController: Sendable {
                 version: version,
                 excludingVersions: excludedVersionsMatchingReference.compactMap { $0.version }
             )
-        case (.tag, _):
-            try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
         }
 
         let selector = ArtifactBundleAssetSelector()
