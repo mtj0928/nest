@@ -6,11 +6,11 @@ struct ExcludedVersionTests {
         arguments: [
             (
                 argument: "owner/repo",
-                expected: ExcludedVersion(reference: "owner/repo", version: nil)
+                expected: ExcludedVersion(reference: "owner/repo", target: nil)
             ),
             (
                 argument: "owner/repo@0.0.1",
-                expected: ExcludedVersion(reference: "owner/repo", version: "0.0.1")
+                expected: ExcludedVersion(reference: "owner/repo", target: "0.0.1")
             ),
             (
                 argument: "foo@owner/repo@0.0.1",

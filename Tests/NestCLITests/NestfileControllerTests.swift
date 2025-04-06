@@ -115,7 +115,7 @@ struct NestfileControllerTests {
             )),
             .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: nil))
         ])
-        let newNestfile = try await controller.update(nestfile, excludedVersions: [.init(reference: "foo/bar", version: "0.1.1")])
+        let newNestfile = try await controller.update(nestfile, excludedVersions: [.init(reference: "foo/bar", target: "0.1.1")])
         #expect(newNestfile.nestPath == nestfile.nestPath)
         #expect(newNestfile.targets.count == 2)
         #expect(newNestfile.targets == [

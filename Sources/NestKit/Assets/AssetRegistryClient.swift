@@ -14,9 +14,9 @@ public protocol AssetRegistryClient: Sendable {
     /// - Parameters:
     ///   - repositoryURL: A url of a repository.
     ///   - version: latestAvailableRelease only.
-    ///   - excludingVersions: excluding versions.
+    ///   - excludingTargets: excluding targets.
     /// - Returns: An asset information.
-    func fetchAssetsApplyingExcludedVersions(repositoryURL: URL, version: GitVersion, excludingVersions: [String]) async throws -> AssetInformation
+    func fetchAssetsApplyingExcludedVersions(repositoryURL: URL, version: GitVersion, excludingTargets: [String]) async throws -> AssetInformation
 }
 
 public struct AssetInformation: Sendable {

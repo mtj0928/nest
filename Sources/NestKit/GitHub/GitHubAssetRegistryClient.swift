@@ -27,12 +27,12 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
     public func fetchAssetsApplyingExcludedVersions(
         repositoryURL: URL,
         version: GitVersion,
-        excludingVersions: [String]
+        excludingTargets: [String]
     ) async throws -> AssetInformation {
         let assetURL = try GitHubURLBuilder.releasesAssetURL(repositoryURL)
         let assetResponses = try await fetchData([GitHubAssetResponse].self, requestURL: assetURL, repositoryURL: repositoryURL)
 
-        guard let matchedAssetResponse = assetResponses.first(where: { !excludingVersions.contains($0.tagName) }) else {
+        guard let matchedAssetResponse = assetResponses.first(where: { !excludingTargets.contains($0.tagName) }) else {
             throw AssetRegistryClientError.noMatchApplyingExcludedVersion
         }
         let assets = matchedAssetResponse.assets

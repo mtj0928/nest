@@ -69,7 +69,7 @@ public struct NestfileController: Sendable {
     ) async throws -> Nestfile.Repository {
         let excludedVersionsMatchingReference = excludedVersions
             .filter { $0.reference == repository.reference }
-        guard excludedVersionsMatchingReference.filter({ $0.version == nil }).isEmpty else {
+        guard excludedVersionsMatchingReference.filter({ $0.target == nil }).isEmpty else {
             return repository
         }
 
@@ -86,7 +86,7 @@ public struct NestfileController: Sendable {
             try await assetRegistryClient.fetchAssetsApplyingExcludedVersions(
                 repositoryURL: url,
                 version: version,
-                excludingVersions: excludedVersionsMatchingReference.compactMap { $0.version }
+                excludingTargets: excludedVersionsMatchingReference.compactMap { $0.target }
             )
         }
 
