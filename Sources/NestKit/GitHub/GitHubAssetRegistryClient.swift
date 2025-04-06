@@ -15,7 +15,7 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
     }
 
     public func fetchAssets(repositoryURL: URL, version: GitVersion) async throws -> AssetInformation {
-        let assetURL = try GitHubURLBuilder.assetURL(repositoryURL, version: version, hasExcludedVersion: false)
+        let assetURL = try GitHubURLBuilder.assetURL(repositoryURL, version: version)
 
         let assetResponse = try await fetchData(GitHubAssetResponse.self, requestURL: assetURL, repositoryURL: repositoryURL)
         let assets = assetResponse.assets.map { asset in
@@ -29,7 +29,7 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
         version: GitVersion,
         excludingVersions: [String]
     ) async throws -> AssetInformation {
-        let assetURL = try GitHubURLBuilder.assetURL(repositoryURL, version: version, hasExcludedVersion: true)
+        let assetURL = try GitHubURLBuilder.releasesAssetURL(repositoryURL)
         let assetResponses = try await fetchData([GitHubAssetResponse].self, requestURL: assetURL, repositoryURL: repositoryURL)
 
         guard let matchedAssetResponse = assetResponses.first(where: { !excludingVersions.contains($0.tagName) }) else {
