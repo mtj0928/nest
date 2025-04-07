@@ -11,15 +11,7 @@ public enum GitHubURLBuilder {
     }
 
     static func assetURL(_ url: URL, version: GitVersion) throws -> URL {
-        guard url.pathComponents.count >= 3 else {
-            throw InvalidURLError(url: url)
-        }
-        let owner = url.pathComponents[1]
-        let repository = url.pathComponents[2]
-
-        guard let baseURL = baseAPIURL(from: url) else {
-            throw InvalidURLError(url: url)
-        }
+        let (baseURL, owner, repository) = try getValidBaseURLAndRepository(url)
 
         switch version {
         case .latestRelease:
@@ -27,6 +19,28 @@ public enum GitHubURLBuilder {
         case .tag(let string):
             return baseURL.appending(components: "repos", owner, repository, "releases", "tags", string)
         }
+    }
+
+    static func releasesAssetURL(_ url: URL) throws -> URL {
+        let (baseURL, owner, repository) = try getValidBaseURLAndRepository(url)
+
+        // Since the latest version is returned in descending order, pagination isn't supported.
+        return baseURL.appending(components: "repos", owner, repository, "releases")
+    }
+
+    private static func getValidBaseURLAndRepository(_ url: URL) throws -> (baseURL: URL, owner: String, repository: String) {
+        guard url.pathComponents.count >= 3 else {
+            throw InvalidURLError(url: url)
+        }
+
+        let owner = url.pathComponents[1]
+        let repository = url.pathComponents[2]
+
+        guard let baseURL = baseAPIURL(from: url) else {
+            throw InvalidURLError(url: url)
+        }
+
+        return (baseURL, owner, repository)
     }
 
     private static func baseAPIURL(from url: URL) -> URL? {

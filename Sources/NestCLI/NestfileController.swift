@@ -20,10 +20,10 @@ public struct NestfileController: Sendable {
         self.checksumCalculator = checksumCalculator
     }
 
-    public func update(_ nestfile: Nestfile) async throws -> Nestfile {
+    public func update(_ nestfile: Nestfile, excludedTargets: [ExcludedTarget]) async throws -> Nestfile {
         var nestfile = nestfile
         nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
-            try await updateTarget(target, versionResolution: .update)
+            try await updateTarget(target, versionResolution: .update, excludedTargets: excludedTargets)
         }
         return nestfile
     }
@@ -31,18 +31,23 @@ public struct NestfileController: Sendable {
     public func resolve(_ nestfile: Nestfile) async throws -> Nestfile {
         var nestfile = nestfile
         nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
-            try await updateTarget(target, versionResolution: .specific)
+            try await updateTarget(target, versionResolution: .specific, excludedTargets: [])
         }
         return nestfile
     }
 
     private func updateTarget(
         _ target: Nestfile.Target,
-        versionResolution: VersionResolution
+        versionResolution: VersionResolution,
+        excludedTargets: [ExcludedTarget]
     ) async throws -> Nestfile.Target {
         switch target {
         case .repository(let repository):
-            let newRepository = try await updateRepository(repository, versionResolution: versionResolution)
+            let newRepository = try await updateRepository(
+                repository,
+                versionResolution: versionResolution,
+                excludedTargets: excludedTargets
+            )
             return .repository(newRepository)
         case .zip(let zipURL):
             guard let url = URL(string: zipURL.zipURL) else { return target }
@@ -59,15 +64,32 @@ public struct NestfileController: Sendable {
 
     private func updateRepository(
         _ repository: Nestfile.Repository,
-        versionResolution: VersionResolution
+        versionResolution: VersionResolution,
+        excludedTargets: [ExcludedTarget]
     ) async throws -> Nestfile.Repository {
+        let excludedTargetsMatchingReference = excludedTargets
+            .filter { $0.reference == repository.reference }
+        guard excludedTargetsMatchingReference.filter({ $0.version == nil }).isEmpty else {
+            return repository
+        }
+
         guard let gitURL = GitURL.parse(string: repository.reference),
               case .url(let url) = gitURL
         else { return repository }
 
         let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
         let version = resolveVersion(repository: repository, resolution: versionResolution)
-        let assetInfo = try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
+        let assetInfo = switch (version, excludedTargetsMatchingReference.isEmpty) {
+        case (.latestRelease, true), (.tag, _):
+            try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
+        case (.latestRelease, false):
+            try await assetRegistryClient.fetchAssetsApplyingExcludedTargets(
+                repositoryURL: url,
+                version: version,
+                excludingTargets: excludedTargetsMatchingReference.compactMap { $0.version }
+            )
+        }
+
         let selector = ArtifactBundleAssetSelector()
         guard let selectedAsset = selector.selectArtifactBundle(from: assetInfo.assets, fileName: repository.assetName) else {
             return Nestfile.Repository(

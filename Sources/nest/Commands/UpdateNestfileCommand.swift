@@ -14,13 +14,16 @@ struct UpdateNestfileCommand: AsyncParsableCommand {
     @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
+    @Option(parsing: .upToNextOption, help: "Exclude by repository or version when using reference-only.\n(ex. --excludes owner/repo@0.0.1 owner/repo@0.0.2)")
+    var excludes: [ExcludedTarget] = []
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
         let (controller, fileSystem, logger) = setUp(nestfile: nestfile)
-        let updatedNestfile = try await controller.update(nestfile)
+        let updatedNestfile = try await controller.update(nestfile, excludedTargets: excludes)
         try updatedNestfile.write(to: nestfilePath, fileSystem: fileSystem)
         logger.info("✨ \(URL(filePath: nestfilePath).lastPathComponent) is Updated")
     }

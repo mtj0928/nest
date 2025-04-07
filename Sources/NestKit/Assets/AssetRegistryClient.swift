@@ -9,6 +9,14 @@ public protocol AssetRegistryClient: Sendable {
     ///   - version: A version of asset you want.
     /// - Returns: An asset information.
     func fetchAssets(repositoryURL: URL, version: GitVersion) async throws -> AssetInformation
+
+    /// Fetches information of assets applying excluded targets in the repository which may contain an artifact bundle corresponding to the version
+    /// - Parameters:
+    ///   - repositoryURL: A url of a repository.
+    ///   - version: latestAvailableRelease only.
+    ///   - excludingTargets: excluding targets.
+    /// - Returns: An asset information.
+    func fetchAssetsApplyingExcludedTargets(repositoryURL: URL, version: GitVersion, excludingTargets: [String]) async throws -> AssetInformation
 }
 
 public struct AssetInformation: Sendable {
@@ -38,10 +46,12 @@ public struct Asset: Sendable, Equatable {
 
 public enum AssetRegistryClientError: LocalizedError, Hashable, Sendable {
     case notFound
+    case noMatchApplyingExcludedTarget
 
     public var errorDescription: String? {
         switch self {
         case .notFound: "Not found for the repository."
+        case .noMatchApplyingExcludedTarget: "Not match applying excluded version."
         }
     }
 }
