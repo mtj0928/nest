@@ -14,7 +14,7 @@ struct UpdateNestfileCommand: AsyncParsableCommand {
     @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
-    @Option(help: "Exclude by repository or version when using reference-only.\n(ex. --excludes owner/repo, owner/repo@0.0.1)")
+    @Option(parsing: .upToNextOption, help: "Exclude by repository or version when using reference-only.\n(ex. --excludes owner/repo@0.0.1 owner/repo@0.0.2)")
     var excludes: [ExcludedTarget] = []
 
     @Flag(name: .shortAndLong)
