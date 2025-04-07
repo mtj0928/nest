@@ -1,13 +1,13 @@
 /// {owner}/{repo} and (optional) version pairs to exclude
-public struct ExcludedVersion: Equatable, Sendable {
+public struct ExcludedTarget: Equatable, Sendable {
     /// A reference to a repository.
     /// {owner}/{repo}
     public let reference: String
-    public let target: String?
+    public let version: String?
 
-    public init(reference: String, target: String?) {
+    public init(reference: String, version: String?) {
         self.reference = reference
-        self.target = target
+        self.version = version
     }
 }
 

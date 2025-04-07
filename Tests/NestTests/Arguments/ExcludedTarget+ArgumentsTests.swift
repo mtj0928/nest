@@ -1,16 +1,16 @@
 @testable import NestKit
 import Testing
 
-struct ExcludedVersionTests {
+struct ExcludedTargetTests {
     @Test(
         arguments: [
             (
                 argument: "owner/repo",
-                expected: ExcludedVersion(reference: "owner/repo", target: nil)
+                expected: ExcludedTarget(reference: "owner/repo", version: nil)
             ),
             (
                 argument: "owner/repo@0.0.1",
-                expected: ExcludedVersion(reference: "owner/repo", target: "0.0.1")
+                expected: ExcludedTarget(reference: "owner/repo", version: "0.0.1")
             ),
             (
                 argument: "foo@owner/repo@0.0.1",
@@ -18,7 +18,7 @@ struct ExcludedVersionTests {
             )
         ]
     )
-    func parse(argument: String, expected: ExcludedVersion?) async throws {
-        #expect(ExcludedVersion(argument: argument) == expected)
+    func parse(argument: String, expected: ExcludedTarget?) async throws {
+        #expect(ExcludedTarget(argument: argument) == expected)
     }
 }

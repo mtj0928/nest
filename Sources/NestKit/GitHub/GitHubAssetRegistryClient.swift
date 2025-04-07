@@ -24,7 +24,7 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
         return AssetInformation(tagName: assetResponse.tagName, assets: assets)
     }
 
-    public func fetchAssetsApplyingExcludedVersions(
+    public func fetchAssetsApplyingExcludedTargets(
         repositoryURL: URL,
         version: GitVersion,
         excludingTargets: [String]
@@ -33,7 +33,7 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
         let assetResponses = try await fetchData([GitHubAssetResponse].self, requestURL: assetURL, repositoryURL: repositoryURL)
 
         guard let matchedAssetResponse = assetResponses.first(where: { !excludingTargets.contains($0.tagName) }) else {
-            throw AssetRegistryClientError.noMatchApplyingExcludedVersion
+            throw AssetRegistryClientError.noMatchApplyingExcludedTarget
         }
         let assets = matchedAssetResponse.assets
             .map { Asset(fileName: $0.name, url: $0.browserDownloadURL) }

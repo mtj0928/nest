@@ -15,7 +15,7 @@ struct UpdateNestfileCommand: AsyncParsableCommand {
     var nestfilePath: String
 
     @Option(help: "Exclude by repository or version when using reference-only.\n(ex. --excludes owner/repo, owner/repo@0.0.1)")
-    var excludes: [ExcludedVersion] = []
+    var excludes: [ExcludedTarget] = []
 
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
@@ -23,7 +23,7 @@ struct UpdateNestfileCommand: AsyncParsableCommand {
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
         let (controller, fileSystem, logger) = setUp(nestfile: nestfile)
-        let updatedNestfile = try await controller.update(nestfile, excludedVersions: excludes)
+        let updatedNestfile = try await controller.update(nestfile, excludedTargets: excludes)
         try updatedNestfile.write(to: nestfilePath, fileSystem: fileSystem)
         logger.info("✨ \(URL(filePath: nestfilePath).lastPathComponent) is Updated")
     }

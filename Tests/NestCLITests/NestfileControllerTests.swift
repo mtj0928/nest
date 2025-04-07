@@ -59,7 +59,7 @@ struct NestfileControllerTests {
             )),
             .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: nil))
         ])
-        let newNestfile = try await controller.update(nestfile, excludedVersions: [])
+        let newNestfile = try await controller.update(nestfile, excludedTargets: [])
         #expect(newNestfile.nestPath == nestfile.nestPath)
         #expect(newNestfile.targets.count == 2)
         #expect(newNestfile.targets == [
@@ -74,7 +74,7 @@ struct NestfileControllerTests {
     }
 
     @Test
-    func updateWithExcludedVersion() async throws {
+    func updateWithExcludedTarget() async throws {
         let zipFileURL = try #require(URL(string: "https://example.com/foo.artifacatbundle.zip"))
         let barLatestReleaseURL = try #require(URL(string: "https://api.github.com/repos/foo/bar/releases"))
         let assetResponses = [
@@ -115,7 +115,7 @@ struct NestfileControllerTests {
             )),
             .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: nil))
         ])
-        let newNestfile = try await controller.update(nestfile, excludedVersions: [.init(reference: "foo/bar", target: "0.1.1")])
+        let newNestfile = try await controller.update(nestfile, excludedTargets: [.init(reference: "foo/bar", version: "0.1.1")])
         #expect(newNestfile.nestPath == nestfile.nestPath)
         #expect(newNestfile.targets.count == 2)
         #expect(newNestfile.targets == [

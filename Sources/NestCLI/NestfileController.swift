@@ -20,10 +20,10 @@ public struct NestfileController: Sendable {
         self.checksumCalculator = checksumCalculator
     }
 
-    public func update(_ nestfile: Nestfile, excludedVersions: [ExcludedVersion]) async throws -> Nestfile {
+    public func update(_ nestfile: Nestfile, excludedTargets: [ExcludedTarget]) async throws -> Nestfile {
         var nestfile = nestfile
         nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
-            try await updateTarget(target, versionResolution: .update, excludedVersions: excludedVersions)
+            try await updateTarget(target, versionResolution: .update, excludedTargets: excludedTargets)
         }
         return nestfile
     }
@@ -31,7 +31,7 @@ public struct NestfileController: Sendable {
     public func resolve(_ nestfile: Nestfile) async throws -> Nestfile {
         var nestfile = nestfile
         nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
-            try await updateTarget(target, versionResolution: .specific, excludedVersions: [])
+            try await updateTarget(target, versionResolution: .specific, excludedTargets: [])
         }
         return nestfile
     }
@@ -39,14 +39,14 @@ public struct NestfileController: Sendable {
     private func updateTarget(
         _ target: Nestfile.Target,
         versionResolution: VersionResolution,
-        excludedVersions: [ExcludedVersion]
+        excludedTargets: [ExcludedTarget]
     ) async throws -> Nestfile.Target {
         switch target {
         case .repository(let repository):
             let newRepository = try await updateRepository(
                 repository,
                 versionResolution: versionResolution,
-                excludedVersions: excludedVersions
+                excludedTargets: excludedTargets
             )
             return .repository(newRepository)
         case .zip(let zipURL):
@@ -65,11 +65,11 @@ public struct NestfileController: Sendable {
     private func updateRepository(
         _ repository: Nestfile.Repository,
         versionResolution: VersionResolution,
-        excludedVersions: [ExcludedVersion]
+        excludedTargets: [ExcludedTarget]
     ) async throws -> Nestfile.Repository {
-        let excludedVersionsMatchingReference = excludedVersions
+        let excludedTargetsMatchingReference = excludedTargets
             .filter { $0.reference == repository.reference }
-        guard excludedVersionsMatchingReference.filter({ $0.target == nil }).isEmpty else {
+        guard excludedTargetsMatchingReference.filter({ $0.version == nil }).isEmpty else {
             return repository
         }
 
@@ -79,14 +79,14 @@ public struct NestfileController: Sendable {
 
         let assetRegistryClient = assetRegistryClientBuilder.build(for: url)
         let version = resolveVersion(repository: repository, resolution: versionResolution)
-        let assetInfo = switch (version, excludedVersionsMatchingReference.isEmpty) {
+        let assetInfo = switch (version, excludedTargetsMatchingReference.isEmpty) {
         case (.latestRelease, true), (.tag, _):
             try await assetRegistryClient.fetchAssets(repositoryURL: url, version: version)
         case (.latestRelease, false):
-            try await assetRegistryClient.fetchAssetsApplyingExcludedVersions(
+            try await assetRegistryClient.fetchAssetsApplyingExcludedTargets(
                 repositoryURL: url,
                 version: version,
-                excludingTargets: excludedVersionsMatchingReference.compactMap { $0.target }
+                excludingTargets: excludedTargetsMatchingReference.compactMap { $0.version }
             )
         }
 
