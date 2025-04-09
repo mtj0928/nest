@@ -52,7 +52,7 @@ $ nest install https://github.com/realm/SwiftLint 0.55.0
 ### Uninstall package
 ```sh
 $ nest uninstall swiftlint # All versions of swiftlint are uninstalled.
-$ nest uninstall swiftlint 0.55.0 # A verision can be specified.
+$ nest uninstall swiftlint 0.55.0 # A version can be specified.
 ```
 
 ### Show all binaries
@@ -105,6 +105,12 @@ nest provides two utility commands, `update-nestfile` and `resolve-nestfile`.
 
 ```sh
 $ nest update-nestfile nestfile.yaml
+
+# Ignore updates of `realm/SwiftLint `
+$ nest update-nestfile nestfile.yaml --excludes realm/SwiftLint
+
+# Ignore versions of 0.58.1 and 0.58.2 of `realm/SwiftLint `
+$ nest update-nestfile nestfile.yaml --excludes realm/SwiftLint@0.58.1 realm/SwiftLint@0.58.2
 ```
 
 `resolve-nestfile` is a similar command but it doesn't update the version when one is specified.
@@ -122,9 +128,9 @@ Fetching releases sometimes fails due to API limit, so we recommended to pass a 
 
 The simplest way is the passing `GH_TOKEN` or `GHE_TOKEN` environment variable. nest uses the token for GitHub.com or any other GitHub Enterprise servers.
 
-### Use `registries` in Nestfile
+### Use `registries` in nestfile
 
-If you want to use a token for GitHub Enterprise, you can specify the names of environment variables in the `registries` section in the Nestfile.
+If you want to use a token for GitHub Enterprise, you can specify the names of environment variables in the `registries` section in the nestfile.
 
 nest will automatically resolve the environment variables to fetch from each server.
 
@@ -140,4 +146,4 @@ registries:
 If the value is not set, uses `GH_TOKEN` instead if available.
 
 ## Why is the name `nest`?
-A nest is place where Swift birds store their crafts.
+A nest is place where Swift birds store their crafts🪺
