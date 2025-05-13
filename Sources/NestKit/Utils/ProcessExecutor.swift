@@ -19,10 +19,12 @@ extension ProcessExecutor {
 public struct NestProcessExecutor: ProcessExecutor {
     let currentDirectoryURL: URL?
     let logger: Logging.Logger
+    let logLevel: Logging.Logger.Level
 
-    public init(currentDirectory: URL? = nil, logger: Logging.Logger) {
+    public init(currentDirectory: URL? = nil, logger: Logging.Logger, logLevel: Logging.Logger.Level = .debug) {
         self.currentDirectoryURL = currentDirectory
         self.logger = logger
+        self.logLevel = logLevel
     }
 
     public func execute(command: String, _ arguments: [String]) async throws -> String {
@@ -36,7 +38,7 @@ public struct NestProcessExecutor: ProcessExecutor {
     }
 
     private func _execute(command: String, _ arguments: [String]) async throws -> [StreamElement] {
-        logger.debug("$ \(command) \(arguments.joined(separator: " "))")
+        logger.log(level: logLevel, "$ \(command) \(arguments.joined(separator: " "))")
         return try await withCheckedThrowingContinuation { continuous in
             let executableURL = URL(fileURLWithPath: command)
             do {
@@ -58,7 +60,7 @@ public struct NestProcessExecutor: ProcessExecutor {
                     else {
                         return
                     }
-                    logger.debug("\(string)")
+                    logger.log(level: logLevel, "\(string)")
                     results.withLock { $0 += [.output(string)] }
                 }
 
@@ -72,7 +74,7 @@ public struct NestProcessExecutor: ProcessExecutor {
                     else {
                         return
                     }
-                    logger.debug("\(string)", metadata: .color(.red))
+                    logger.log(level: logLevel, "\(string)", metadata: .color(.red))
                     results.withLock { $0 += [.error(string)] }
                 }
 
