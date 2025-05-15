@@ -19,6 +19,24 @@ public struct NestInfoController {
         return nestInfo
     }
 
+    /// Get NestInfo.Command from `owner/repository`
+    public func fetchCommand(reference: String, version: String) -> NestInfo.Command? {
+         return getInfo().commands
+            .first {
+                let command = $0.value
+                    .first {
+                        switch $0.manufacturer {
+                        case let .artifactBundle(sourceInfo):
+                            return sourceInfo.repository?.reference.referenceName == reference
+                        case let .localBuild(repository):
+                            return repository.reference.referenceName == reference
+                        }
+                    }
+                return command != nil
+            }?.value
+            .first { $0.version == version }
+    }
+
     func remove(command: String, version: String) throws {
         try updateInfo { info in
             info.commands[command] = info.commands[command]?.filter { $0.version != version }

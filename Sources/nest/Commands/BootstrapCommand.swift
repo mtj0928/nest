@@ -34,7 +34,7 @@ struct BootstrapCommand: AsyncParsableCommand {
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
-            let checksumOption = checksumOption(expectedChecksum: targetInfo.resolveChecksum(), logger: logger)
+            let checksumOption = ChecksumOption(isSkip: skipChecksumValidation, expectedChecksum: targetInfo.resolveChecksum(), logger: logger)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):
@@ -66,18 +66,6 @@ struct BootstrapCommand: AsyncParsableCommand {
                 try artifactBundleManager.install(binary)
                 logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
             }
-        }
-    }
-
-    private func checksumOption(expectedChecksum: String?, logger: Logger) -> ChecksumOption {
-        if skipChecksumValidation {
-            return .skip
-        }
-        if let expectedChecksum {
-            return .needsCheck(expected: expectedChecksum)
-        }
-        return .printActual { checksum in
-            logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
         }
     }
 }
