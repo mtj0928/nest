@@ -16,7 +16,7 @@ struct RunCommand: AsyncParsableCommand {
     @Flag(help: "Will not perform installation.")
     var noInstall: Bool = false
     
-    @Option(help: "A nestfile written in yaml. (Default: nestfile.yaml)")
+    @Option(help: "A nestfile written in yaml.")
     var nestfilePath: String = "nestfile.yaml"
     
     @Argument(parsing: .captureForPassthrough)
@@ -66,7 +66,6 @@ struct RunCommand: AsyncParsableCommand {
             target: target,
             gitURL: gitURL,
             gitVersion: gitVersion,
-            nestInfo: nestInfoController.getInfo(),
             nestInfoController: nestInfoController,
             executableBinaryPreparer: executableBinaryPreparer,
             artifactBundleManager: artifactBundleManager,
@@ -94,7 +93,6 @@ struct RunCommand: AsyncParsableCommand {
         target: Nestfile.Target,
         gitURL: GitURL,
         gitVersion: GitVersion,
-        nestInfo: NestInfo,
         nestInfoController: NestInfoController,
         executableBinaryPreparer: ExecutableBinaryPreparer,
         artifactBundleManager: ArtifactBundleManager,
@@ -127,7 +125,6 @@ struct RunCommand: AsyncParsableCommand {
                 target: target,
                 gitURL: gitURL,
                 gitVersion: gitVersion,
-                nestInfo: nestInfo,
                 nestInfoController: nestInfoController,
                 executableBinaryPreparer: executableBinaryPreparer,
                 artifactBundleManager: artifactBundleManager,
