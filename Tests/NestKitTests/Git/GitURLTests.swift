@@ -42,6 +42,17 @@ struct GitURLTests {
         let repository = GitURL.parse(string: parameter.name)
         #expect(repository?.repositoryName == parameter.expect)
     }
+    
+    @Test(arguments: [
+        ("owner/repo", expect: "owner/repo"),
+        ("https://github.com/owner/repo", expect: "owner/repo"),
+        ("github.com/owner/repo", "owner/repo"),
+        ("git@github.com:owner/repo.git", expect: "owner/repo")
+    ])
+    func referenceName(name: String, expected: String) {
+        let repository = GitURL.parse(string: name)
+        #expect(repository?.referenceName == expected)
+    }
 
     @Test(arguments:[
         ("owner/repo", expect: "https://github.com/owner/repo"),
