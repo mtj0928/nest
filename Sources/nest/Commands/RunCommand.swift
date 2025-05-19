@@ -42,7 +42,7 @@ struct RunCommand: AsyncParsableCommand {
         } else {
             []
         }
-        guard let target = nestfileController.fetchTarget(reference: reference, nestfile: nestfile),
+        guard let target = nestfileController.target(matchingTo: reference, in: nestfile),
               let expectedVersion = target.version
         else {
             // While we could execute with the latest version, the bootstrap subcommand serves that purpose.

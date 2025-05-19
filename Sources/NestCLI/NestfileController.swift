@@ -21,7 +21,10 @@ public struct NestfileController: Sendable {
     }
     
     /// Get the version that matches the `owner/repo`
-    public func fetchTarget(reference: String, nestfile: Nestfile) -> Nestfile.Target? {
+    /// - Parameters:
+    ///   - reference: `owner/repo` format
+    ///   - nestfile: Nestfile struct that defines nestfile.yaml
+    public func target(matchingTo reference: String, in nestfile: Nestfile) -> Nestfile.Target? {
         return nestfile.targets
             .first { target in
                 guard case let .repository(repository) = target,
