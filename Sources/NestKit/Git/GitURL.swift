@@ -60,7 +60,7 @@ public enum GitURL: Sendable, Hashable, Codable {
     public var referenceName: String? {
         switch self {
         case let .url(url):
-            return url.referenceName
+            return url.reference
         case let .ssh(sshURL):
             return sshURL.path.split(separator: ":").last?.replacingOccurrences(of: ".git", with: "")
         }
