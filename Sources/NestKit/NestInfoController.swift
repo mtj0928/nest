@@ -20,7 +20,7 @@ public struct NestInfoController {
     }
 
     /// Get NestInfo.Command from `owner/repository`
-    public func fetchCommand(reference: String, version: String) -> NestInfo.Command? {
+    public func command(matchingTo reference: String, version: String) -> NestInfo.Command? {
          return getInfo().commands
             .first {
                 let command = $0.value

@@ -98,7 +98,7 @@ struct RunCommand: AsyncParsableCommand {
         artifactBundleManager: ArtifactBundleManager,
         logger: Logger
     ) async throws -> String? {
-        guard let binaryRelativePath = nestInfoController.fetchCommand(reference: reference, version: version)?.binaryPath
+        guard let binaryRelativePath = nestInfoController.command(matchingTo: reference, version: version)?.binaryPath
         else {
             // attempt installation only once
             guard !didAttemptInstallation && !noInstall else { return nil }

@@ -56,8 +56,8 @@ struct NestInfoControllerTests {
         for command in commands {
             try nestInfoController.add(name: "foo", command: command)
         }
-        #expect(nestInfoController.fetchCommand(reference: "owner/foo", version: "0.0.2") == commands[1])
-        #expect(nestInfoController.fetchCommand(reference: "owner/foo", version: "0.0.3") == nil)
+        #expect(nestInfoController.command(matchingTo: "owner/foo", version: "0.0.2") == commands[1])
+        #expect(nestInfoController.command(matchingTo: "owner/foo", version: "0.0.3") == nil)
     }
 
     @Test
