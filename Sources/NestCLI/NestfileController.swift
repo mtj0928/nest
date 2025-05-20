@@ -28,7 +28,7 @@ public struct NestfileController: Sendable {
         return nestfile.targets
             .first { target in
                 guard case let .repository(repository) = target,
-                      GitURL.parse(string: repository.reference)?.referenceName == reference
+                      GitURL.parse(string: repository.reference)?.reference == reference
                 else { return false }
                 return true
             }

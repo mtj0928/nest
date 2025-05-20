@@ -51,7 +51,7 @@ struct GitURLTests {
     ])
     func referenceName(name: String, expected: String) {
         let repository = GitURL.parse(string: name)
-        #expect(repository?.referenceName == expected)
+        #expect(repository?.reference == expected)
     }
 
     @Test(arguments:[

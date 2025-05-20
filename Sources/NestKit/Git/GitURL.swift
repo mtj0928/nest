@@ -57,7 +57,7 @@ public enum GitURL: Sendable, Hashable, Codable {
     }
     
     /// `owner/repo` format
-    public var referenceName: String? {
+    public var reference: String? {
         switch self {
         case let .url(url):
             return url.reference

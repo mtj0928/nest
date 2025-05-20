@@ -10,7 +10,7 @@ struct URLTests {
         (URL(string: "https://foo.com/bar/owner/repo")!, "bar/owner"),
         (URL(string: "https://foo.com/bar")!, nil)
     ])
-    func testReferenceName(url: URL, expected: String?) throws {
+    func testReference(url: URL, expected: String?) throws {
         #expect(url.reference == expected)
     }
     

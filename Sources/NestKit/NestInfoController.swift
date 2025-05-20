@@ -27,9 +27,9 @@ public struct NestInfoController {
                     .contains {
                         switch $0.manufacturer {
                         case let .artifactBundle(sourceInfo):
-                            return sourceInfo.repository?.reference.referenceName == reference
+                            return sourceInfo.repository?.reference.reference == reference
                         case let .localBuild(repository):
-                            return repository.reference.referenceName == reference
+                            return repository.reference.reference == reference
                         }
                     }
             }?.value
