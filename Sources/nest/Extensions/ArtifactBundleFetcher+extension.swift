@@ -3,16 +3,16 @@ import Logging
 
 extension ChecksumOption {
     init(isSkip: Bool = false, expectedChecksum: String?, logger: Logger) {
-        guard !isSkip else {
+        if isSkip {
             self = .skip
             return
         }
-        guard let expectedChecksum else {
-            self = .printActual { checksum in
-                logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
-            }
+        if let expectedChecksum {
+            self = .needsCheck(expected: expectedChecksum)
             return
         }
-        self = .needsCheck(expected: expectedChecksum)
+        self = .printActual { checksum in
+            logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
+        }
     }
 }

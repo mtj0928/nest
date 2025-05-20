@@ -98,40 +98,39 @@ struct RunCommand: AsyncParsableCommand {
         artifactBundleManager: ArtifactBundleManager,
         logger: Logger
     ) async throws -> String? {
-        guard let binaryRelativePath = nestInfoController.command(matchingTo: reference, version: version)?.binaryPath
-        else {
-            // attempt installation only once
-            guard !didAttemptInstallation && !noInstall else { return nil }
-            
-            let checksumOption = ChecksumOption(expectedChecksum: target.resolveChecksum(), logger: logger)
-            
-            let executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
-                at: gitURL,
-                version: gitVersion,
-                artifactBundleZipFileName: target.resolveAssetName(),
-                checksum: checksumOption
-            )
-
-            for binary in executableBinaries {
-                try artifactBundleManager.install(binary)
-                logger.info("🪺 Success to install \(binary.commandName) version \(binary.version).")
-            }
-
-            return try await resolveBinaryRelativePath(
-                didAttemptInstallation: true,
-                noInstall: noInstall,
-                reference: reference,
-                version: version,
-                target: target,
-                gitURL: gitURL,
-                gitVersion: gitVersion,
-                nestInfoController: nestInfoController,
-                executableBinaryPreparer: executableBinaryPreparer,
-                artifactBundleManager: artifactBundleManager,
-                logger: logger
-            )
+        if let binaryRelativePath = nestInfoController.command(matchingTo: reference, version: version)?.binaryPath {
+            return binaryRelativePath
         }
-        return binaryRelativePath
+        // attempt installation only once
+        guard !didAttemptInstallation && !noInstall else { return nil }
+        
+        let checksumOption = ChecksumOption(expectedChecksum: target.resolveChecksum(), logger: logger)
+        
+        let executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
+            at: gitURL,
+            version: gitVersion,
+            artifactBundleZipFileName: target.resolveAssetName(),
+            checksum: checksumOption
+        )
+
+        for binary in executableBinaries {
+            try artifactBundleManager.install(binary)
+            logger.info("🪺 Success to install \(binary.commandName) version \(binary.version).")
+        }
+
+        return try await resolveBinaryRelativePath(
+            didAttemptInstallation: true,
+            noInstall: noInstall,
+            reference: reference,
+            version: version,
+            target: target,
+            gitURL: gitURL,
+            gitVersion: gitVersion,
+            nestInfoController: nestInfoController,
+            executableBinaryPreparer: executableBinaryPreparer,
+            artifactBundleManager: artifactBundleManager,
+            logger: logger
+        )
     }
 }
 
