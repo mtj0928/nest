@@ -23,8 +23,8 @@ public struct NestInfoController {
     public func command(matchingTo reference: String, version: String) -> NestInfo.Command? {
          return getInfo().commands
             .first {
-                let command = $0.value
-                    .first {
+                $0.value
+                    .contains {
                         switch $0.manufacturer {
                         case let .artifactBundle(sourceInfo):
                             return sourceInfo.repository?.reference.referenceName == reference
@@ -32,7 +32,6 @@ public struct NestInfoController {
                             return repository.reference.referenceName == reference
                         }
                     }
-                return command != nil
             }?.value
             .first { $0.version == version }
     }
