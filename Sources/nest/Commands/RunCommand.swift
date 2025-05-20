@@ -16,7 +16,7 @@ struct RunCommand: AsyncParsableCommand {
     @Flag(help: "Will not perform installation.")
     var noInstall: Bool = false
     
-    @Option(help: "A nestfile written in yaml.")
+    @Option(help: "A path to nestfile")
     var nestfilePath: String = "nestfile.yaml"
     
     @Argument(parsing: .captureForPassthrough)
