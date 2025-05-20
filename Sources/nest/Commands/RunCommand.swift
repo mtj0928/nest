@@ -50,22 +50,12 @@ struct RunCommand: AsyncParsableCommand {
             logger.error("Failed to find expected version in nestfile", metadata: .color(.red))
             return
         }
-        
-        guard let installTarget = InstallTarget(argument: reference),
-              case let .git(gitURL) = installTarget,
-              let gitVersion = GitVersion(argument: expectedVersion)
-        else {
-            return
-        }
 
         guard let binaryRelativePath = try await resolveBinaryRelativePath(
-            didAttemptInstallation: false,
             noInstall: noInstall,
             reference: reference,
             version: expectedVersion,
             target: target,
-            gitURL: gitURL,
-            gitVersion: gitVersion,
             nestInfoController: nestInfoController,
             executableBinaryPreparer: executableBinaryPreparer,
             artifactBundleManager: artifactBundleManager,
@@ -86,13 +76,10 @@ struct RunCommand: AsyncParsableCommand {
     }
 
     private func resolveBinaryRelativePath(
-        didAttemptInstallation: Bool,
         noInstall: Bool,
         reference: String,
         version: String,
         target: Nestfile.Target,
-        gitURL: GitURL,
-        gitVersion: GitVersion,
         nestInfoController: NestInfoController,
         executableBinaryPreparer: ExecutableBinaryPreparer,
         artifactBundleManager: ArtifactBundleManager,
@@ -101,36 +88,30 @@ struct RunCommand: AsyncParsableCommand {
         if let binaryRelativePath = nestInfoController.command(matchingTo: reference, version: version)?.binaryPath {
             return binaryRelativePath
         }
-        // attempt installation only once
-        guard !didAttemptInstallation && !noInstall else { return nil }
+        guard !noInstall else { return nil }
         
-        let checksumOption = ChecksumOption(expectedChecksum: target.resolveChecksum(), logger: logger)
-        
+        guard let installTarget = InstallTarget(argument: reference),
+              case let .git(gitURL) = installTarget,
+              let gitVersion = GitVersion(argument: version)
+        else {
+            return nil
+        }
+
         let executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
             at: gitURL,
             version: gitVersion,
             artifactBundleZipFileName: target.resolveAssetName(),
-            checksum: checksumOption
+            checksum: ChecksumOption(expectedChecksum: target.resolveChecksum(), logger: logger)
         )
 
         for binary in executableBinaries {
             try artifactBundleManager.install(binary)
             logger.info("🪺 Success to install \(binary.commandName) version \(binary.version).")
         }
-
-        return try await resolveBinaryRelativePath(
-            didAttemptInstallation: true,
-            noInstall: noInstall,
-            reference: reference,
-            version: version,
-            target: target,
-            gitURL: gitURL,
-            gitVersion: gitVersion,
-            nestInfoController: nestInfoController,
-            executableBinaryPreparer: executableBinaryPreparer,
-            artifactBundleManager: artifactBundleManager,
-            logger: logger
-        )
+        guard let binaryRelativePath = nestInfoController.command(matchingTo: reference, version: version)?.binaryPath else {
+            return nil
+        }
+        return binaryRelativePath
     }
 }
 
