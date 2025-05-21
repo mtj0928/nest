@@ -229,4 +229,18 @@ public enum ChecksumOption {
     case needsCheck(expected: String)
     case printActual(handler: (String) -> Void)
     case skip
+    
+    public init(isSkip: Bool = false, expectedChecksum: String?, logger: Logger) {
+        if isSkip {
+            self = .skip
+            return
+        }
+        if let expectedChecksum {
+            self = .needsCheck(expected: expectedChecksum)
+            return
+        }
+        self = .printActual { checksum in
+            logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
+        }
+    }
 }

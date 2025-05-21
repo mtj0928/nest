@@ -48,6 +48,30 @@ public struct Nestfile: Codable, Sendable {
             default: return false
             }
         }
+        
+        public var version: String? {
+            switch self {
+            case let .repository(repository):
+                return repository.version
+            case .zip, .deprecatedZIP:
+                return nil
+            }
+        }
+        
+        public var assetName: String? {
+            switch self {
+            case .repository(let repository): repository.assetName
+            case .zip, .deprecatedZIP: nil
+            }
+        }
+        
+        public var checksum: String? {
+            switch self {
+            case .repository(let repository): repository.checksum
+            case .zip(let zipURL): zipURL.checksum
+            case .deprecatedZIP: nil
+            }
+        }
     }
 
     public struct Repository: Codable, Equatable, Sendable {
