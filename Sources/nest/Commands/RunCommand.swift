@@ -27,22 +27,20 @@ struct RunCommand: AsyncParsableCommand {
         let (nestfileController, executableBinaryPreparer, nestDirectory, artifactBundleManager, logger) = setUp(nestfile: nestfile)
         let nestInfoController = NestInfoController(directory: nestDirectory, fileSystem: FileManager.default)
         
-        guard !arguments.isEmpty else {
-            logger.error("`owner/repository` is not specified.", metadata: .color(.red))
+        let executor: RunCommandExecutor
+        do {
+            executor = try RunCommandExecutor(arguments: arguments)
+        } catch let error as RunCommandExecutor.ParseError {
+            switch error {
+            case .emptyArguments:
+                logger.error("`owner/repository` is not specified.", metadata: .color(.red))
+            case .invalidFormat:
+                logger.error("Invalid format: \(arguments), expected owner/repository", metadata: .color(.red))
+            }
             return
         }
-        guard arguments[0].contains("/") else {
-            logger.error("Invalid format: \(arguments), expected owner/repository", metadata: .color(.red))
-            return
-        }
-        
-        let reference = arguments[0]
-        let subcommands: [String] = if arguments.count >= 2 {
-            Array(arguments[1...])
-        } else {
-            []
-        }
-        guard let target = nestfileController.target(matchingTo: reference, in: nestfile),
+
+        guard let target = nestfileController.target(matchingTo: executor.reference, in: nestfile),
               let expectedVersion = target.version
         else {
             // While we could execute with the latest version, the bootstrap subcommand serves that purpose.
@@ -51,11 +49,20 @@ struct RunCommand: AsyncParsableCommand {
             return
         }
 
-        guard let binaryRelativePath = try await resolveBinaryRelativePath(
+        guard let installTarget = InstallTarget(argument: executor.reference),
+              case let .git(gitURL) = installTarget,
+              let gitVersion = GitVersion(argument: expectedVersion)
+        else {
+            return
+        }
+
+        guard let binaryRelativePath = try await executor.resolveBinaryRelativePath(
             noInstall: noInstall,
-            reference: reference,
+            reference: executor.reference,
             version: expectedVersion,
             target: target,
+            gitURL: gitURL,
+            gitVersion: gitVersion,
             nestInfoController: nestInfoController,
             executableBinaryPreparer: executableBinaryPreparer,
             artifactBundleManager: artifactBundleManager,
@@ -71,47 +78,8 @@ struct RunCommand: AsyncParsableCommand {
         _ = try await NestProcessExecutor(logger: logger, logLevel: .info)
             .execute(
                 command: "\(nestDirectory.rootDirectory.relativePath)\(binaryRelativePath)",
-                subcommands
+                executor.subcommands
             )
-    }
-
-    private func resolveBinaryRelativePath(
-        noInstall: Bool,
-        reference: String,
-        version: String,
-        target: Nestfile.Target,
-        nestInfoController: NestInfoController,
-        executableBinaryPreparer: ExecutableBinaryPreparer,
-        artifactBundleManager: ArtifactBundleManager,
-        logger: Logger
-    ) async throws -> String? {
-        if let binaryRelativePath = nestInfoController.command(matchingTo: reference, version: version)?.binaryPath {
-            return binaryRelativePath
-        }
-        guard !noInstall else { return nil }
-        
-        guard let installTarget = InstallTarget(argument: reference),
-              case let .git(gitURL) = installTarget,
-              let gitVersion = GitVersion(argument: version)
-        else {
-            return nil
-        }
-
-        let executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
-            at: gitURL,
-            version: gitVersion,
-            artifactBundleZipFileName: target.resolveAssetName(),
-            checksum: ChecksumOption(expectedChecksum: target.resolveChecksum(), logger: logger)
-        )
-
-        for binary in executableBinaries {
-            try artifactBundleManager.install(binary)
-            logger.info("🪺 Success to install \(binary.commandName) version \(binary.version).")
-        }
-        guard let binaryRelativePath = nestInfoController.command(matchingTo: reference, version: version)?.binaryPath else {
-            return nil
-        }
-        return binaryRelativePath
     }
 }
 

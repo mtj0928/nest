@@ -34,7 +34,7 @@ struct BootstrapCommand: AsyncParsableCommand {
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
-            let checksumOption = ChecksumOption(isSkip: skipChecksumValidation, expectedChecksum: targetInfo.resolveChecksum(), logger: logger)
+            let checksumOption = ChecksumOption(isSkip: skipChecksumValidation, expectedChecksum: targetInfo.checksum, logger: logger)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):
@@ -54,7 +54,7 @@ struct BootstrapCommand: AsyncParsableCommand {
                 executableBinaries = try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
                     at: gitURL,
                     version: version,
-                    artifactBundleZipFileName: targetInfo.resolveAssetName(),
+                    artifactBundleZipFileName: targetInfo.assetName,
                     checksum: checksumOption
                 )
             case .artifactBundle(let url):
@@ -101,21 +101,6 @@ extension Nestfile.Target {
             return repository.version
         case .zip, .deprecatedZIP:
             return nil
-        }
-    }
-
-    func resolveAssetName() -> String? {
-        switch self {
-        case .repository(let repository): repository.assetName
-        case .zip, .deprecatedZIP: nil
-        }
-    }
-
-    func resolveChecksum() -> String? {
-        switch self {
-        case .repository(let repository): repository.checksum
-        case .zip(let zipURL): zipURL.checksum
-        case .deprecatedZIP: nil
         }
     }
 }
