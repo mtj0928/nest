@@ -115,6 +115,14 @@ $ nest update-nestfile nestfile.yaml --excludes realm/SwiftLint@0.58.1 realm/Swi
 
 `resolve-nestfile` is a similar command but it doesn't update the version when one is specified.
 
+### Execute the binary that matches `owner/repository` written in nestfile
+
+```sh
+$ nest run owner/repository
+```
+
+If a version matching the nestfile is not installed, it will attempt to install and run the matching version.
+
 ## Cache directory
 `nest` stores artifacts at `~/.nest` as a default. 
 If you want change the directory,

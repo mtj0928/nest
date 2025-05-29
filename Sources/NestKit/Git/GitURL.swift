@@ -55,6 +55,16 @@ public enum GitURL: Sendable, Hashable, Codable {
                 .replacingOccurrences(of: ".git", with: "")
         }
     }
+    
+    /// `owner/repo` format
+    public var reference: String? {
+        switch self {
+        case let .url(url):
+            return url.reference
+        case let .ssh(sshURL):
+            return sshURL.path.split(separator: ":").last?.replacingOccurrences(of: ".git", with: "")
+        }
+    }
 
     public var stringURL: String {
         switch self {

@@ -25,7 +25,7 @@ public struct ArtifactBundleManager: Sendable {
         commands = commands.filter { $0.version == version }
 
         for command in commands {
-            // Remove symboliklink
+            // Remove symbolic link
             if let linkedFilePath = try? self.linkedFilePath(commandName: name),
                linkedFilePath == command.binaryPath {
                 let resourceNames = command.resourcePaths.map { directory.url($0).lastPathComponent }

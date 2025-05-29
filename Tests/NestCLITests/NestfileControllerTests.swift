@@ -26,6 +26,35 @@ struct NestfileControllerTests {
             ]
         ]
     }
+    
+    @Test
+    func fetchTarget() async throws {
+        let zipFileURL = try #require(URL(string: "https://example.com/foo.artifacatbundle.zip"))
+        let controller = NestfileController(
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(
+                httpClient: httpClient,
+                registryConfigs: nil,
+                logger: Logger(label: "Test")
+            ),
+            fileSystem: fileSystem,
+            fileDownloader: NestFileDownloader(httpClient: httpClient),
+            checksumCalculator: SwiftChecksumCalculator(processExecutor: processExecutor)
+        )
+        let repositoryTarget = Nestfile.Target.repository(
+            Nestfile.Repository(
+                reference: "owner/foo",
+                version: "0.0.1",
+                assetName: nil,
+                checksum: nil
+            )
+        )
+        let nestfile = Nestfile(nestPath: "./.nest", targets: [
+            repositoryTarget,
+            .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: nil))
+        ])
+        #expect(controller.target(matchingTo: "owner/foo", in: nestfile) == repositoryTarget)
+        #expect(controller.target(matchingTo: "owner/undefined", in: nestfile) == nil)
+    }
 
     @Test
     func update() async throws {
