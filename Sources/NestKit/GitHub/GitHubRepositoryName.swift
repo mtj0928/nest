@@ -4,6 +4,10 @@ public struct GitHubRepositoryName: Sendable, Hashable {
     public var owner: String
     public var name: String
 
+    var httpsURL: URL {
+        URL(string: "https://\(Self.gitHubHost)/\(owner)/\(name)")!
+    }
+
     public init?(owner: String, name: String) {
         guard Self.validate(owner), Self.validate(name) else { return nil }
         self.owner = owner
@@ -16,6 +20,11 @@ public struct GitHubRepositoryName: Sendable, Hashable {
             return self
         }
 
+        return parseOmittedStyle(from: string)
+    }
+
+    /// Parse string if it follows `{owner}/{repository name}` format.
+    public static func parseOmittedStyle(from string: String) -> Self? {
         let components = string.split(separator: "/").map { String($0) }
         if components.count == 2 {
             return GitHubRepositoryName(owner: components[0], name: components[1].removingGitExtension())
@@ -31,7 +40,7 @@ public struct GitHubRepositoryName: Sendable, Hashable {
     }
 
     public static func parse(from url: URL) -> Self? {
-        guard url.host() == githubHost else { return nil }
+        guard url.host() == gitHubHost else { return nil }
         let components = url.pathComponents.compactMap { String($0) }
 
         // http://github.com/owner/name/main/...
@@ -42,7 +51,7 @@ public struct GitHubRepositoryName: Sendable, Hashable {
     }
 
     public static func parse(from sshURL: SSHURL) -> Self? {
-        guard sshURL.host == githubHost else {
+        guard sshURL.host == gitHubHost else {
             return nil
         }
         
@@ -52,7 +61,7 @@ public struct GitHubRepositoryName: Sendable, Hashable {
 }
 
 extension GitHubRepositoryName {
-    private static var githubHost: String { "github.com" }
+    private static var gitHubHost: String { "github.com" }
 
     private static func validate(_ input: String) -> Bool {
         let invalidCharacters: [Character] = ["@", ":", "/"]

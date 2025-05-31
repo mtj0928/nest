@@ -23,20 +23,17 @@ public enum GitURL: Sendable, Hashable, Codable {
             return .ssh(sshURL)
         }
 
+        // A case the string is `{Owner}/{Repository Name}`.
+        if let gitHubRepositoryName = GitHubRepositoryName.parseOmittedStyle(from: string) {
+            return .url(gitHubRepositoryName.httpsURL)
+        }
+
         guard let url = URL(string: string) else { return nil }
 
         // github.com/xxx/yyy or https://github.com/xxx/yyy
         if url.host() != nil {
             let fileNameWithoutPathExtension = url.fileNameWithoutPathExtension
             return .url(url.deletingLastPathComponent().appending(path: fileNameWithoutPathExtension))
-        }
-
-        // xxx/yyy
-        if url.pathComponents.count == 2,
-           url.scheme == nil,
-           url.host() == nil,
-           let url = URL(string: "https://github.com/\(string)") {
-            return .url(url)
         }
 
         if url.pathComponents.count >= 2,
