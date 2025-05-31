@@ -32,7 +32,7 @@ struct NestInfoControllerTests {
                     sourceInfo: ArtifactBundleSourceInfo(
                         zipURL: #require(URL(string: "https://foo.com/bar.zip")),
                         repository: Repository(
-                            reference: #require(.parse(string: "owner/foo")),
+                            reference: #require(.parse(from: "owner/foo")),
                             version: "0.0.1"
                         )
                     )
@@ -46,7 +46,7 @@ struct NestInfoControllerTests {
                     sourceInfo: ArtifactBundleSourceInfo(
                         zipURL: #require(URL(string: "https://foo.com/bar.zip")),
                         repository: Repository(
-                            reference: #require(.parse(string: "owner/foo")),
+                            reference: #require(.parse(from: "owner/foo")),
                             version: "0.0.2"
                         )
                     )
@@ -71,7 +71,7 @@ struct NestInfoControllerTests {
                 sourceInfo: ArtifactBundleSourceInfo(
                     zipURL: #require(URL(string: "https://foo.com/bar.zip")),
                     repository: Repository(
-                        reference: #require(.parse(string: "foo/bar")),
+                        reference: #require(.parse(from: "foo/bar")),
                         version: "0.0.1"
                     )
                 )
@@ -92,7 +92,7 @@ struct NestInfoControllerTests {
                 sourceInfo: ArtifactBundleSourceInfo(
                     zipURL: #require(URL(string: "https://foo.com/bar.zip")),
                     repository: Repository(
-                        reference: #require(.parse(string: "foo/bar")),
+                        reference: #require(.parse(from: "foo/bar")),
                         version: "0.0.1"
                     )
                 )

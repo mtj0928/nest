@@ -11,7 +11,7 @@ public struct GitHubRepositoryName: Sendable, Hashable {
     }
 
     public static func parse(from string: String) -> Self? {
-        if let gitURL = GitURL.parse(string: string),
+        if let gitURL = GitURL.parse(from: string),
            let self = parse(from: gitURL) {
             return self
         }

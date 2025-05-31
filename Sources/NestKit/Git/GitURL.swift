@@ -7,7 +7,7 @@ public enum GitURL: Sendable, Hashable, Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let string = try container.decode(String.self)
-        guard let value = Self.parse(string: string) else {
+        guard let value = Self.parse(from: string) else {
             throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "Invalid format"))
         }
         self = value
@@ -18,7 +18,7 @@ public enum GitURL: Sendable, Hashable, Codable {
         try container.encode(stringURL)
     }
 
-    public static func parse(string: String) -> GitURL? {
+    public static func parse(from string: String) -> GitURL? {
         if let sshURL = SSHURL(string: string) {
             return .ssh(sshURL)
         }
