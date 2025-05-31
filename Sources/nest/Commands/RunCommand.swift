@@ -11,16 +11,16 @@ struct RunCommand: AsyncParsableCommand {
     )
 
     @Flag(name: .shortAndLong)
-    var verbose: Bool = false
+    var verbose = false
     
     @Flag(help: "Will not perform installation.")
-    var noInstall: Bool = false
+    var noInstall = false
     
-    @Option(help: "A path to nestfile")
-    var nestfilePath: String = "nestfile.yaml"
+    @Option(help: "A path to nestfile", completion: .file(extensions: ["yaml"]))
+    var nestfilePath = "nestfile.yaml"
 
     @Argument(parsing: .captureForPassthrough)
-    var arguments: [String] = []
+    var arguments: [String]
 
     mutating func run() async throws {
         if arguments.first == "--help" {
