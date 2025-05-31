@@ -30,13 +30,11 @@ struct RunCommand: AsyncParsableCommand {
         let executor: RunCommandExecutor
         do {
             executor = try RunCommandExecutor(arguments: arguments)
-        } catch let error as RunCommandExecutor.ParseError {
-            switch error {
-            case .emptyArguments:
-                logger.error("`owner/repository` is not specified.", metadata: .color(.red))
-            case .invalidFormat:
-                logger.error("Invalid format: \(arguments), expected owner/repository", metadata: .color(.red))
-            }
+        } catch .emptyArguments {
+            logger.error("`owner/repository` is not specified.", metadata: .color(.red))
+            return
+        } catch .invalidFormat {
+            logger.error("Invalid format: \(arguments), expected owner/repository", metadata: .color(.red))
             return
         }
 

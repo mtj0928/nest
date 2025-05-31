@@ -11,7 +11,7 @@ public struct RunCommandExecutor {
         case invalidFormat
     }
     
-    public init(arguments: [String]) throws {
+    public init(arguments: [String]) throws(ParseError) {
         guard !arguments.isEmpty else {
             throw ParseError.emptyArguments
         }
