@@ -26,5 +26,12 @@ extension NestInfo {
             self.resourcePaths = resourcePaths
             self.manufacturer = manufacturer
         }
+
+        public var repository: Repository? {
+            switch manufacturer {
+            case .artifactBundle(let sourceInfo): sourceInfo.repository
+            case .localBuild(let repository): repository
+            }
+        }
     }
 }
