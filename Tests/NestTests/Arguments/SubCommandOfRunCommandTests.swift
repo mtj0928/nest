@@ -1,26 +1,26 @@
 import Testing
 @testable import nest
 
-struct RunCommandArgumentTests {
+struct SubCommandOfRunCommandTests {
     @Test(arguments: [
         (["owner/repo"], "owner/repo", []),
         (["owner/repo", "--option"], "owner/repo", ["--option"]),
         (["owner/repo", "subcommand", "--option"], "owner/repo", ["subcommand", "--option"])
     ])
     func initialize(arguments: [String], expectedReference reference: String, expectedSubcommands subcommands: [String]?) throws {
-        let executor = try RunCommandArgument(arguments: arguments)
-        #expect(executor.gitURL.reference == reference)
-        #expect(executor.subcommands == subcommands)
+        let executor = try SubCommandOfRunCommand(arguments: arguments)
+        #expect(executor.repository.reference == reference)
+        #expect(executor.arguments == subcommands)
     }
     
     @Test(arguments: [
-        ([], RunCommandArgument.ParseError.emptyArguments),
+        ([], SubCommandOfRunCommand.ParseError.emptyArguments),
         ([""], .invalidFormat),
         (["ownerrepo"], .invalidFormat)
     ])
-    func failedInitialize(arguments: [String], expectedError error: RunCommandArgument.ParseError) throws {
+    func failedInitialize(arguments: [String], expectedError error: SubCommandOfRunCommand.ParseError) throws {
         #expect(throws: error, performing: {
-            try RunCommandArgument(arguments: arguments)
+            try SubCommandOfRunCommand(arguments: arguments)
         })
     }
 }

@@ -23,20 +23,14 @@ public struct ExecutableBinaryPreparer {
         self.logger = logger
     }
 
-    public func resolveInstalledExecutableBinariesFromNestInfo(for gitURL: GitURL, version: GitVersion) -> [ExecutableBinary]? {
+    public func resolveInstalledExecutableBinariesFromNestInfo(for gitURL: GitURL, version: GitVersion) -> [ExecutableBinary] {
         let commands = nestInfoController.getInfo().commands
             .compactMapValues { commands -> [NestInfo.Command]? in
                 let filteredCommands = commands.filter { command in
                     command.repository?.reference == gitURL && command.version == version.description
                 }
-                if filteredCommands.isEmpty {
-                    return nil
-                }
-                return filteredCommands
+                return filteredCommands.isEmpty ? nil : filteredCommands
             }
-        if commands.isEmpty {
-            return nil
-        }
         return commands
             .flatMap { commandName, commands in commands.map { (commandName, $0) }}
             .map { commandName, command in

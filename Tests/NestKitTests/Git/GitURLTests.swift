@@ -16,14 +16,14 @@ struct GitURLTests {
             "example.com/owner/repo/foo",
             expect: GitURL.url(URL(string: "https://example.com/owner/repo/foo")!)
         ),
-//        (
-//            "github.com/owner/repo",
-//            expect: .url(URL(string: "https://github.com/owner/repo")!)
-//        ),
-//        (
-//            "git@github.com:owner/repo.git",
-//            expect: .ssh(SSHURL(user: "git", host: "github.com", path: "owner/repo.git"))
-//        )
+        (
+            "github.com/owner/repo",
+            expect: .url(URL(string: "https://github.com/owner/repo")!)
+        ),
+        (
+            "git@github.com:owner/repo.git",
+            expect: .ssh(SSHURL(user: "git", host: "github.com", path: "owner/repo.git"))
+        )
     ])
     func parseGitURLOnSuccessCase(parameter: (argument: String, expect: GitURL)) throws {
         let gitURL = try #require(GitURL.parse(from: parameter.argument))

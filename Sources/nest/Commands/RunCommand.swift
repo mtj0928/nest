@@ -61,7 +61,8 @@ struct RunCommand: AsyncParsableCommand {
 
         let version = GitVersion.tag(expectedVersion)
         let executables: [ExecutableBinary]
-        if let installedBinaries = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version) {
+        let installedBinaries = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
+        if !installedBinaries.isEmpty {
             executables = installedBinaries
         } else if noInstall {
             logger.error("The executable binary is not installed yet. Please try without the --no-install option or run the bootstrap command.", metadata: .color(.red))
@@ -74,7 +75,7 @@ struct RunCommand: AsyncParsableCommand {
                 assetName: target.assetName,
                 checksumOption: ChecksumOption(expectedChecksum: target.checksum, logger: logger)
             )
-            executables = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version) ?? []
+            executables = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         }
 
         guard !executables.isEmpty else {
