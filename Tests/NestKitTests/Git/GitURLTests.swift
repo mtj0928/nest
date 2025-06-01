@@ -13,6 +13,10 @@ struct GitURLTests {
             expect: .url(URL(string: "https://github.com/owner/repo")!)
         ),
         (
+            "example.com/owner/repo/foo",
+            expect: GitURL.url(URL(string: "https://example.com/owner/repo/foo")!)
+        ),
+        (
             "github.com/owner/repo",
             expect: .url(URL(string: "https://github.com/owner/repo")!)
         ),
@@ -22,13 +26,13 @@ struct GitURLTests {
         )
     ])
     func parseGitURLOnSuccessCase(parameter: (argument: String, expect: GitURL)) throws {
-        let gitURL = try #require(GitURL.parse(string: parameter.argument))
+        let gitURL = try #require(GitURL.parse(from: parameter.argument))
         #expect(gitURL == parameter.expect)
     }
 
     @Test(arguments:["repo"])
     func parseGitURLOnFailureCase(argument: String) throws {
-        let repository = GitURL.parse(string: argument)
+        let repository = GitURL.parse(from: argument)
         #expect(repository == nil)
     }
 
@@ -39,7 +43,7 @@ struct GitURLTests {
         ("git@github.com:owner/repo.git", expect: "repo")
     ])
     func repositoryName(parameter: (name: String, expect: String)) {
-        let repository = GitURL.parse(string: parameter.name)
+        let repository = GitURL.parse(from: parameter.name)
         #expect(repository?.repositoryName == parameter.expect)
     }
     
@@ -50,7 +54,7 @@ struct GitURLTests {
         ("git@github.com:owner/repo.git", expect: "owner/repo")
     ])
     func referenceName(name: String, expected: String) {
-        let repository = GitURL.parse(string: name)
+        let repository = GitURL.parse(from: name)
         #expect(repository?.reference == expected)
     }
 
@@ -61,7 +65,7 @@ struct GitURLTests {
         ("git@github.com:owner/repo.git", expect: "git@github.com:owner/repo.git")
     ])
     func stringURL(parameter: (name: String, expect: String)) {
-        let repository = GitURL.parse(string: parameter.name)
+        let repository = GitURL.parse(from: parameter.name)
         #expect(repository?.stringURL == parameter.expect)
     }
 }

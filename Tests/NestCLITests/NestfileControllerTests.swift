@@ -52,8 +52,8 @@ struct NestfileControllerTests {
             repositoryTarget,
             .zip(Nestfile.ZIPURL(zipURL: zipFileURL.absoluteString, checksum: nil))
         ])
-        #expect(controller.target(matchingTo: "owner/foo", in: nestfile) == repositoryTarget)
-        #expect(controller.target(matchingTo: "owner/undefined", in: nestfile) == nil)
+        #expect(controller.target(matchingTo: try #require(.parse(from: "owner/foo")), in: nestfile) == repositoryTarget)
+        #expect(controller.target(matchingTo: try #require(.parse(from: "owner/undefined")), in: nestfile) == nil)
     }
 
     @Test

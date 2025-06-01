@@ -7,7 +7,7 @@ public enum GitURL: Sendable, Hashable, Codable {
     public init(from decoder: any Decoder) throws {
         let container = try decoder.singleValueContainer()
         let string = try container.decode(String.self)
-        guard let value = Self.parse(string: string) else {
+        guard let value = Self.parse(from: string) else {
             throw DecodingError.dataCorrupted(.init(codingPath: container.codingPath, debugDescription: "Invalid format"))
         }
         self = value
@@ -18,9 +18,14 @@ public enum GitURL: Sendable, Hashable, Codable {
         try container.encode(stringURL)
     }
 
-    public static func parse(string: String) -> GitURL? {
+    public static func parse(from string: String) -> GitURL? {
         if let sshURL = SSHURL(string: string) {
             return .ssh(sshURL)
+        }
+
+        // A case the string is `{Owner}/{Repository Name}`.
+        if let gitHubRepositoryName = GitHubRepositoryName.parseOmittedStyle(from: string) {
+            return .url(gitHubRepositoryName.httpsURL)
         }
 
         guard let url = URL(string: string) else { return nil }
@@ -29,14 +34,6 @@ public enum GitURL: Sendable, Hashable, Codable {
         if url.host() != nil {
             let fileNameWithoutPathExtension = url.fileNameWithoutPathExtension
             return .url(url.deletingLastPathComponent().appending(path: fileNameWithoutPathExtension))
-        }
-
-        // xxx/yyy
-        if url.pathComponents.count == 2,
-           url.scheme == nil,
-           url.host() == nil,
-           let url = URL(string: "https://github.com/\(string)") {
-            return .url(url)
         }
 
         if url.pathComponents.count >= 2,

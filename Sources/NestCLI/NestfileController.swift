@@ -22,15 +22,13 @@ public struct NestfileController: Sendable {
     
     /// Get the version that matches the `owner/repo`
     /// - Parameters:
-    ///   - reference: `owner/repo` format
+    ///   - gitURL: A git URL.
     ///   - nestfile: Nestfile struct that defines nestfile.yaml
-    public func target(matchingTo reference: String, in nestfile: Nestfile) -> Nestfile.Target? {
+    public func target(matchingTo gitURL: GitURL, in nestfile: Nestfile) -> Nestfile.Target? {
         return nestfile.targets
             .first { target in
-                guard case let .repository(repository) = target,
-                      GitURL.parse(string: repository.reference)?.reference == reference
-                else { return false }
-                return true
+                guard case let .repository(repository) = target else { return false }
+                return GitURL.parse(from: repository.reference) == gitURL
             }
     }
 
@@ -87,7 +85,7 @@ public struct NestfileController: Sendable {
             return repository
         }
 
-        guard let gitURL = GitURL.parse(string: repository.reference),
+        guard let gitURL = GitURL.parse(from: repository.reference),
               case .url(let url) = gitURL
         else { return repository }
 

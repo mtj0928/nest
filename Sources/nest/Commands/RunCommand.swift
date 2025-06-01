@@ -11,74 +11,83 @@ struct RunCommand: AsyncParsableCommand {
     )
 
     @Flag(name: .shortAndLong)
-    var verbose: Bool = false
+    var verbose = false
     
     @Flag(help: "Will not perform installation.")
-    var noInstall: Bool = false
+    var noInstall = false
     
-    @Option(help: "A path to nestfile")
-    var nestfilePath: String = "nestfile.yaml"
-    
+    @Option(help: "A path to nestfile", completion: .file(extensions: ["yaml"]))
+    var nestfilePath = "nestfile.yaml"
+
     @Argument(parsing: .captureForPassthrough)
     var arguments: [String]
-    
+
     mutating func run() async throws {
-        let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
-        let (nestfileController, executableBinaryPreparer, nestDirectory, artifactBundleManager, logger) = setUp(nestfile: nestfile)
-        let nestInfoController = NestInfoController(directory: nestDirectory, fileSystem: FileManager.default)
-        
-        let executor: RunCommandExecutor
-        do {
-            executor = try RunCommandExecutor(arguments: arguments)
-        } catch let error as RunCommandExecutor.ParseError {
-            switch error {
-            case .emptyArguments:
-                logger.error("`owner/repository` is not specified.", metadata: .color(.red))
-            case .invalidFormat:
-                logger.error("Invalid format: \(arguments), expected owner/repository", metadata: .color(.red))
-            }
+        if arguments.first == "--help" {
+            let helpMessage = Self.helpMessage(for: Self.self)
+            print(helpMessage)
             return
         }
 
-        guard let target = nestfileController.target(matchingTo: executor.reference, in: nestfile),
+        let nestfile: Nestfile
+        do {
+            nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
+        } catch {
+            print("Nestfile not found at \(nestfilePath)".red)
+            return
+        }
+
+        let (nestfileController, executableBinaryPreparer, nestDirectory, logger) = setUp(nestfile: nestfile)
+
+        let subcommand: SubCommandOfRunCommand
+        do {
+            subcommand = try SubCommandOfRunCommand(arguments: arguments)
+        } catch .emptyArguments {
+            logger.error("`owner/repository` is not specified.", metadata: .color(.red))
+            return
+        } catch .invalidFormat {
+            logger.error("Invalid format: \"\(arguments[0])\", expected owner/repository", metadata: .color(.red))
+            return
+        }
+
+        guard let target = nestfileController.target(matchingTo: subcommand.repository, in: nestfile),
               let expectedVersion = target.version
         else {
             // While we could execute with the latest version, the bootstrap subcommand serves that purpose.
             // Therefore, we return an error when no version is specified.
-            logger.error("Failed to find expected version in nestfile", metadata: .color(.red))
+            logger.error("Failed to find an expected version for \"\(arguments[0])\" in nestfile", metadata: .color(.red))
             return
         }
 
-        guard let installTarget = InstallTarget(argument: executor.reference),
-              case let .git(gitURL) = installTarget,
-              let gitVersion = GitVersion(argument: expectedVersion)
-        else {
+        let version = GitVersion.tag(expectedVersion)
+        let executables: [ExecutableBinary]
+        let installedBinaries = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
+        if !installedBinaries.isEmpty {
+            executables = installedBinaries
+        } else if noInstall {
+            logger.error("The executable binary is not installed yet. Please try without the --no-install option or run the bootstrap command.", metadata: .color(.red))
             return
-        }
-
-        guard let binaryRelativePath = try await executor.resolveBinaryRelativePath(
-            noInstall: noInstall,
-            reference: executor.reference,
-            version: expectedVersion,
-            target: target,
-            gitURL: gitURL,
-            gitVersion: gitVersion,
-            nestInfoController: nestInfoController,
-            executableBinaryPreparer: executableBinaryPreparer,
-            artifactBundleManager: artifactBundleManager,
-            logger: logger
-        ) else {
-            logger.error(
-                "Failed to find binary path, likely because it's not installed. Please try without the --no-install option or run the bootstrap command.",
-                metadata: .color(.red)
+        } else {
+            logger.info("Install executable binaries because they are not installed.")
+            try await executableBinaryPreparer.installBinaries(
+                gitURL: subcommand.repository,
+                version: version,
+                assetName: target.assetName,
+                checksumOption: ChecksumOption(expectedChecksum: target.checksum, logger: logger)
             )
+            executables = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
+        }
+
+        guard !executables.isEmpty else {
+            logger.error("No executable binary found.")
             return
         }
 
-        _ = try await NestProcessExecutor(logger: logger, logLevel: .info)
+        let binaryRelativePath = executables[0].binaryPath // FIXME: Needs to address multiple commands in the same artifact bundle.
+        _ = try? await NestProcessExecutor(logger: logger, logLevel: .info)
             .execute(
-                command: "\(nestDirectory.rootDirectory.relativePath)\(binaryRelativePath)",
-                executor.subcommands
+                command: nestDirectory.rootDirectory.appending(path: binaryRelativePath.path(percentEncoded: false)).path(percentEncoded: false),
+                subcommand.arguments
             )
     }
 }
@@ -88,7 +97,6 @@ extension RunCommand {
         NestfileController,
         ExecutableBinaryPreparer,
         NestDirectory,
-        ArtifactBundleManager,
         Logger
     ) {
         LoggingSystem.bootstrap()
@@ -115,7 +123,6 @@ extension RunCommand {
             controller,
             configuration.executableBinaryPreparer,
             configuration.nestDirectory,
-            configuration.artifactBundleManager,
             configuration.logger
         )
     }

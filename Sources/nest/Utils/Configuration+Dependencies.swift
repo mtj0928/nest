@@ -10,6 +10,8 @@ extension Configuration {
         ExecutableBinaryPreparer(
             artifactBundleFetcher: artifactBundleFetcher,
             swiftPackageBuilder: swiftPackageBuilder,
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
+            artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
         )
     }

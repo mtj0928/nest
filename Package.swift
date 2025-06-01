@@ -10,7 +10,7 @@ let package = Package(
         .library(name: "NestKit", targets: ["NestKit"])
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.3.0"),
+        .package(url: "https://github.com/apple/swift-argument-parser", from: "1.5.1"),
         .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/apple/swift-http-types.git", from: "1.0.0"),
         .package(url: "https://github.com/weichsel/ZIPFoundation", from: "0.9.0"),

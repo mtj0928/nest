@@ -38,7 +38,7 @@ public struct NestProcessExecutor: ProcessExecutor {
     }
 
     private func _execute(command: String, _ arguments: [String]) async throws -> [StreamElement] {
-        logger.log(level: logLevel, "$ \(command) \(arguments.joined(separator: " "))")
+        logger.debug("$ \(command) \(arguments.joined(separator: " "))")
         return try await withCheckedThrowingContinuation { continuous in
             let executableURL = URL(fileURLWithPath: command)
             do {
