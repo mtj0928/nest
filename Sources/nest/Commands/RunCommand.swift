@@ -83,12 +83,16 @@ struct RunCommand: AsyncParsableCommand {
             return
         }
 
-        let binaryRelativePath = executables[0].binaryPath // FIXME: Needs to address multiple commands in the same artifact bundle.
-        _ = try? await NestProcessExecutor(logger: logger, logLevel: .info)
-            .execute(
-                command: nestDirectory.rootDirectory.appending(path: binaryRelativePath.path(percentEncoded: false)).path(percentEncoded: false),
-                subcommand.arguments
-            )
+        // FIXME: Needs to address multiple commands in the same artifact bundle.
+        let binaryRelativePath = executables[0].binaryPath.path(percentEncoded: false)
+        let command = nestDirectory.rootDirectory.appending(path: binaryRelativePath).path(percentEncoded: false)
+        var environment = ProcessInfo.processInfo.environment
+        environment["RESOURCE_PATH"] = ""
+        let result = try await NestProcessExecutor(environment: environment, logger: logger, logLevel: .info)
+            .executeInteractively(command: command, subcommand.arguments)
+        if result != 0 {
+            Foundation.exit(result)
+        }
     }
 }
 

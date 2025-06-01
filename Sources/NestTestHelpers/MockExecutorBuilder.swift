@@ -46,4 +46,10 @@ public struct MockProcessExecutor: ProcessExecutor {
     public func execute(command: String, _ arguments: [String]) async throws -> String {
         try await executorClosure(command, arguments)
     }
+    
+    public func executeInteractively(command: String, _ arguments: [String]) async throws -> Int32 {
+        // For testing, just call execute and exit
+        _ = try await executorClosure(command, arguments)
+        return 0
+    }
 }
