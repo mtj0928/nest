@@ -128,7 +128,11 @@ public struct NestProcessExecutor: ProcessExecutor {
         }
 
         try process.run()
+
+        // Need to support standard input
+        // https://forums.swift.org/t/how-to-allow-process-to-receive-user-input-when-run-as-part-of-an-executable-e-g-to-enabled-sudo-commands/34357/7
         tcsetpgrp(STDIN_FILENO, process.processIdentifier)
+
         process.waitUntilExit()
         return process.terminationStatus
     }
