@@ -36,7 +36,7 @@ public struct NestProcessExecutor: ProcessExecutor {
         currentDirectory: URL? = nil,
         environment: [String: String] = ProcessInfo.processInfo.environment,
         logger: Logging.Logger,
-        logLevel: Logging.Logger.Level = .debug,
+        logLevel: Logging.Logger.Level = .debug
     ) {
         self.currentDirectoryURL = currentDirectory
         self.environment = environment
