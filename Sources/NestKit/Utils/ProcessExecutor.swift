@@ -4,11 +4,21 @@ import os
 
 public protocol ProcessExecutor: Sendable {
     func execute(command: String, _ arguments: [String]) async throws -> String
+
+    /// Executes the given command with the given arguments.
+    /// All inputs, outputs and errors are exposed to users unlike ``execute(command:_:)``.
+    /// So user can input texts if the command requires.
+    /// The returned value indicates the status of the results of the command.
+    func executeInteractively(command: String, _ arguments: [String]) async throws -> Int32
 }
 
 extension ProcessExecutor {
     public func execute(command: String, _ arguments: String...) async throws -> String {
         try await execute(command: command, arguments)
+    }
+
+    public func executeInteractively(command: String, _ arguments: String...) async throws -> Int32 {
+        try await executeInteractively(command: command, arguments)
     }
 
     public func which(_ command: String) async throws -> String {
@@ -18,11 +28,18 @@ extension ProcessExecutor {
 
 public struct NestProcessExecutor: ProcessExecutor {
     let currentDirectoryURL: URL?
+    let environment: [String: String]
     let logger: Logging.Logger
     let logLevel: Logging.Logger.Level
 
-    public init(currentDirectory: URL? = nil, logger: Logging.Logger, logLevel: Logging.Logger.Level = .debug) {
+    public init(
+        currentDirectory: URL? = nil,
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        logger: Logging.Logger,
+        logLevel: Logging.Logger.Level = .debug
+    ) {
         self.currentDirectoryURL = currentDirectory
+        self.environment = environment
         self.logger = logger
         self.logLevel = logLevel
     }
@@ -48,6 +65,7 @@ public struct NestProcessExecutor: ProcessExecutor {
                 process.currentDirectoryURL = currentDirectoryURL
                 process.executableURL = executableURL
                 process.arguments = arguments
+                process.environment = environment
 
                 let outputPipe = Pipe()
                 process.standardOutput = outputPipe
@@ -95,6 +113,28 @@ public struct NestProcessExecutor: ProcessExecutor {
                 continuous.resume(throwing: error)
             }
         }
+    }
+
+    public func executeInteractively(command: String, _ arguments: [String]) async throws -> Int32 {
+        logger.debug("$ \(command) \(arguments.joined(separator: " "))")
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: command)
+        process.arguments = arguments
+        process.environment = environment
+
+        if let currentDirectoryURL {
+            process.currentDirectoryURL = currentDirectoryURL
+        }
+
+        try process.run()
+
+        // Need to support standard input
+        // https://forums.swift.org/t/how-to-allow-process-to-receive-user-input-when-run-as-part-of-an-executable-e-g-to-enabled-sudo-commands/34357/7
+        tcsetpgrp(STDIN_FILENO, process.processIdentifier)
+
+        process.waitUntilExit()
+        return process.terminationStatus
     }
 }
 
