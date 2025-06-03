@@ -115,13 +115,25 @@ $ nest update-nestfile nestfile.yaml --excludes realm/SwiftLint@0.58.1 realm/Swi
 
 `resolve-nestfile` is a similar command but it doesn't update the version when one is specified.
 
-### Execute the binary that matches `owner/repository` written in nestfile
+### Run Packages in nestfile
+The `run` command executes a package in the nestfile. 
 
 ```sh
-$ nest run owner/repository
+# Run a tool specified in nestfile
+$ nest run realm/SwiftLint foo.swift
+
+# Use --no-install flag to prevent automatic installation and specify a custom nestfile location
+$ nest run --nestfile-path custom-nestfile.yaml --no-install realm/SwiftLint foo.swift
 ```
 
-If a version matching the nestfile is not installed, it will attempt to install and run the matching version.
+The command will:
+1. Look for the specified repository in the nestfile
+2. Check if the required version is already installed
+3. If not installed and `--no-install` is not specified, automatically install the required version
+4. Execute the package with any additional arguments passed through
+
+> [!NOTE]
+> The `run` command requires a fixed version which is specified in the nestfile. If a version is not specified, the `run` command will return an error rather than using the latest version.
 
 ## Cache directory
 `nest` stores artifacts at `~/.nest` as a default. 
