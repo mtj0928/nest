@@ -8,6 +8,7 @@ extension Configuration {
 
     var executableBinaryPreparer: ExecutableBinaryPreparer {
         ExecutableBinaryPreparer(
+            directory: nestDirectory,
             artifactBundleFetcher: artifactBundleFetcher,
             swiftPackageBuilder: swiftPackageBuilder,
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),

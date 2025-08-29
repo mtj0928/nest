@@ -7,7 +7,7 @@ import Logging
 struct BootstrapCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "bootstrap",
-        abstract: "Install repositories based on a given nestfile."
+        abstract: "Install repositories based on a given nestfile and update the selected command versions."
     )
 
     @Argument(help: "A nestfile written in yaml.")
@@ -46,7 +46,7 @@ struct BootstrapCommand: AsyncParsableCommand {
                 else { .latestRelease }
             }
 
-            let executableBinaries: [ExecutableBinary]
+            let executableBinaries: [PreparedBinary]
             switch target {
             case .git(let gitURL):
                 let versionString = version == .latestRelease ? "" : "(\(version.description)) "
@@ -63,8 +63,13 @@ struct BootstrapCommand: AsyncParsableCommand {
             }
 
             for binary in executableBinaries {
-                try artifactBundleManager.install(binary)
-                logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
+                let executableBinary = binary.executableBinary
+                if binary.isAlreadyInstalled {
+                    try artifactBundleManager.link(executableBinary)
+                } else {
+                    try artifactBundleManager.install(executableBinary)
+                }
+                logger.info("🪺 Success to install \(executableBinary.commandName).", metadata: .color(.green))
             }
         }
     }
