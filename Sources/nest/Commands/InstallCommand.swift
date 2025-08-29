@@ -25,7 +25,7 @@ struct InstallCommand: AsyncParsableCommand {
         let (executableBinaryPreparer, nestDirectory, artifactBundleManager, logger) = setUp()
         do {
 
-            let executableBinaries = switch target {
+            let executableBinaries: [PreparedBinary] = switch target {
             case .git(let gitURL):
                 try await executableBinaryPreparer.fetchOrBuildBinariesFromGitRepository(
                     at: gitURL,
@@ -38,8 +38,13 @@ struct InstallCommand: AsyncParsableCommand {
             }
 
             for binary in executableBinaries {
-                try artifactBundleManager.install(binary)
-                logger.info("🪺 Success to install \(binary.commandName).", metadata: .color(.green))
+                let executableBinary = binary.executableBinary
+                if binary.isAlreadyInstalled {
+                    logger.info("🪺 Skip to install \(binary.executableBinary) because it's already installed .", metadata: .color(.green))
+                } else {
+                    try artifactBundleManager.install(executableBinary)
+                    logger.info("🪺 Success to install \(executableBinary.commandName).", metadata: .color(.green))
+                }
             }
 
             let binDirectory = nestDirectory.bin.path()

@@ -84,8 +84,7 @@ struct RunCommand: AsyncParsableCommand {
         }
 
         // FIXME: Needs to address multiple commands in the same artifact bundle.
-        let binaryRelativePath = executables[0].binaryPath.path(percentEncoded: false)
-        let command = nestDirectory.rootDirectory.appending(path: binaryRelativePath).path(percentEncoded: false)
+        let command = executables[0].binaryPath.path(percentEncoded: false)
         var environment = ProcessInfo.processInfo.environment
         environment["RESOURCE_PATH"] = ""
         let result = try await NestProcessExecutor(environment: environment, logger: logger, logLevel: .info)
