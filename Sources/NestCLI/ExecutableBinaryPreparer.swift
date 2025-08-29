@@ -110,11 +110,21 @@ public struct ExecutableBinaryPreparer {
     }
 
     public func resolveInstalledExecutableBinariesFromNestInfo(for gitURL: GitURL, version: GitVersion) -> [ExecutableBinary] {
+        resolveExecutableBinaries { command in
+            command.repository?.reference == gitURL && command.version == version.description
+        }
+    }
+
+    public func resolveInstalledExecutableBinariesFromNestInfo(for url: URL) -> [ExecutableBinary] {
+        resolveExecutableBinaries { command in
+            command.manufacturer == .artifactBundle(sourceInfo: ArtifactBundleSourceInfo(zipURL: url, repository: nil))
+        }
+    }
+
+    private func resolveExecutableBinaries(commandFilter: @escaping (NestInfo.Command) -> Bool) -> [ExecutableBinary] {
         let commands = nestInfoController.getInfo().commands
             .compactMapValues { commands -> [NestInfo.Command]? in
-                let filteredCommands = commands.filter { command in
-                    command.repository?.reference == gitURL && command.version == version.description
-                }
+                let filteredCommands = commands.filter(commandFilter)
                 return filteredCommands.isEmpty ? nil : filteredCommands
             }
         return commands
@@ -128,27 +138,6 @@ public struct ExecutableBinaryPreparer {
                 )
             }
     }
-
-    public func resolveInstalledExecutableBinariesFromNestInfo(for url: URL) -> [ExecutableBinary] {
-        let commands = nestInfoController.getInfo().commands
-            .compactMapValues { commands -> [NestInfo.Command]? in
-                let filteredCommands = commands.filter { command in
-                    command.manufacturer == .artifactBundle(sourceInfo: ArtifactBundleSourceInfo(zipURL: url, repository: nil))
-                }
-                return filteredCommands.isEmpty ? nil : filteredCommands
-            }
-        return commands
-            .flatMap { commandName, commands in commands.map { (commandName, $0) }}
-            .map { commandName, command in
-                ExecutableBinary(
-                    commandName: commandName,
-                    binaryPath: URL(filePath: command.binaryPath),
-                    version: command.version,
-                    manufacturer: command.manufacturer
-                )
-            }
-    }
-
 }
 
 public struct PreparedBinary: Sendable {
