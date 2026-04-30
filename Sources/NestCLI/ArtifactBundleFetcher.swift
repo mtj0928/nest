@@ -157,8 +157,6 @@ public struct ArtifactBundleFetcher {
         try fileSystem.removeItemIfExists(at: downloadedZipFilePath)
         try fileSystem.copyItem(at: downloadedFilePath, to: downloadedZipFilePath)
 
-        try fileSystem.unzip(at: downloadedFilePath, to: destination)
-
         switch checksum {
         case .needsCheck(let expectedChecksum):
             let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
@@ -174,6 +172,8 @@ public struct ArtifactBundleFetcher {
         case .skip:
             break
         }
+
+        try fileSystem.unzip(at: downloadedFilePath, to: destination)
     }
 }
 

@@ -84,6 +84,11 @@ struct ArtfactBundleFetcherTests {
                 checksum: .needsCheck(expected: "different-checksum")
             )
         }
+
+        // The destination directory must not be populated when the checksum
+        // verification fails: unzip must not run before verification.
+        let destination = workingDirectory.appending(component: zipURL.fileNameWithoutPathExtension)
+        #expect(!fileSystem.fileExists(atPath: destination.path()))
     }
 
     @Test(arguments: [
