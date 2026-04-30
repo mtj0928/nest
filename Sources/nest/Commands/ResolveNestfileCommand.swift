@@ -14,13 +14,16 @@ struct ResolveNestfileCommand: AsyncParsableCommand {
     @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
+    @Flag(help: "Overwrite the existing checksum even when the target version is unchanged. Use this only when a release was legitimately re-tagged.")
+    var allowChecksumChanges: Bool = false
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
         let (controller, fileSystem, logger) = setUp(nestfile: nestfile)
-        let updatedNestfile = try await controller.resolve(nestfile)
+        let updatedNestfile = try await controller.resolve(nestfile, allowChecksumChanges: allowChecksumChanges)
         try updatedNestfile.write(to: nestfilePath, fileSystem: fileSystem)
         logger.info("✨ \(URL(filePath: nestfilePath).lastPathComponent) is Updated")
     }

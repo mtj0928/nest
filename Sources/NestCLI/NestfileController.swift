@@ -32,18 +32,35 @@ public struct NestfileController: Sendable {
             }
     }
 
-    public func update(_ nestfile: Nestfile, excludedTargets: [ExcludedTarget]) async throws -> Nestfile {
+    public func update(
+        _ nestfile: Nestfile,
+        excludedTargets: [ExcludedTarget],
+        allowChecksumChanges: Bool = false
+    ) async throws -> Nestfile {
         var nestfile = nestfile
         nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
-            try await updateTarget(target, versionResolution: .update, excludedTargets: excludedTargets)
+            try await updateTarget(
+                target,
+                versionResolution: .update,
+                excludedTargets: excludedTargets,
+                allowChecksumChanges: allowChecksumChanges
+            )
         }
         return nestfile
     }
 
-    public func resolve(_ nestfile: Nestfile) async throws -> Nestfile {
+    public func resolve(
+        _ nestfile: Nestfile,
+        allowChecksumChanges: Bool = false
+    ) async throws -> Nestfile {
         var nestfile = nestfile
         nestfile.targets = try await nestfile.targets.asyncMap(numberOfConcurrentTasks: .max) { target in
-            try await updateTarget(target, versionResolution: .specific, excludedTargets: [])
+            try await updateTarget(
+                target,
+                versionResolution: .specific,
+                excludedTargets: [],
+                allowChecksumChanges: allowChecksumChanges
+            )
         }
         return nestfile
     }
@@ -51,25 +68,35 @@ public struct NestfileController: Sendable {
     private func updateTarget(
         _ target: Nestfile.Target,
         versionResolution: VersionResolution,
-        excludedTargets: [ExcludedTarget]
+        excludedTargets: [ExcludedTarget],
+        allowChecksumChanges: Bool
     ) async throws -> Nestfile.Target {
         switch target {
         case .repository(let repository):
             let newRepository = try await updateRepository(
                 repository,
                 versionResolution: versionResolution,
-                excludedTargets: excludedTargets
+                excludedTargets: excludedTargets,
+                allowChecksumChanges: allowChecksumChanges
             )
             return .repository(newRepository)
         case .zip(let zipURL):
             guard let url = URL(string: zipURL.zipURL) else { return target }
-            let newZipURL = try await updateZip(url: url)
+            let newZipURL = try await updateZip(
+                url: url,
+                existingChecksum: zipURL.checksum,
+                allowChecksumChanges: allowChecksumChanges
+            )
             return .zip(newZipURL)
         case .deprecatedZIP(let zipURL):
             guard let url = URL(string: zipURL.url) else {
                 return .zip(Nestfile.ZIPURL(zipURL: zipURL.url, checksum: nil))
             }
-            let newZipURL = try await updateZip(url: url)
+            let newZipURL = try await updateZip(
+                url: url,
+                existingChecksum: nil,
+                allowChecksumChanges: allowChecksumChanges
+            )
             return .zip(newZipURL)
         }
     }
@@ -77,7 +104,8 @@ public struct NestfileController: Sendable {
     private func updateRepository(
         _ repository: Nestfile.Repository,
         versionResolution: VersionResolution,
-        excludedTargets: [ExcludedTarget]
+        excludedTargets: [ExcludedTarget],
+        allowChecksumChanges: Bool
     ) async throws -> Nestfile.Repository {
         let excludedTargetsMatchingReference = excludedTargets
             .filter { $0.reference == repository.reference }
@@ -122,6 +150,19 @@ public struct NestfileController: Sendable {
         }
 
         let checksum = try await downloadZIP(url: selectedAsset.url)
+        if !allowChecksumChanges,
+           let existingChecksum = repository.checksum,
+           let existingVersion = repository.version,
+           existingVersion == assetInfo.tagName,
+           let newChecksum = checksum,
+           existingChecksum != newChecksum {
+            throw NestfileControllerError.checksumChanged(
+                target: repository.reference,
+                version: existingVersion,
+                expected: existingChecksum,
+                actual: newChecksum
+            )
+        }
         return Nestfile.Repository(
             reference: repository.reference,
             version: assetInfo.tagName,
@@ -130,8 +171,23 @@ public struct NestfileController: Sendable {
         )
     }
 
-    private func updateZip(url: URL) async throws -> Nestfile.ZIPURL {
+    private func updateZip(
+        url: URL,
+        existingChecksum: String?,
+        allowChecksumChanges: Bool
+    ) async throws -> Nestfile.ZIPURL {
         let checksum = try await downloadZIP(url: url)
+        if !allowChecksumChanges,
+           let existingChecksum,
+           let newChecksum = checksum,
+           existingChecksum != newChecksum {
+            throw NestfileControllerError.checksumChanged(
+                target: url.absoluteString,
+                version: nil,
+                expected: existingChecksum,
+                actual: newChecksum
+            )
+        }
         return Nestfile.ZIPURL(zipURL: url.absoluteString, checksum: checksum)
     }
 
@@ -165,4 +221,22 @@ private enum VersionResolution {
     /// A case indicating using the latest version for repository whose version is not specified.
     /// If a version is specified, the versions is used.
     case specific
+}
+
+public enum NestfileControllerError: LocalizedError, Equatable, Sendable {
+    case checksumChanged(target: String, version: String?, expected: String, actual: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .checksumChanged(let target, let version, let expected, let actual):
+            let versionPart = version.map { " at version \($0)" } ?? ""
+            return """
+            Checksum changed for "\(target)"\(versionPart) without a version bump.
+            This may indicate a release re-tag, a compromised release, or a man-in-the-middle attack.
+            expected: \(expected)
+            actual:   \(actual)
+            If this change is expected, pass `--allow-checksum-changes` to overwrite.
+            """
+        }
+    }
 }

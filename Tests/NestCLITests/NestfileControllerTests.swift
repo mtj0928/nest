@@ -159,6 +159,49 @@ struct NestfileControllerTests {
     }
 
     @Test
+    func resolveDetectsChecksumChangeForSameVersion() async throws {
+        let zipFileURL = try #require(URL(string: "https://example.com/foo.artifacatbundle.zip"))
+        let barReleaseURL = try #require(URL(string: "https://api.github.com/repos/foo/bar/releases/tags/0.0.1"))
+        let assetResponse = GitHubAssetResponse(
+            assets: [GitHubAsset(name: "foo.artifactbundle.zip", browserDownloadURL: zipFileURL)],
+            tagName: "0.0.1"
+        )
+        httpClient.dummyData = try [
+            barReleaseURL: JSONEncoder().encode(assetResponse),
+            zipFileURL: Data(contentsOf: artifactBundlePath)
+        ]
+
+        let controller = NestfileController(
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(
+                httpClient: httpClient,
+                registryConfigs: nil,
+                logger: Logger(label: "Test")
+            ),
+            fileSystem: fileSystem,
+            fileDownloader: NestFileDownloader(httpClient: httpClient),
+            checksumCalculator: SwiftChecksumCalculator(processExecutor: processExecutor)
+        )
+        // The existing checksum "stale-checksum" differs from the freshly computed "aaa".
+        // resolve should refuse to silently overwrite when the version did not change.
+        let nestfile = Nestfile(nestPath: "./.nest", targets: [
+            .repository(Nestfile.Repository(
+                reference: "foo/bar",
+                version: "0.0.1",
+                assetName: "foo.artifactbundle.zip",
+                checksum: "stale-checksum"
+            )),
+        ])
+
+        await #expect(throws: NestfileControllerError.self) {
+            try await controller.resolve(nestfile)
+        }
+
+        // When opted in via allowChecksumChanges, the checksum is overwritten.
+        let overwritten = try await controller.resolve(nestfile, allowChecksumChanges: true)
+        #expect(overwritten.targets[0].checksum == "aaa")
+    }
+
+    @Test
     func resolve() async throws {
         let zipFileURL = try #require(URL(string: "https://example.com/foo.artifacatbundle.zip"))
         let barReleaseURL = try #require(URL(string: "https://api.github.com/repos/foo/bar/releases/tags/0.0.1"))
