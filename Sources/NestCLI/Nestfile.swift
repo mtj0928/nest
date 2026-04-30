@@ -188,3 +188,15 @@ extension Nestfile.RegistryConfigs {
         github.reduce(into: [:]) { $0[$1.host] = $1.tokenEnvironmentVariable }
     }
 }
+
+extension Nestfile.Target {
+    package func checksumOption(skipValidation: Bool) -> ChecksumOption {
+        if skipValidation {
+            return .skip
+        }
+        if let checksum {
+            return .needsCheck(expected: checksum)
+        }
+        return .unresolvable(.missingChecksum(target: identifier))
+    }
+}

@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
-import NestKit
-import NestCLI
 import Logging
+import NestCLI
+import NestKit
 
 struct RunCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -15,6 +15,9 @@ struct RunCommand: AsyncParsableCommand {
     
     @Flag(help: "Will not perform installation.")
     var noInstall = false
+
+    @Flag(name: .shortAndLong, help: "Skip checksum validation for downloaded artifactbundles.")
+    var skipChecksumValidation = false
     
     @Option(help: "A path to nestfile", completion: .file(extensions: ["yaml"]))
     var nestfilePath = "nestfile.yaml"
@@ -37,7 +40,7 @@ struct RunCommand: AsyncParsableCommand {
             return
         }
 
-        let (nestfileController, executableBinaryPreparer, nestDirectory, logger) = setUp(nestfile: nestfile)
+        let (nestfileController, executableBinaryPreparer, _, logger) = setUp(nestfile: nestfile)
 
         let subcommand: SubCommandOfRunCommand
         do {
@@ -73,7 +76,7 @@ struct RunCommand: AsyncParsableCommand {
                 gitURL: subcommand.repository,
                 version: version,
                 assetName: target.assetName,
-                checksumOption: ChecksumOption(expectedChecksum: target.checksum, logger: logger)
+                checksumOption: target.checksumOption(skipValidation: skipChecksumValidation)
             )
             executables = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         }
