@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
-import NestKit
-import NestCLI
 import Logging
+import NestCLI
+import NestKit
 
 @main
 struct Nest: AsyncParsableCommand {
@@ -68,5 +68,15 @@ extension FileSystem {
 extension ProcessInfo {
     var nestPath: String? {
         environment["NEST_PATH"]
+    }
+
+    // TODO: Remove this opt-in environment variable when checksum verification becomes the default behavior.
+    var requireChecksum: Bool {
+        switch environment["NEST_REQUIRE_CHECKSUM"]?.lowercased() {
+        case "1", "true", "yes", "on":
+            true
+        default:
+            false
+        }
     }
 }

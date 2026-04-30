@@ -150,8 +150,8 @@ public struct ArtifactBundleFetcher {
     private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws  {
         // Surface checksum flag conflicts before spending bandwidth on a
         // download whose archive we cannot accept anyway.
-        if url.needsUnzip, case .unresolvable(.mutuallyExclusiveFlags) = checksum {
-            throw ChecksumOptionError.mutuallyExclusiveFlags
+        if url.needsUnzip, case .unresolvable(let error) = checksum {
+            throw error
         }
         let downloadedFilePath = try await fileDownloader.download(url: url)
         if !url.needsUnzip {
@@ -166,9 +166,9 @@ public struct ArtifactBundleFetcher {
         try fileSystem.copyItem(at: downloadedFilePath, to: downloadedZipFilePath)
 
         switch checksum {
-        case .unresolvable(.mutuallyExclusiveFlags):
-            throw ChecksumOptionError.mutuallyExclusiveFlags
-        case .unresolvable(.missingChecksum(let target)):
+        case .unresolvable(let error):
+            throw error
+        case .warnOnMissingChecksum(let target):
             // TODO: Make missing checksums a hard error after the migration period ends.
             // Keep this warning path only until existing CI users have had enough time
             // to populate nestfile checksums with `nest update-nestfile`.
@@ -268,6 +268,9 @@ public enum ChecksumOption {
     case needsCheck(expected: String)
     case printActual(handler: (String) -> Void)
     case skip
+    /// A temporary migration path for nestfiles without checksums. The archive is
+    /// accepted, but the actual checksum is printed prominently so users can pin it.
+    case warnOnMissingChecksum(target: String)
     /// A configuration error that should surface only when an artifact bundle ZIP is actually
     /// being downloaded. Build-from-source paths never consume the option, so the error is not
     /// raised in those cases.

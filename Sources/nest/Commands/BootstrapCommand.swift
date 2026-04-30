@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
+import Logging
 import NestCLI
 import NestKit
-import Logging
 
 struct BootstrapCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -16,12 +16,17 @@ struct BootstrapCommand: AsyncParsableCommand {
     @Flag(name: .shortAndLong, help: "Skip checksum validation for downloaded artifactbundles.")
     var skipChecksumValidation = false
 
+    // TODO: Remove this opt-in flag when checksum verification becomes the default behavior.
+    @Flag(help: "Require checksums for downloaded artifact bundles.")
+    var requireChecksum = false
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
         let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestfile: nestfile)
+        let requireChecksum = requireChecksum || ProcessInfo.processInfo.requireChecksum
 
         if nestfile.targets.contains(where: { $0.isDeprecatedZIP }) {
             logger.warning("""
@@ -34,7 +39,7 @@ struct BootstrapCommand: AsyncParsableCommand {
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
-            let checksumOption = targetInfo.checksumOption(skipValidation: skipChecksumValidation)
+            let checksumOption = targetInfo.checksumOption(skipValidation: skipChecksumValidation, requireValidation: requireChecksum)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):

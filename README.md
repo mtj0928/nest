@@ -91,10 +91,10 @@ targets:
   - reference: mtj0928/nest # or htpps://github.com/mtj0928/nest
     version: 0.1.0 # (Optional) When a version is not specified, the latest release will be used.
     assetName: nest-macos.artifactbundle.zip # (Optional) When a name is not specified, it will be resolved by GitHub API.
-    checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # Required for artifact bundle downloads. Run `update-nestfile` to populate.
+    checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # Recommended now and required in strict mode. Run `update-nestfile` to populate.
   # Example 2 Specify zip URL directly
   - zipURL: https://github.com/mtj0928/nest/releases/download/0.1.0/nest-macos.artifactbundle.zip
-    checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # Required for artifact bundle downloads.
+    checksum: adcc2e3b4d48606cba7787153b0794f8a87e5289803466d63513f04c4d7661fb # Recommended now and required in strict mode.
 registries:
   github:
     - host: my-github-enterprise.example.com
@@ -105,6 +105,10 @@ Run `update-nestfile` to populate the `checksum` fields, then run `bootstrap` to
 ```sh
 $ nest update-nestfile nestfile.yaml
 $ nest bootstrap nestfile.yaml
+
+# Opt in to the future strict behavior now.
+$ nest bootstrap nestfile.yaml --require-checksum
+$ NEST_REQUIRE_CHECKSUM=1 nest bootstrap nestfile.yaml
 
 # Pass --skip-checksum-validation to bypass verification (not recommended).
 $ nest bootstrap nestfile.yaml --skip-checksum-validation

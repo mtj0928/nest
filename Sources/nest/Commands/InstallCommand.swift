@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
+import Logging
 import NestCLI
 import NestKit
-import Logging
 
 struct InstallCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -23,6 +23,10 @@ struct InstallCommand: AsyncParsableCommand {
 
     @Flag(help: "Skip checksum verification. Required when installing a direct artifact bundle URL without --checksum.")
     var allowUnverified = false
+
+    // TODO: Remove this opt-in flag when checksum verification becomes the default behavior.
+    @Flag(help: "Require checksum for downloaded artifact bundles.")
+    var requireChecksum = false
 
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
@@ -51,6 +55,8 @@ struct InstallCommand: AsyncParsableCommand {
             let checksumOption: ChecksumOption =
                 if checksum != nil && allowUnverified {
                     .unresolvable(.mutuallyExclusiveFlags)
+                } else if checksum == nil && !allowUnverified && (requireChecksum || ProcessInfo.processInfo.requireChecksum) {
+                    .unresolvable(.missingChecksum(target: target.identifier))
                 } else {
                     ChecksumOption(
                         isSkip: allowUnverified,
@@ -90,6 +96,17 @@ struct InstallCommand: AsyncParsableCommand {
         } catch {
             logger.error(error)
             Foundation.exit(1)
+        }
+    }
+}
+
+extension InstallTarget {
+    var identifier: String {
+        switch self {
+        case .git(let gitURL):
+            gitURL.reference ?? gitURL.stringURL
+        case .artifactBundle(let url):
+            url.absoluteString
         }
     }
 }
