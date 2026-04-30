@@ -162,17 +162,12 @@ public struct ArtifactBundleFetcher {
         switch checksum {
         case .needsCheck(let expectedChecksum):
             let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
-            if expectedChecksum == calculatedChecksum {
-                break
+            if expectedChecksum != calculatedChecksum {
+                throw ArtifactBundleFetcherError.checksumMismatch(
+                    expected: expectedChecksum,
+                    actual: calculatedChecksum
+                )
             }
-            logger.warning(
-                """
-                ⚠️ The checksum of the downloaded file does not match the expected checksum.
-                expected: \(expectedChecksum)
-                actual:   \(calculatedChecksum)
-                """,
-                metadata: .color(.yellow)
-            )
         case .printActual(let handler):
             let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
             handler(calculatedChecksum)
@@ -209,12 +204,19 @@ public enum ArtifactBundleFetcherError: LocalizedError {
     case noCandidates
     case noTagSpecified
     case unsupportedTriple
+    case checksumMismatch(expected: String, actual: String)
 
     public var errorDescription: String? {
         switch self {
         case .noCandidates: "No candidates for artifact bundle in the repository, please specify the file name."
         case .noTagSpecified: "No tag specified, please specify the tag."
         case .unsupportedTriple: "No binaries corresponding to the current triple."
+        case .checksumMismatch(let expected, let actual):
+            """
+            The checksum of the downloaded file does not match the expected checksum.
+            expected: \(expected)
+            actual:   \(actual)
+            """
         }
     }
 }

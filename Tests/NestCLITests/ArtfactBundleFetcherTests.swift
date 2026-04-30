@@ -60,6 +60,32 @@ struct ArtfactBundleFetcherTests {
         )])
     }
 
+    @Test
+    func downloadArtifactBundleThrowsOnChecksumMismatch() async throws {
+        let workingDirectory = URL(filePath: "/tmp/nest")
+        let zipURL = try #require(URL(string: "https://example.com/artifactbundle.zip"))
+        let httpClient = MockHTTPClient(mockFileSystem: fileSystem)
+        httpClient.dummyData = [zipURL: try Data(contentsOf: artifactBundlePath)]
+
+        let fileDownloader = NestFileDownloader(httpClient: httpClient)
+        let fetcher = ArtifactBundleFetcher(
+            workingDirectory: workingDirectory,
+            executorBuilder: executorBuilder,
+            fileSystem: fileSystem,
+            fileDownloader: fileDownloader,
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: logger),
+            logger: logger
+        )
+
+        await #expect(throws: ArtifactBundleFetcherError.self) {
+            try await fetcher.downloadArtifactBundle(
+                url: zipURL,
+                checksum: .needsCheck(expected: "different-checksum")
+            )
+        }
+    }
+
     @Test(arguments: [
         (artifactBundlePath: artifactBundlePath, expectedBinaryPath: URL(filePath: "/tmp/nest/repo/foo.artifactbundle/foo-1.0.0-macosx/bin/foo")),
         (artifactBundlePath: withoutArtifactBundleFolderPath, expectedBinaryPath: URL(filePath: "/tmp/nest/repo/foo-1.0.0-macosx/bin/foo"))

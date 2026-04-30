@@ -81,6 +81,8 @@ public struct ExecutableBinaryPreparer {
                 logger.info("🪺 The artifact bundle has been already installed.")
                 return resolveInstalledExecutableBinariesFromNestInfo(for: gitURL, version: version)
                     .map { PreparedBinary(executableBinary: $0, isAlreadyInstalled: true) }
+            } catch ArtifactBundleFetcherError.checksumMismatch(let expected, let actual) {
+                throw ArtifactBundleFetcherError.checksumMismatch(expected: expected, actual: actual)
             } catch {
                 logger.error(error)
             }
