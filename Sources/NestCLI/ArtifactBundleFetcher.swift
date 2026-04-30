@@ -148,13 +148,16 @@ public struct ArtifactBundleFetcher {
     }
 
     private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws  {
-        // Surface unresolvable checksum configuration before spending bandwidth
-        // on a download whose archive we cannot accept anyway.
-        if url.needsUnzip, case .unresolvable(let error) = checksum {
-            throw error
+        // Surface checksum flag conflicts before spending bandwidth on a
+        // download whose archive we cannot accept anyway.
+        if url.needsUnzip, case .unresolvable(.mutuallyExclusiveFlags) = checksum {
+            throw ChecksumOptionError.mutuallyExclusiveFlags
         }
         let downloadedFilePath = try await fileDownloader.download(url: url)
         if !url.needsUnzip {
+            if case .unresolvable(let error) = checksum {
+                throw error
+            }
             try fileSystem.copyItem(at: downloadedFilePath, to: destination)
             return
         }
@@ -163,8 +166,35 @@ public struct ArtifactBundleFetcher {
         try fileSystem.copyItem(at: downloadedFilePath, to: downloadedZipFilePath)
 
         switch checksum {
-        case .unresolvable(let error):
-            throw error
+        case .unresolvable(.mutuallyExclusiveFlags):
+            throw ChecksumOptionError.mutuallyExclusiveFlags
+        case .unresolvable(.missingChecksum(let target)):
+            // TODO: Make missing checksums a hard error after the migration period ends.
+            // Keep this warning path only until existing CI users have had enough time
+            // to populate nestfile checksums with `nest update-nestfile`.
+            let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
+            logger.warning(
+                """
+
+                🚨🚨🚨  CHECKSUM MISSING - UNVERIFIED ARTIFACT BUNDLE  🚨🚨🚨
+
+                nest is installing "\(target)" without checksum verification.
+                This is allowed temporarily for migration, but it will become an error in a future release.
+
+                Add this checksum to the target in your nestfile:
+                  checksum: \(calculatedChecksum)
+
+                Recommended:
+                  nest update-nestfile <path>
+
+                Temporary CI escape hatch:
+                  nest bootstrap <path> --skip-checksum-validation
+                  nest run --skip-checksum-validation ...
+
+                🚨🚨🚨  CHECKSUM MISSING - UNVERIFIED ARTIFACT BUNDLE  🚨🚨🚨
+                """,
+                metadata: .color(.yellow)
+            )
         case .needsCheck(let expectedChecksum):
             let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
             if expectedChecksum != calculatedChecksum {
