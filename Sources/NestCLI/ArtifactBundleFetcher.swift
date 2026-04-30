@@ -148,6 +148,11 @@ public struct ArtifactBundleFetcher {
     }
 
     private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws  {
+        // Surface unresolvable checksum configuration before spending bandwidth
+        // on a download whose archive we cannot accept anyway.
+        if url.needsUnzip, case .unresolvable(let error) = checksum {
+            throw error
+        }
         let downloadedFilePath = try await fileDownloader.download(url: url)
         if !url.needsUnzip {
             try fileSystem.copyItem(at: downloadedFilePath, to: destination)
@@ -255,11 +260,18 @@ public enum ChecksumOption {
 
 public enum ChecksumOptionError: LocalizedError, Equatable, Sendable {
     case mutuallyExclusiveFlags
+    case missingChecksum(target: String)
 
     public var errorDescription: String? {
         switch self {
         case .mutuallyExclusiveFlags:
             "--checksum and --allow-unverified are mutually exclusive."
+        case .missingChecksum(let target):
+            """
+            Missing checksum for "\(target)" in the nestfile.
+            Run `nest update-nestfile <path>` to populate checksums, \
+            or pass `--skip-checksum-validation` to bypass verification.
+            """
         }
     }
 }

@@ -87,4 +87,16 @@ struct NestfileTests {
         let gheServer = try #require(githubInfo.first { $0.host == "my-ghe.example.com" })
         #expect(gheServer.tokenEnvironmentVariable == "MY_GHE_TOKEN")
     }
+
+    @Test(arguments: [
+        (target: Nestfile.Target.repository(Nestfile.Repository(reference: "mtj0928/nest", version: nil, assetName: nil, checksum: nil)),
+         expected: "mtj0928/nest"),
+        (target: .zip(Nestfile.ZIPURL(zipURL: "https://example.com/foo.zip", checksum: nil)),
+         expected: "https://example.com/foo.zip"),
+        (target: .deprecatedZIP(Nestfile.DeprecatedZIPURL(url: "https://example.com/legacy.zip")),
+         expected: "https://example.com/legacy.zip"),
+    ])
+    func targetIdentifier(target: Nestfile.Target, expected: String) {
+        #expect(target.identifier == expected)
+    }
 }

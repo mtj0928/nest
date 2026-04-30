@@ -34,7 +34,14 @@ struct BootstrapCommand: AsyncParsableCommand {
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
-            let checksumOption = ChecksumOption(isSkip: skipChecksumValidation, expectedChecksum: targetInfo.checksum, logger: logger)
+            let checksumOption: ChecksumOption =
+                if skipChecksumValidation {
+                    .skip
+                } else if let expected = targetInfo.checksum {
+                    .needsCheck(expected: expected)
+                } else {
+                    .unresolvable(.missingChecksum(target: targetInfo.identifier))
+                }
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):

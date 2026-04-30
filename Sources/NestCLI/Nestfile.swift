@@ -72,6 +72,15 @@ public struct Nestfile: Codable, Sendable {
             case .deprecatedZIP: nil
             }
         }
+
+        /// A human-readable identifier used in log messages and error messages.
+        public var identifier: String {
+            switch self {
+            case .repository(let repository): repository.reference
+            case .zip(let zipURL): zipURL.zipURL
+            case .deprecatedZIP(let zipURL): zipURL.url
+            }
+        }
     }
 
     public struct Repository: Codable, Equatable, Sendable {
