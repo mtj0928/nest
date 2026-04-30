@@ -115,7 +115,9 @@ public struct Nestfile: Codable, Sendable {
 
         public init(from decoder: any Decoder) throws {
             let container = try decoder.singleValueContainer()
-            self.url = try container.decode(String.self)
+            let url = try container.decode(String.self)
+            _ = try URL.httpsURL(from: url)
+            self.url = url
         }
 
         public func encode(to encoder: Encoder) throws {
@@ -131,6 +133,14 @@ public struct Nestfile: Codable, Sendable {
         public init(zipURL: String, checksum: String?) {
             self.zipURL = zipURL
             self.checksum = checksum
+        }
+
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let zipURL = try container.decode(String.self, forKey: .zipURL)
+            _ = try URL.httpsURL(from: zipURL)
+            self.zipURL = zipURL
+            self.checksum = try container.decodeIfPresent(String.self, forKey: .checksum)
         }
 
         enum CodingKeys: String, CodingKey {

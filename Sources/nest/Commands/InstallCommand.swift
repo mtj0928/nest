@@ -34,15 +34,18 @@ struct InstallCommand: AsyncParsableCommand {
             // make a verification decision up front. The git path may build from
             // source instead, so any checksum-flag inconsistency is deferred to
             // `.unresolvable` and only surfaces if a ZIP is actually downloaded.
-            if case .artifactBundle = target, checksum == nil, !allowUnverified {
-                logger.error(
-                    """
-                    Installing a direct artifact bundle URL requires integrity verification.
-                    Pass --checksum <value> to verify, or --allow-unverified to skip explicitly.
-                    """,
-                    metadata: .color(.red)
-                )
-                Foundation.exit(1)
+            if case .artifactBundle(let url) = target {
+                _ = try URL.httpsURL(from: url.absoluteString)
+                if checksum == nil, !allowUnverified {
+                    logger.error(
+                        """
+                        Installing a direct artifact bundle URL requires integrity verification.
+                        Pass --checksum <value> to verify, or --allow-unverified to skip explicitly.
+                        """,
+                        metadata: .color(.red)
+                    )
+                    Foundation.exit(1)
+                }
             }
 
             let checksumOption: ChecksumOption =

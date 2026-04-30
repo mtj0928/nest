@@ -99,4 +99,48 @@ struct NestfileTests {
     func targetIdentifier(target: Nestfile.Target, expected: String) {
         #expect(target.identifier == expected)
     }
+
+    @Test
+    func loadFileRejectsHTTPZIPURL() throws {
+        let nestFile = """
+        nestPath: "aaa"
+        targets:
+          - zipURL: http://example.com/foo.zip
+        """
+
+        fileSystem.item = [
+            "/": [
+                "User": .directory,
+                "tmp": .directory
+            ]
+        ]
+        let nestFilePath = URL(filePath: "/User/nestfile")
+        try fileSystem.write(nestFile.data(using: .utf8)!, to: nestFilePath)
+
+        #expect(throws: (any Error).self) {
+            try Nestfile.load(from: nestFilePath.path(), fileSystem: fileSystem)
+        }
+    }
+
+    @Test
+    func loadFileRejectsHTTPDeprecatedZIPURL() throws {
+        let nestFile = """
+        nestPath: "aaa"
+        targets:
+          - http://example.com/foo.zip
+        """
+
+        fileSystem.item = [
+            "/": [
+                "User": .directory,
+                "tmp": .directory
+            ]
+        ]
+        let nestFilePath = URL(filePath: "/User/nestfile")
+        try fileSystem.write(nestFile.data(using: .utf8)!, to: nestFilePath)
+
+        #expect(throws: (any Error).self) {
+            try Nestfile.load(from: nestFilePath.path(), fileSystem: fileSystem)
+        }
+    }
 }
