@@ -158,6 +158,8 @@ public struct ArtifactBundleFetcher {
         try fileSystem.copyItem(at: downloadedFilePath, to: downloadedZipFilePath)
 
         switch checksum {
+        case .unresolvable(let error):
+            throw error
         case .needsCheck(let expectedChecksum):
             let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
             if expectedChecksum != calculatedChecksum {
@@ -231,7 +233,11 @@ public enum ChecksumOption {
     case needsCheck(expected: String)
     case printActual(handler: (String) -> Void)
     case skip
-    
+    /// A configuration error that should surface only when an artifact bundle ZIP is actually
+    /// being downloaded. Build-from-source paths never consume the option, so the error is not
+    /// raised in those cases.
+    case unresolvable(ChecksumOptionError)
+
     public init(isSkip: Bool = false, expectedChecksum: String?, logger: Logger) {
         if isSkip {
             self = .skip
@@ -243,6 +249,17 @@ public enum ChecksumOption {
         }
         self = .printActual { checksum in
             logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
+        }
+    }
+}
+
+public enum ChecksumOptionError: LocalizedError, Equatable, Sendable {
+    case mutuallyExclusiveFlags
+
+    public var errorDescription: String? {
+        switch self {
+        case .mutuallyExclusiveFlags:
+            "--checksum and --allow-unverified are mutually exclusive."
         }
     }
 }

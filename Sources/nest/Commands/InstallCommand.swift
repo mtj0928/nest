@@ -30,10 +30,10 @@ struct InstallCommand: AsyncParsableCommand {
     mutating func run() async throws {
         let (executableBinaryPreparer, nestDirectory, artifactBundleManager, logger) = setUp()
         do {
-            if checksum != nil && allowUnverified {
-                logger.error("--checksum and --allow-unverified are mutually exclusive.", metadata: .color(.red))
-                Foundation.exit(1)
-            }
+            // Direct artifact bundle URLs always download a ZIP, so the user must
+            // make a verification decision up front. The git path may build from
+            // source instead, so any checksum-flag inconsistency is deferred to
+            // `.unresolvable` and only surfaces if a ZIP is actually downloaded.
             if case .artifactBundle = target, checksum == nil, !allowUnverified {
                 logger.error(
                     """
@@ -45,11 +45,16 @@ struct InstallCommand: AsyncParsableCommand {
                 Foundation.exit(1)
             }
 
-            let checksumOption = ChecksumOption(
-                isSkip: allowUnverified,
-                expectedChecksum: checksum,
-                logger: logger
-            )
+            let checksumOption: ChecksumOption =
+                if checksum != nil && allowUnverified {
+                    .unresolvable(.mutuallyExclusiveFlags)
+                } else {
+                    ChecksumOption(
+                        isSkip: allowUnverified,
+                        expectedChecksum: checksum,
+                        logger: logger
+                    )
+                }
 
             let executableBinaries: [PreparedBinary] = switch target {
             case .git(let gitURL):
