@@ -44,9 +44,17 @@ curl -s https://raw.githubusercontent.com/mtj0928/nest/main/Scripts/install.sh |
 
 ### Install packages
 ```sh
-$ nest install realm/SwiftLint 
+$ nest install realm/SwiftLint
 $ nest install realm/SwiftLint 0.55.0 # A version can be specified.
 $ nest install https://github.com/realm/SwiftLint 0.55.0
+
+# Verify the artifact bundle against a known checksum.
+$ nest install realm/SwiftLint 0.55.0 --checksum adcc2e3b...
+
+# When installing a direct artifact bundle URL, --checksum is required.
+# Use --allow-unverified to opt out of verification explicitly.
+$ nest install https://example.com/foo.artifactbundle.zip --checksum abc123...
+$ nest install https://example.com/foo.artifactbundle.zip --allow-unverified
 ```
 
 ### Uninstall package
