@@ -60,6 +60,120 @@ struct ArtfactBundleFetcherTests {
         )])
     }
 
+    @Test
+    func downloadArtifactBundleThrowsOnChecksumMismatch() async throws {
+        let workingDirectory = URL(filePath: "/tmp/nest")
+        let zipURL = try #require(URL(string: "https://example.com/artifactbundle.zip"))
+        let httpClient = MockHTTPClient(mockFileSystem: fileSystem)
+        httpClient.dummyData = [zipURL: try Data(contentsOf: artifactBundlePath)]
+
+        let fileDownloader = NestFileDownloader(httpClient: httpClient)
+        let fetcher = ArtifactBundleFetcher(
+            workingDirectory: workingDirectory,
+            executorBuilder: executorBuilder,
+            fileSystem: fileSystem,
+            fileDownloader: fileDownloader,
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: logger),
+            logger: logger
+        )
+
+        await #expect(throws: ArtifactBundleFetcherError.self) {
+            try await fetcher.downloadArtifactBundle(
+                url: zipURL,
+                checksum: .needsCheck(expected: "different-checksum")
+            )
+        }
+
+        // The destination directory must not be populated when the checksum
+        // verification fails: unzip must not run before verification.
+        let destination = workingDirectory.appending(component: zipURL.fileNameWithoutPathExtension)
+        #expect(!fileSystem.fileExists(atPath: destination.path()))
+    }
+
+    @Test
+    func unresolvableChecksumThrowsOnZipDownload() async throws {
+        let workingDirectory = URL(filePath: "/tmp/nest")
+        let zipURL = try #require(URL(string: "https://example.com/artifactbundle.zip"))
+        let httpClient = MockHTTPClient(mockFileSystem: fileSystem)
+        httpClient.dummyData = [zipURL: try Data(contentsOf: artifactBundlePath)]
+
+        let fileDownloader = NestFileDownloader(httpClient: httpClient)
+        let fetcher = ArtifactBundleFetcher(
+            workingDirectory: workingDirectory,
+            executorBuilder: executorBuilder,
+            fileSystem: fileSystem,
+            fileDownloader: fileDownloader,
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: logger),
+            logger: logger
+        )
+
+        await #expect(throws: ChecksumOptionError.mutuallyExclusiveFlags) {
+            try await fetcher.downloadArtifactBundle(
+                url: zipURL,
+                checksum: .unresolvable(.mutuallyExclusiveFlags)
+            )
+        }
+    }
+
+    @Test
+    func missingChecksumContinuesZipDownloadForMigration() async throws {
+        let workingDirectory = URL(filePath: "/tmp/nest")
+        let zipURL = try #require(URL(string: "https://example.com/artifactbundle.zip"))
+        let httpClient = MockHTTPClient(mockFileSystem: fileSystem)
+        httpClient.dummyData = [zipURL: try Data(contentsOf: artifactBundlePath)]
+
+        let fileDownloader = NestFileDownloader(httpClient: httpClient)
+        let fetcher = ArtifactBundleFetcher(
+            workingDirectory: workingDirectory,
+            executorBuilder: executorBuilder,
+            fileSystem: fileSystem,
+            fileDownloader: fileDownloader,
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: logger),
+            logger: logger
+        )
+
+        let result = try await fetcher.downloadArtifactBundle(
+            url: zipURL,
+            checksum: .warnOnMissingChecksum(target: "owner/repo")
+        )
+
+        #expect(result == [ExecutableBinary(
+            commandName: "foo",
+            binaryPath: URL(filePath: "/tmp/nest/artifactbundle/foo.artifactbundle/foo-1.0.0-macosx/bin/foo"),
+            version: "1.0.0",
+            manufacturer: .artifactBundle(sourceInfo: ArtifactBundleSourceInfo(zipURL: zipURL, repository: nil))
+        )])
+    }
+
+    @Test
+    func missingChecksumThrowsOnZipDownloadInStrictMode() async throws {
+        let workingDirectory = URL(filePath: "/tmp/nest")
+        let zipURL = try #require(URL(string: "https://example.com/artifactbundle.zip"))
+        let httpClient = MockHTTPClient(mockFileSystem: fileSystem)
+        httpClient.dummyData = [zipURL: try Data(contentsOf: artifactBundlePath)]
+
+        let fileDownloader = NestFileDownloader(httpClient: httpClient)
+        let fetcher = ArtifactBundleFetcher(
+            workingDirectory: workingDirectory,
+            executorBuilder: executorBuilder,
+            fileSystem: fileSystem,
+            fileDownloader: fileDownloader,
+            nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: logger),
+            logger: logger
+        )
+
+        await #expect(throws: ChecksumOptionError.missingChecksum(target: "owner/repo")) {
+            try await fetcher.downloadArtifactBundle(
+                url: zipURL,
+                checksum: .unresolvable(.missingChecksum(target: "owner/repo"))
+            )
+        }
+    }
+
     @Test(arguments: [
         (artifactBundlePath: artifactBundlePath, expectedBinaryPath: URL(filePath: "/tmp/nest/repo/foo.artifactbundle/foo-1.0.0-macosx/bin/foo")),
         (artifactBundlePath: withoutArtifactBundleFolderPath, expectedBinaryPath: URL(filePath: "/tmp/nest/repo/foo-1.0.0-macosx/bin/foo"))

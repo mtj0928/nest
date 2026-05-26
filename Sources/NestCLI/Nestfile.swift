@@ -72,6 +72,15 @@ public struct Nestfile: Codable, Sendable {
             case .deprecatedZIP: nil
             }
         }
+
+        /// A human-readable identifier used in log messages and error messages.
+        public var identifier: String {
+            switch self {
+            case .repository(let repository): repository.reference
+            case .zip(let zipURL): zipURL.zipURL
+            case .deprecatedZIP(let zipURL): zipURL.url
+            }
+        }
     }
 
     public struct Repository: Codable, Equatable, Sendable {
@@ -106,7 +115,9 @@ public struct Nestfile: Codable, Sendable {
 
         public init(from decoder: any Decoder) throws {
             let container = try decoder.singleValueContainer()
-            self.url = try container.decode(String.self)
+            let url = try container.decode(String.self)
+            _ = try URL.httpsURL(from: url)
+            self.url = url
         }
 
         public func encode(to encoder: Encoder) throws {
@@ -122,6 +133,14 @@ public struct Nestfile: Codable, Sendable {
         public init(zipURL: String, checksum: String?) {
             self.zipURL = zipURL
             self.checksum = checksum
+        }
+
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            let zipURL = try container.decode(String.self, forKey: .zipURL)
+            _ = try URL.httpsURL(from: zipURL)
+            self.zipURL = zipURL
+            self.checksum = try container.decodeIfPresent(String.self, forKey: .checksum)
         }
 
         enum CodingKeys: String, CodingKey {
@@ -167,5 +186,21 @@ extension Nestfile.RegistryConfigs {
     public typealias GitHubHost = String
     public var githubServerTokenEnvironmentVariableNames: [GitHubHost: String] {
         github.reduce(into: [:]) { $0[$1.host] = $1.tokenEnvironmentVariable }
+    }
+}
+
+extension Nestfile.Target {
+    // TODO: Remove `requireValidation` when checksum verification becomes the default behavior.
+    package func checksumOption(skipValidation: Bool, requireValidation: Bool = false) -> ChecksumOption {
+        if skipValidation {
+            return .skip
+        }
+        if let checksum {
+            return .needsCheck(expected: checksum)
+        }
+        if requireValidation {
+            return .unresolvable(.missingChecksum(target: identifier))
+        }
+        return .warnOnMissingChecksum(target: identifier)
     }
 }

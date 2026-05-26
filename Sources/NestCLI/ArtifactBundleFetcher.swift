@@ -148,8 +148,16 @@ public struct ArtifactBundleFetcher {
     }
 
     private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws  {
+        // Surface checksum flag conflicts before spending bandwidth on a
+        // download whose archive we cannot accept anyway.
+        if url.needsUnzip, case .unresolvable(let error) = checksum {
+            throw error
+        }
         let downloadedFilePath = try await fileDownloader.download(url: url)
         if !url.needsUnzip {
+            if case .unresolvable(let error) = checksum {
+                throw error
+            }
             try fileSystem.copyItem(at: downloadedFilePath, to: destination)
             return
         }
@@ -157,28 +165,52 @@ public struct ArtifactBundleFetcher {
         try fileSystem.removeItemIfExists(at: downloadedZipFilePath)
         try fileSystem.copyItem(at: downloadedFilePath, to: downloadedZipFilePath)
 
-        try fileSystem.unzip(at: downloadedFilePath, to: destination)
-
         switch checksum {
-        case .needsCheck(let expectedChecksum):
+        case .unresolvable(let error):
+            throw error
+        case .warnOnMissingChecksum(let target):
+            // TODO: Make missing checksums a hard error after the migration period ends.
+            // Keep this warning path only until existing CI users have had enough time
+            // to populate nestfile checksums with `nest update-nestfile`.
             let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
-            if expectedChecksum == calculatedChecksum {
-                break
-            }
             logger.warning(
                 """
-                ⚠️ The checksum of the downloaded file does not match the expected checksum.
-                expected: \(expectedChecksum)
-                actual:   \(calculatedChecksum)
+
+                🚨🚨🚨  CHECKSUM MISSING - UNVERIFIED ARTIFACT BUNDLE  🚨🚨🚨
+
+                nest is installing "\(target)" without checksum verification.
+                This is allowed temporarily for migration, but it will become an error in a future release.
+
+                Add this checksum to the target in your nestfile:
+                  checksum: \(calculatedChecksum)
+
+                Recommended:
+                  nest update-nestfile <path>
+
+                Temporary CI escape hatch:
+                  nest bootstrap <path> --skip-checksum-validation
+                  nest run --skip-checksum-validation ...
+
+                🚨🚨🚨  CHECKSUM MISSING - UNVERIFIED ARTIFACT BUNDLE  🚨🚨🚨
                 """,
                 metadata: .color(.yellow)
             )
+        case .needsCheck(let expectedChecksum):
+            let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
+            if expectedChecksum != calculatedChecksum {
+                throw ArtifactBundleFetcherError.checksumMismatch(
+                    expected: expectedChecksum,
+                    actual: calculatedChecksum
+                )
+            }
         case .printActual(let handler):
             let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
             handler(calculatedChecksum)
         case .skip:
             break
         }
+
+        try fileSystem.unzip(at: downloadedFilePath, to: destination)
     }
 }
 
@@ -209,12 +241,19 @@ public enum ArtifactBundleFetcherError: LocalizedError {
     case noCandidates
     case noTagSpecified
     case unsupportedTriple
+    case checksumMismatch(expected: String, actual: String)
 
     public var errorDescription: String? {
         switch self {
         case .noCandidates: "No candidates for artifact bundle in the repository, please specify the file name."
         case .noTagSpecified: "No tag specified, please specify the tag."
         case .unsupportedTriple: "No binaries corresponding to the current triple."
+        case .checksumMismatch(let expected, let actual):
+            """
+            The checksum of the downloaded file does not match the expected checksum.
+            expected: \(expected)
+            actual:   \(actual)
+            """
         }
     }
 }
@@ -229,7 +268,14 @@ public enum ChecksumOption {
     case needsCheck(expected: String)
     case printActual(handler: (String) -> Void)
     case skip
-    
+    /// A temporary migration path for nestfiles without checksums. The archive is
+    /// accepted, but the actual checksum is printed prominently so users can pin it.
+    case warnOnMissingChecksum(target: String)
+    /// A configuration error that should surface only when an artifact bundle ZIP is actually
+    /// being downloaded. Build-from-source paths never consume the option, so the error is not
+    /// raised in those cases.
+    case unresolvable(ChecksumOptionError)
+
     public init(isSkip: Bool = false, expectedChecksum: String?, logger: Logger) {
         if isSkip {
             self = .skip
@@ -241,6 +287,24 @@ public enum ChecksumOption {
         }
         self = .printActual { checksum in
             logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
+        }
+    }
+}
+
+public enum ChecksumOptionError: LocalizedError, Equatable, Sendable {
+    case mutuallyExclusiveFlags
+    case missingChecksum(target: String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .mutuallyExclusiveFlags:
+            "--checksum and --allow-unverified are mutually exclusive."
+        case .missingChecksum(let target):
+            """
+            Missing checksum for "\(target)" in the nestfile.
+            Run `nest update-nestfile <path>` to populate checksums, \
+            or pass `--skip-checksum-validation` to bypass verification.
+            """
         }
     }
 }

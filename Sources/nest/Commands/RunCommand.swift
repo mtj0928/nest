@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
-import NestKit
-import NestCLI
 import Logging
+import NestCLI
+import NestKit
 
 struct RunCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -15,6 +15,13 @@ struct RunCommand: AsyncParsableCommand {
     
     @Flag(help: "Will not perform installation.")
     var noInstall = false
+
+    @Flag(name: .shortAndLong, help: "Skip checksum validation for downloaded artifactbundles.")
+    var skipChecksumValidation = false
+
+    // TODO: Remove this opt-in flag when checksum verification becomes the default behavior.
+    @Flag(help: "Require checksums for downloaded artifact bundles.")
+    var requireChecksum = false
     
     @Option(help: "A path to nestfile", completion: .file(extensions: ["yaml"]))
     var nestfilePath = "nestfile.yaml"
@@ -37,7 +44,7 @@ struct RunCommand: AsyncParsableCommand {
             return
         }
 
-        let (nestfileController, executableBinaryPreparer, nestDirectory, logger) = setUp(nestfile: nestfile)
+        let (nestfileController, executableBinaryPreparer, _, logger) = setUp(nestfile: nestfile)
 
         let subcommand: SubCommandOfRunCommand
         do {
@@ -61,6 +68,7 @@ struct RunCommand: AsyncParsableCommand {
 
         let version = GitVersion.tag(expectedVersion)
         let executables: [ExecutableBinary]
+        let requireChecksum = requireChecksum || ProcessInfo.processInfo.requireChecksum
         let installedBinaries = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         if !installedBinaries.isEmpty {
             executables = installedBinaries
@@ -73,7 +81,7 @@ struct RunCommand: AsyncParsableCommand {
                 gitURL: subcommand.repository,
                 version: version,
                 assetName: target.assetName,
-                checksumOption: ChecksumOption(expectedChecksum: target.checksum, logger: logger)
+                checksumOption: target.checksumOption(skipValidation: skipChecksumValidation, requireValidation: requireChecksum)
             )
             executables = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         }
