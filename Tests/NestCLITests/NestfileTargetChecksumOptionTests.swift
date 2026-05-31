@@ -6,7 +6,7 @@ struct NestfileTargetChecksumOptionTests {
     func checksumOptionNeedsCheckWhenChecksumExists() {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: "abc123"))
 
-        switch target.checksumOption(skipValidation: false) {
+        switch target.checksumOption(policy: .warn) {
         case .needsCheck(let expected):
             #expect(expected == "abc123")
         default:
@@ -18,7 +18,7 @@ struct NestfileTargetChecksumOptionTests {
     func checksumOptionIsUnresolvableWhenChecksumIsMissing() {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: nil))
 
-        switch target.checksumOption(skipValidation: false) {
+        switch target.checksumOption(policy: .warn) {
         case .warnOnMissingChecksum(let targetIdentifier):
             #expect(targetIdentifier == "owner/repo")
         default:
@@ -30,7 +30,7 @@ struct NestfileTargetChecksumOptionTests {
     func checksumOptionIsUnresolvableWhenChecksumIsMissingInStrictMode() {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: nil))
 
-        switch target.checksumOption(skipValidation: false, requireValidation: true) {
+        switch target.checksumOption(policy: .require) {
         case .unresolvable(.missingChecksum(let targetIdentifier)):
             #expect(targetIdentifier == "owner/repo")
         default:
@@ -42,7 +42,7 @@ struct NestfileTargetChecksumOptionTests {
     func checksumOptionSkipsWhenValidationIsSkipped() {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: nil))
 
-        switch target.checksumOption(skipValidation: true) {
+        switch target.checksumOption(policy: .skip) {
         case .skip:
             break
         default:

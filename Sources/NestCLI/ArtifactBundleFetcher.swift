@@ -188,8 +188,8 @@ public struct ArtifactBundleFetcher {
                   nest update-nestfile <path>
 
                 Temporary CI escape hatch:
-                  nest bootstrap <path> --skip-checksum-validation
-                  nest run --skip-checksum-validation ...
+                  nest bootstrap <path> --checksum-policy skip
+                  nest run --checksum-policy skip ...
 
                 🚨🚨🚨  CHECKSUM MISSING - UNVERIFIED ARTIFACT BUNDLE  🚨🚨🚨
                 """,
@@ -298,12 +298,12 @@ public enum ChecksumOptionError: LocalizedError, Equatable, Sendable {
     public var errorDescription: String? {
         switch self {
         case .mutuallyExclusiveFlags:
-            "--checksum and --allow-unverified are mutually exclusive."
+            "--checksum and --checksum-policy skip are mutually exclusive."
         case .missingChecksum(let target):
             """
             Missing checksum for "\(target)" in the nestfile.
             Run `nest update-nestfile <path>` to populate checksums, \
-            or pass `--skip-checksum-validation` to bypass verification.
+            or pass `--checksum-policy skip` to bypass verification.
             """
         }
     }

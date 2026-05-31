@@ -190,15 +190,14 @@ extension Nestfile.RegistryConfigs {
 }
 
 extension Nestfile.Target {
-    // TODO: Remove `requireValidation` when checksum verification becomes the default behavior.
-    package func checksumOption(skipValidation: Bool, requireValidation: Bool = false) -> ChecksumOption {
-        if skipValidation {
+    package func checksumOption(policy: ChecksumValidationPolicy) -> ChecksumOption {
+        if policy == .skip {
             return .skip
         }
         if let checksum {
             return .needsCheck(expected: checksum)
         }
-        if requireValidation {
+        if policy == .require {
             return .unresolvable(.missingChecksum(target: identifier))
         }
         return .warnOnMissingChecksum(target: identifier)

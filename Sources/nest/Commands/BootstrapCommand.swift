@@ -13,12 +13,11 @@ struct BootstrapCommand: AsyncParsableCommand {
     @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
-    @Flag(name: .shortAndLong, help: "Skip checksum validation for downloaded artifactbundles.")
-    var skipChecksumValidation = false
+    @Option(help: "Checksum validation policy for downloaded artifact bundles: skip, warn, or require.")
+    var checksumPolicy: ChecksumValidationPolicyArgument?
 
-    // TODO: Remove this opt-in flag when checksum verification becomes the default behavior.
-    @Flag(help: "Require checksums for downloaded artifact bundles.")
-    var requireChecksum = false
+    @Flag(name: .customLong("skip-checksum-validation"), help: .hidden)
+    var skipChecksumValidation = false
 
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
@@ -26,7 +25,11 @@ struct BootstrapCommand: AsyncParsableCommand {
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
         let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestfile: nestfile)
-        let requireChecksum = requireChecksum || ProcessInfo.processInfo.requireChecksum
+        let checksumValidationPolicy = if skipChecksumValidation {
+            ChecksumValidationPolicy.skip
+        } else {
+            checksumPolicy?.policy ?? ProcessInfo.processInfo.checksumValidationPolicy
+        }
 
         if nestfile.targets.contains(where: { $0.isDeprecatedZIP }) {
             logger.warning("""
@@ -39,7 +42,7 @@ struct BootstrapCommand: AsyncParsableCommand {
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
-            let checksumOption = targetInfo.checksumOption(skipValidation: skipChecksumValidation, requireValidation: requireChecksum)
+            let checksumOption = targetInfo.checksumOption(policy: checksumValidationPolicy)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):
