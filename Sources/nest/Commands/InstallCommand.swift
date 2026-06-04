@@ -50,22 +50,11 @@ struct InstallCommand: AsyncParsableCommand {
                 }
             }
 
-            let checksumOption: ChecksumOption =
-                if checksum != nil && checksumValidationPolicy == .skip {
-                    .unresolvable(.mutuallyExclusiveFlags)
-                } else if checksum == nil && checksumValidationPolicy == .require {
-                    .unresolvable(.missingChecksum(target: target.identifier))
-                } else if checksum == nil && checksumValidationPolicy == .warn && isChecksumPolicyExplicit {
-                    .printActual { checksum in
-                        logger.warning("ℹ️ The checksum is \(checksum). Please use --checksum to verify the downloaded file.")
-                    }
-                } else {
-                    ChecksumOption(
-                        isSkip: checksumValidationPolicy == .skip,
-                        expectedChecksum: checksum,
-                        logger: logger
-                    )
-                }
+            let checksumOption = checksumOption(
+                checksumValidationPolicy: checksumValidationPolicy,
+                isChecksumPolicyExplicit: isChecksumPolicyExplicit,
+                logger: logger
+            )
 
             let executableBinaries: [PreparedBinary] = switch target {
             case .git(let gitURL):
@@ -105,6 +94,29 @@ struct InstallCommand: AsyncParsableCommand {
 extension InstallCommand {
     func requiresExplicitChecksumDecision(isChecksumPolicyExplicit: Bool) -> Bool {
         checksum == nil && !isChecksumPolicyExplicit
+    }
+
+    func checksumOption(
+        checksumValidationPolicy: ChecksumValidationPolicy,
+        isChecksumPolicyExplicit: Bool,
+        logger: Logger
+    ) -> ChecksumOption {
+        if checksum != nil && checksumValidationPolicy == .skip {
+            return .unresolvable(.mutuallyExclusiveFlags)
+        }
+        if checksum == nil && checksumValidationPolicy == .require {
+            return .unresolvable(.missingInstallChecksum(target: target.identifier))
+        }
+        if checksum == nil && checksumValidationPolicy == .warn && isChecksumPolicyExplicit {
+            return .printActual { checksum in
+                logger.warning("ℹ️ The checksum is \(checksum). Please use --checksum to verify the downloaded file.")
+            }
+        }
+        return ChecksumOption(
+            isSkip: checksumValidationPolicy == .skip,
+            expectedChecksum: checksum,
+            logger: logger
+        )
     }
 }
 

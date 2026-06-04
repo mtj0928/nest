@@ -1,3 +1,4 @@
+import Logging
 import Testing
 @testable import nest
 
@@ -17,8 +18,23 @@ struct ChecksumPolicyCommandArgumentsTests {
     }
 
     @Test
+    func runCommandAcceptsReleasedShortSkipChecksumValidationAlias() throws {
+        let command = try RunCommand.parse(["-s", "owner/repo"])
+
+        #expect(command.skipChecksumValidation)
+        #expect(command.arguments == ["owner/repo"])
+    }
+
+    @Test
     func bootstrapCommandAcceptsReleasedSkipChecksumValidationAlias() throws {
         let command = try BootstrapCommand.parse(["nestfile.yaml", "--skip-checksum-validation"])
+
+        #expect(command.skipChecksumValidation)
+    }
+
+    @Test
+    func bootstrapCommandAcceptsReleasedShortSkipChecksumValidationAlias() throws {
+        let command = try BootstrapCommand.parse(["nestfile.yaml", "-s"])
 
         #expect(command.skipChecksumValidation)
     }
@@ -47,6 +63,26 @@ struct ChecksumPolicyCommandArgumentsTests {
         let command = try InstallCommand.parse(["https://example.com/foo.artifactbundle.zip"])
 
         #expect(command.requiresExplicitChecksumDecision(isChecksumPolicyExplicit: false))
+    }
+
+    @Test
+    func installCommandUsesInstallSpecificMissingChecksumError() throws {
+        let command = try InstallCommand.parse([
+            "https://example.com/foo.artifactbundle.zip",
+            "--checksum-policy",
+            "require"
+        ])
+
+        switch command.checksumOption(
+            checksumValidationPolicy: .require,
+            isChecksumPolicyExplicit: true,
+            logger: Logger(label: "test")
+        ) {
+        case .unresolvable(.missingInstallChecksum(let target)):
+            #expect(target == "https://example.com/foo.artifactbundle.zip")
+        default:
+            Issue.record("Expected .unresolvable(.missingInstallChecksum)")
+        }
     }
 
     @Test(arguments: [

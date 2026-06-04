@@ -16,7 +16,7 @@ struct BootstrapCommand: AsyncParsableCommand {
     @Option(help: "Checksum validation policy for downloaded artifact bundles: skip, warn, or require.")
     var checksumPolicy: ChecksumValidationPolicyArgument?
 
-    @Flag(name: .customLong("skip-checksum-validation"), help: .hidden)
+    @Flag(name: [.customLong("skip-checksum-validation"), .customShort("s")], help: .hidden)
     var skipChecksumValidation = false
 
     @Flag(name: .shortAndLong)
