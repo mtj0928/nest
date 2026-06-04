@@ -71,12 +71,12 @@ extension ProcessInfo {
     }
 
     // TODO: Remove this opt-in environment variable when checksum verification becomes the default behavior.
-    var requireChecksum: Bool {
+    var checksumValidationPolicy: ChecksumValidationPolicy {
         switch environment["NEST_REQUIRE_CHECKSUM"]?.lowercased() {
         case "1", "true", "yes", "on":
-            true
+            .require
         default:
-            false
+            .warn
         }
     }
 }

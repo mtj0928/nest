@@ -12,17 +12,16 @@ struct RunCommand: AsyncParsableCommand {
 
     @Flag(name: .shortAndLong)
     var verbose = false
-    
+
     @Flag(help: "Will not perform installation.")
     var noInstall = false
 
-    @Flag(name: .shortAndLong, help: "Skip checksum validation for downloaded artifactbundles.")
+    @Option(help: "Checksum validation policy for downloaded artifact bundles: skip, warn, or require.")
+    var checksumPolicy: ChecksumValidationPolicyArgument?
+
+    @Flag(name: [.customLong("skip-checksum-validation"), .customShort("s")], help: .hidden)
     var skipChecksumValidation = false
 
-    // TODO: Remove this opt-in flag when checksum verification becomes the default behavior.
-    @Flag(help: "Require checksums for downloaded artifact bundles.")
-    var requireChecksum = false
-    
     @Option(help: "A path to nestfile", completion: .file(extensions: ["yaml"]))
     var nestfilePath = "nestfile.yaml"
 
@@ -68,7 +67,11 @@ struct RunCommand: AsyncParsableCommand {
 
         let version = GitVersion.tag(expectedVersion)
         let executables: [ExecutableBinary]
-        let requireChecksum = requireChecksum || ProcessInfo.processInfo.requireChecksum
+        let checksumValidationPolicy = if skipChecksumValidation {
+            ChecksumValidationPolicy.skip
+        } else {
+            checksumPolicy?.policy ?? ProcessInfo.processInfo.checksumValidationPolicy
+        }
         let installedBinaries = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         if !installedBinaries.isEmpty {
             executables = installedBinaries
@@ -81,7 +84,7 @@ struct RunCommand: AsyncParsableCommand {
                 gitURL: subcommand.repository,
                 version: version,
                 assetName: target.assetName,
-                checksumOption: target.checksumOption(skipValidation: skipChecksumValidation, requireValidation: requireChecksum)
+                checksumOption: target.checksumOption(policy: checksumValidationPolicy)
             )
             executables = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         }
@@ -116,7 +119,7 @@ extension RunCommand {
             registryTokenEnvironmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:],
             logLevel: verbose ? .trace : .info
         )
-        
+
         let controller = NestfileController(
             assetRegistryClientBuilder: AssetRegistryClientBuilder(
                 httpClient: configuration.httpClient,

@@ -21,12 +21,8 @@ struct InstallCommand: AsyncParsableCommand {
     @Option(help: "Verify the downloaded artifact bundle against this checksum.")
     var checksum: String?
 
-    @Flag(help: "Skip checksum verification. Required when installing a direct artifact bundle URL without --checksum.")
-    var allowUnverified = false
-
-    // TODO: Remove this opt-in flag when checksum verification becomes the default behavior.
-    @Flag(help: "Require checksum for downloaded artifact bundles.")
-    var requireChecksum = false
+    @Option(help: "Checksum validation policy for downloaded artifact bundles: skip, warn, or require.")
+    var checksumPolicy: ChecksumValidationPolicyArgument?
 
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
@@ -34,17 +30,19 @@ struct InstallCommand: AsyncParsableCommand {
     mutating func run() async throws {
         let (executableBinaryPreparer, nestDirectory, artifactBundleManager, logger) = setUp()
         do {
+            let checksumValidationPolicy = checksumPolicy?.policy ?? ProcessInfo.processInfo.checksumValidationPolicy
+            let isChecksumPolicyExplicit = checksumPolicy != nil
             // Direct artifact bundle URLs always download a ZIP, so the user must
             // make a verification decision up front. The git path may build from
             // source instead, so any checksum-flag inconsistency is deferred to
             // `.unresolvable` and only surfaces if a ZIP is actually downloaded.
             if case .artifactBundle(let url) = target {
                 _ = try URL.httpsURL(from: url.absoluteString)
-                if checksum == nil, !allowUnverified {
+                if requiresExplicitChecksumDecision(isChecksumPolicyExplicit: isChecksumPolicyExplicit) {
                     logger.error(
                         """
                         Installing a direct artifact bundle URL requires integrity verification.
-                        Pass --checksum <value> to verify, or --allow-unverified to skip explicitly.
+                        Pass --checksum <value> to verify, or --checksum-policy <skip|warn|require> to choose explicitly.
                         """,
                         metadata: .color(.red)
                     )
@@ -52,18 +50,11 @@ struct InstallCommand: AsyncParsableCommand {
                 }
             }
 
-            let checksumOption: ChecksumOption =
-                if checksum != nil && allowUnverified {
-                    .unresolvable(.mutuallyExclusiveFlags)
-                } else if checksum == nil && !allowUnverified && (requireChecksum || ProcessInfo.processInfo.requireChecksum) {
-                    .unresolvable(.missingChecksum(target: target.identifier))
-                } else {
-                    ChecksumOption(
-                        isSkip: allowUnverified,
-                        expectedChecksum: checksum,
-                        logger: logger
-                    )
-                }
+            let checksumOption = checksumOption(
+                checksumValidationPolicy: checksumValidationPolicy,
+                isChecksumPolicyExplicit: isChecksumPolicyExplicit,
+                logger: logger
+            )
 
             let executableBinaries: [PreparedBinary] = switch target {
             case .git(let gitURL):
@@ -97,6 +88,35 @@ struct InstallCommand: AsyncParsableCommand {
             logger.error(error)
             Foundation.exit(1)
         }
+    }
+}
+
+extension InstallCommand {
+    func requiresExplicitChecksumDecision(isChecksumPolicyExplicit: Bool) -> Bool {
+        checksum == nil && !isChecksumPolicyExplicit
+    }
+
+    func checksumOption(
+        checksumValidationPolicy: ChecksumValidationPolicy,
+        isChecksumPolicyExplicit: Bool,
+        logger: Logger
+    ) -> ChecksumOption {
+        if checksum != nil && checksumValidationPolicy == .skip {
+            return .unresolvable(.mutuallyExclusiveFlags)
+        }
+        if checksum == nil && checksumValidationPolicy == .require {
+            return .unresolvable(.missingInstallChecksum(target: target.identifier))
+        }
+        if checksum == nil && checksumValidationPolicy == .warn && isChecksumPolicyExplicit {
+            return .printActual { checksum in
+                logger.warning("ℹ️ The checksum is \(checksum). Please use --checksum to verify the downloaded file.")
+            }
+        }
+        return ChecksumOption(
+            isSkip: checksumValidationPolicy == .skip,
+            expectedChecksum: checksum,
+            logger: logger
+        )
     }
 }
 
