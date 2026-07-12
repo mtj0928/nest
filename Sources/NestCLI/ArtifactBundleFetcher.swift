@@ -66,10 +66,7 @@ public struct ArtifactBundleFetcher {
         let repositoryDirectory = workingDirectory.appending(component: gitURL.fileNameWithoutPathExtension)
         try fileSystem.removeItemIfExists(at: repositoryDirectory)
 
-        // Prepare the artifact bundle.
-        logger.info("📦 Preparing the artifact bundle of \(gitURL.lastPathComponent)...")
         try await downloadZIPFile(from: resolvedAsset.zipURL, to: repositoryDirectory, checksum: checksum)
-        logger.info("✅ Success to prepare the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
         let triple = try await tripleDetector.detect()
@@ -99,10 +96,7 @@ public struct ArtifactBundleFetcher {
         let directory = workingDirectory.appending(component: url.fileNameWithoutPathExtension)
         try fileSystem.removeItemIfExists(at: directory)
 
-        // Prepare the artifact bundle.
-        logger.info("📦 Preparing the artifact bundle at \(url.absoluteString)...")
         try await downloadZIPFile(from: url, to: directory, checksum: checksum)
-        logger.info("✅ Success to prepare the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
         let triple = try await tripleDetector.detect()
@@ -172,7 +166,8 @@ public struct ArtifactBundleFetcher {
         defer { try? fileSystem.removeItemIfExists(at: temporaryZIPFilePath) }
         if let cacheFilePath,
            fileSystem.fileExists(atPath: cacheFilePath.path()) {
-            logger.info("📦 Using cached artifact bundle ZIP at \(cacheFilePath.path()).")
+            logger.info("🔄 Reusing the artifact bundle ZIP from the user cache.")
+            logger.debug("The cached artifact bundle ZIP is at \(cacheFilePath.path()).")
             do {
                 try await prepareZIPFile(
                     at: cacheFilePath,
@@ -270,7 +265,8 @@ public struct ArtifactBundleFetcher {
     private func storeZIPFileInCache(at sourceURL: URL, to cacheFilePath: URL) {
         do {
             try fileSystem.copyItemAtomicallyReplacingDestination(at: sourceURL, to: cacheFilePath)
-            logger.info("📦 Cached artifact bundle ZIP at \(cacheFilePath.path()).")
+            logger.info("📦 Cached artifact bundle ZIP.")
+            logger.debug("The artifact bundle ZIP was cached at \(cacheFilePath.path()).")
         } catch {
             logger.warning("⚠️ Failed to cache the artifact bundle ZIP: \(error.localizedDescription)")
         }
