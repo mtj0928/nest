@@ -25,6 +25,7 @@ extension Configuration {
             fileDownloader: NestFileDownloader(httpClient: httpClient),
             nestInfoController: NestInfoController(directory: nestDirectory, fileSystem: fileSystem),
             assetRegistryClientBuilder: assetRegistryClientBuilder,
+            artifactBundleZIPCacheOption: artifactBundleZIPCacheOption,
             logger: logger
         )
     }

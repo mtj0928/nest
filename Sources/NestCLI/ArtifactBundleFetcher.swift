@@ -11,6 +11,7 @@ public struct ArtifactBundleFetcher {
     private let assetRegistryClientBuilder: AssetRegistryClientBuilder
     private let checksumCalculator: any ChecksumCalculator
     private let tripleDetector: TripleDetector
+    private let artifactBundleZIPCacheOption: ArtifactBundleZIPCacheOption
     private let logger: Logger
 
     public init(
@@ -20,6 +21,7 @@ public struct ArtifactBundleFetcher {
         fileDownloader: some FileDownloader,
         nestInfoController: NestInfoController,
         assetRegistryClientBuilder: AssetRegistryClientBuilder,
+        artifactBundleZIPCacheOption: ArtifactBundleZIPCacheOption,
         logger: Logger
     ) {
         self.workingDirectory = workingDirectory
@@ -30,6 +32,7 @@ public struct ArtifactBundleFetcher {
         self.assetRegistryClientBuilder = assetRegistryClientBuilder
         self.checksumCalculator = SwiftChecksumCalculator(swift: SwiftCommand(executor: executorBuilder.build()))
         self.tripleDetector = TripleDetector(swiftCommand: SwiftCommand(executor: executorBuilder.build()))
+        self.artifactBundleZIPCacheOption = artifactBundleZIPCacheOption
         self.logger = logger
     }
     
@@ -63,10 +66,7 @@ public struct ArtifactBundleFetcher {
         let repositoryDirectory = workingDirectory.appending(component: gitURL.fileNameWithoutPathExtension)
         try fileSystem.removeItemIfExists(at: repositoryDirectory)
 
-        // Download the artifact bundle
-        logger.info("🌐 Downloading the artifact bundle of \(gitURL.lastPathComponent)...")
         try await downloadZIPFile(from: resolvedAsset.zipURL, to: repositoryDirectory, checksum: checksum)
-        logger.info("✅ Success to download the artifact bundle of \(gitURL.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
         let triple = try await tripleDetector.detect()
@@ -96,10 +96,7 @@ public struct ArtifactBundleFetcher {
         let directory = workingDirectory.appending(component: url.fileNameWithoutPathExtension)
         try fileSystem.removeItemIfExists(at: directory)
 
-        // Download the artifact bundle
-        logger.info("🌐 Downloading the artifact bundle at \(url.absoluteString)...")
         try await downloadZIPFile(from: url, to: directory, checksum: checksum)
-        logger.info("✅ Success to download the artifact bundle of \(url.lastPathComponent).", metadata: .color(.green))
 
         // Get the current triple.
         let triple = try await tripleDetector.detect()
@@ -147,23 +144,75 @@ public struct ArtifactBundleFetcher {
         )
     }
 
-    private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws  {
+    private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws {
         // Surface checksum flag conflicts before spending bandwidth on a
         // download whose archive we cannot accept anyway.
         if url.needsUnzip, case .unresolvable(let error) = checksum {
             throw error
         }
-        let downloadedFilePath = try await fileDownloader.download(url: url)
         if !url.needsUnzip {
+            let downloadedFilePath = try await fileDownloader.download(url: url)
             if case .unresolvable(let error) = checksum {
                 throw error
             }
             try fileSystem.copyItem(at: downloadedFilePath, to: destination)
             return
         }
-        let downloadedZipFilePath = fileSystem.temporaryDirectory.appendingPathComponent(url.lastPathComponent)
-        try fileSystem.removeItemIfExists(at: downloadedZipFilePath)
-        try fileSystem.copyItem(at: downloadedFilePath, to: downloadedZipFilePath)
+
+        let cacheFilePath = artifactBundleZIPCacheOption.cacheFileURL(for: url)
+        let temporaryZIPFilePath = fileSystem.temporaryDirectory.appending(
+            component: "nest-artifact-bundle-\(UUID().uuidString).zip"
+        )
+        defer { try? fileSystem.removeItemIfExists(at: temporaryZIPFilePath) }
+        if let cacheFilePath,
+           fileSystem.fileExists(atPath: cacheFilePath.path()) {
+            logger.info("🔄 Reusing the artifact bundle ZIP from the user cache.")
+            logger.debug("The cached artifact bundle ZIP is at \(cacheFilePath.path()).")
+            do {
+                try await prepareZIPFile(
+                    at: cacheFilePath,
+                    temporaryZIPFilePath: temporaryZIPFilePath,
+                    destination: destination,
+                    checksum: checksum
+                )
+                return
+            } catch {
+                if !error.invalidatesArtifactBundleZIPCache {
+                    throw error
+                }
+                logger.warning(
+                    """
+                    ⚠️ Cached artifact bundle ZIP is unusable and will be downloaded again: \
+                    \(error.localizedDescription)
+                    """
+                )
+                try? fileSystem.removeItemIfExists(at: cacheFilePath)
+                try fileSystem.removeItemIfExists(at: destination)
+            }
+        }
+
+        logger.info("🌐 Downloading the artifact bundle ZIP at \(url.absoluteString)...")
+        let downloadedZIPFilePath = try await fileDownloader.download(url: url)
+        try await prepareZIPFile(
+            at: downloadedZIPFilePath,
+            temporaryZIPFilePath: temporaryZIPFilePath,
+            destination: destination,
+            checksum: checksum
+        )
+
+        if let cacheFilePath {
+            storeZIPFileInCache(at: temporaryZIPFilePath, to: cacheFilePath)
+        }
+    }
+
+    private func prepareZIPFile(
+        at sourceURL: URL,
+        temporaryZIPFilePath: URL,
+        destination: URL,
+        checksum: ChecksumOption
+    ) async throws {
+        try fileSystem.removeItemIfExists(at: temporaryZIPFilePath)
+        try fileSystem.copyItem(at: sourceURL, to: temporaryZIPFilePath)
 
         switch checksum {
         case .unresolvable(let error):
@@ -172,7 +221,7 @@ public struct ArtifactBundleFetcher {
             // TODO: Make missing checksums a hard error after the migration period ends.
             // Keep this warning path only until existing CI users have had enough time
             // to populate nestfile checksums with `nest update-nestfile`.
-            let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
+            let calculatedChecksum = try await checksumCalculator.calculate(temporaryZIPFilePath.path())
             logger.warning(
                 """
 
@@ -196,7 +245,7 @@ public struct ArtifactBundleFetcher {
                 metadata: .color(.yellow)
             )
         case .needsCheck(let expectedChecksum):
-            let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
+            let calculatedChecksum = try await checksumCalculator.calculate(temporaryZIPFilePath.path())
             if expectedChecksum != calculatedChecksum {
                 throw ArtifactBundleFetcherError.checksumMismatch(
                     expected: expectedChecksum,
@@ -204,13 +253,32 @@ public struct ArtifactBundleFetcher {
                 )
             }
         case .printActual(let handler):
-            let calculatedChecksum = try await checksumCalculator.calculate(downloadedZipFilePath.path())
+            let calculatedChecksum = try await checksumCalculator.calculate(temporaryZIPFilePath.path())
             handler(calculatedChecksum)
         case .skip:
             break
         }
 
-        try fileSystem.unzip(at: downloadedFilePath, to: destination)
+        try fileSystem.unzip(at: temporaryZIPFilePath, to: destination)
+    }
+
+    private func storeZIPFileInCache(at sourceURL: URL, to cacheFilePath: URL) {
+        do {
+            try fileSystem.copyItemAtomicallyReplacingDestination(at: sourceURL, to: cacheFilePath)
+            logger.info("📦 Cached artifact bundle ZIP.")
+            logger.debug("The artifact bundle ZIP was cached at \(cacheFilePath.path()).")
+        } catch {
+            logger.warning("⚠️ Failed to cache the artifact bundle ZIP: \(error.localizedDescription)")
+        }
+    }
+}
+
+extension ArtifactBundleZIPCacheOption {
+    fileprivate func cacheFileURL(for remoteURL: URL) -> URL? {
+        switch self {
+        case .enableCache(let artifactBundleZIPCache): artifactBundleZIPCache.fileURL(for: remoteURL)
+        case .disableCache: nil
+        }
     }
 }
 
@@ -233,6 +301,21 @@ extension ArtifactBundle {
                 throw ArtifactBundleFetcherError.unsupportedTriple
             }
             return binaries
+        }
+    }
+}
+
+private extension Error {
+    var invalidatesArtifactBundleZIPCache: Bool {
+        if self is InvalidZIPArchiveError {
+            return true
+        }
+        guard let artifactBundleFetcherError = self as? ArtifactBundleFetcherError else {
+            return false
+        }
+        return switch artifactBundleFetcherError {
+        case .checksumMismatch: true
+        default: false
         }
     }
 }

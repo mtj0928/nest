@@ -1,3 +1,4 @@
+import Darwin
 import Foundation
 import ZIPFoundation
 
@@ -14,6 +15,7 @@ public protocol FileSystem: Sendable {
     func removeItem(at URL: URL) throws
     func child(at url: URL) throws -> [URL]
     func copyItem(at srcURL: URL, to dstURL: URL) throws
+    func replaceItemAtomically(at sourceURL: URL, to destinationURL: URL) throws
     func createSymbolicLink(at url: URL, withDestinationURL destURL: URL) throws
     func destinationOfSymbolicLink(atPath path: String) throws -> String
     func unzip(
@@ -38,14 +40,18 @@ extension FileSystem {
     }
 
     public func unzip(at sourceURL: URL, to destinationURL: URL) throws {
-        try unzip(
-            at: sourceURL,
-            to: destinationURL,
-            skipCRC32: false,
-            allowUncontainedSymlinks: false,
-            progress: nil,
-            pathEncoding: nil
-        )
+        do {
+            try unzip(
+                at: sourceURL,
+                to: destinationURL,
+                skipCRC32: false,
+                allowUncontainedSymlinks: false,
+                progress: nil,
+                pathEncoding: nil
+            )
+        } catch let error as Archive.ArchiveError {
+            throw InvalidZIPArchiveError(underlyingError: error)
+        }
     }
 
     public func child(extension extensionName: String, at url: URL) throws -> [URL] {
@@ -57,6 +63,20 @@ extension FileSystem {
         if fileExists(atPath: path.path()) {
             try removeItem(at: path)
         }
+    }
+
+    /// Copies a file to a sibling temporary path and atomically publishes the completed copy.
+    public func copyItemAtomicallyReplacingDestination(at sourceURL: URL, to destinationURL: URL) throws {
+        let destinationDirectory = destinationURL.deletingLastPathComponent()
+        try createDirectory(at: destinationDirectory, withIntermediateDirectories: true)
+
+        let temporaryURL = destinationDirectory.appending(
+            component: ".\(destinationURL.lastPathComponent).\(UUID().uuidString).tmp"
+        )
+        defer { try? removeItemIfExists(at: temporaryURL) }
+
+        try copyItem(at: sourceURL, to: temporaryURL)
+        try replaceItemAtomically(at: temporaryURL, to: destinationURL)
     }
 
     public func child(at url: URL) throws -> [URL] {
@@ -75,6 +95,13 @@ extension FileSystem {
 }
 
 extension FileManager: FileSystem {
+    public func replaceItemAtomically(at sourceURL: URL, to destinationURL: URL) throws {
+        if Darwin.rename(sourceURL.path(), destinationURL.path()) != 0 {
+            let errorCode = errno
+            throw NSError(domain: NSPOSIXErrorDomain, code: Int(errorCode))
+        }
+    }
+
     public func data(at url: URL) throws -> Data {
         try Data(contentsOf: url)
     }

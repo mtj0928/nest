@@ -19,6 +19,9 @@ struct BootstrapCommand: AsyncParsableCommand {
     @Flag(name: [.customLong("skip-checksum-validation"), .customShort("s")], help: .hidden)
     var skipChecksumValidation = false
 
+    @OptionGroup
+    var cacheOptions: CacheOptions
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
@@ -128,7 +131,8 @@ extension BootstrapCommand {
         let configuration = Configuration.make(
             nestPath: nestfile.nestPath ?? ProcessInfo.processInfo.nestPath,
             registryTokenEnvironmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:],
-            logLevel: verbose ? .trace : .info
+            logLevel: verbose ? .trace : .info,
+            enableUserScopeCache: cacheOptions.enableUserScopeCache
         )
 
         return (

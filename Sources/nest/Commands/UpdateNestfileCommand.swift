@@ -1,9 +1,9 @@
 import ArgumentParser
 import AsyncOperations
 import Foundation
+import Logging
 import NestCLI
 import NestKit
-import Logging
 
 struct UpdateNestfileCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -42,7 +42,8 @@ extension UpdateNestfileCommand {
         let configuration = Configuration.make(
             nestPath: nestfile.nestPath ?? ProcessInfo.processInfo.nestPath,
             registryTokenEnvironmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:],
-            logLevel: verbose ? .trace : .info
+            logLevel: verbose ? .trace : .info,
+            enableUserScopeCache: false
         )
         let controller = NestfileController(
             assetRegistryClientBuilder: AssetRegistryClientBuilder(

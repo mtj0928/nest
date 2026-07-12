@@ -24,6 +24,9 @@ struct InstallCommand: AsyncParsableCommand {
     @Option(help: "Checksum validation policy for downloaded artifact bundles: skip, warn, or require.")
     var checksumPolicy: ChecksumValidationPolicyArgument?
 
+    @OptionGroup
+    var cacheOptions: CacheOptions
+
     @Flag(name: .shortAndLong)
     var verbose: Bool = false
 
@@ -141,7 +144,8 @@ extension InstallCommand {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
             nestPath: ProcessInfo.processInfo.nestPath,
-            logLevel: verbose ? .trace : .info
+            logLevel: verbose ? .trace : .info,
+            enableUserScopeCache: cacheOptions.enableUserScopeCache
         )
 
         return (

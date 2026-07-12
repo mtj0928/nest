@@ -1,8 +1,8 @@
 import ArgumentParser
 import Foundation
+import Logging
 import NestCLI
 import NestKit
-import Logging
 
 struct ListCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
@@ -38,7 +38,8 @@ extension ListCommand {
         LoggingSystem.bootstrap()
         let configuration = Configuration.make(
             nestPath: ProcessInfo.processInfo.nestPath,
-            logLevel: verbose ? .trace : .info
+            logLevel: verbose ? .trace : .info,
+            enableUserScopeCache: false
         )
 
         return (
