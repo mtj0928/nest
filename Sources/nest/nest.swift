@@ -27,6 +27,7 @@ extension Configuration {
         nestPath: String?,
         registryTokenEnvironmentVariableNames: [Nestfile.RegistryConfigs.GitHubHost: String] = [:],
         logLevel: Logger.Level,
+        enableUserScopeCache: Bool,
         httpClient: some HTTPClient = URLSession.shared,
         fileSystem: some FileSystem = FileManager.default
     ) -> Configuration {
@@ -53,6 +54,9 @@ extension Configuration {
             workingDirectory: fileSystem.temporaryDirectory.appending(path: "nest"),
             assetRegistryClientBuilder: assetRegistryClientBuilder,
             nestDirectory: nestDirectory,
+            artifactBundleZIPCacheOption: enableUserScopeCache
+                ? .enableCache(ArtifactBundleZIPCache(directory: fileSystem.defaultUserScopeCachePath.appending(component: "artifact-bundle-zips")))
+                : .disableCache,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
             logger: logger
         )
@@ -62,6 +66,10 @@ extension Configuration {
 extension FileSystem {
     var defaultNestPath: URL {
         homeDirectoryForCurrentUser.appending(component: ".nest")
+    }
+
+    var defaultUserScopeCachePath: URL {
+        homeDirectoryForCurrentUser.appending(components: "Library", "Caches", "nest")
     }
 }
 

@@ -8,6 +8,7 @@ public struct Configuration: Sendable {
     public var workingDirectory: URL
     public var assetRegistryClientBuilder: AssetRegistryClientBuilder
     public var nestDirectory: NestDirectory
+    public var artifactBundleZIPCacheOption: ArtifactBundleZIPCacheOption
     public var artifactBundleManager: ArtifactBundleManager
     public var logger: Logger
 
@@ -18,6 +19,7 @@ public struct Configuration: Sendable {
         workingDirectory: URL,
         assetRegistryClientBuilder: AssetRegistryClientBuilder,
         nestDirectory: NestDirectory,
+        artifactBundleZIPCacheOption: ArtifactBundleZIPCacheOption,
         artifactBundleManager: ArtifactBundleManager,
         logger: Logger
     ) {
@@ -27,6 +29,7 @@ public struct Configuration: Sendable {
         self.workingDirectory = workingDirectory
         self.assetRegistryClientBuilder = assetRegistryClientBuilder
         self.nestDirectory = nestDirectory
+        self.artifactBundleZIPCacheOption = artifactBundleZIPCacheOption
         self.artifactBundleManager = artifactBundleManager
         self.logger = logger
     }

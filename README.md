@@ -157,6 +157,16 @@ The command will:
 If you want change the directory,
 please update `$NEST_PATH` or specify `nestPath` in a configuration file (only `bootstrap`).
 
+To reuse downloaded artifact bundle ZIP files across multiple nest paths, pass `--enable-user-scope-cache` when installing:
+
+```sh
+$ nest install realm/SwiftLint --enable-user-scope-cache
+$ nest bootstrap nestfile.yaml --enable-user-scope-cache
+$ nest run --enable-user-scope-cache realm/SwiftLint foo.swift
+```
+
+When this option is enabled, nest stores the downloaded ZIP file as-is under `~/Library/Caches/nest/artifact-bundle-zips`. The cache mirrors a safe, bounded portion of the source URL for readability and adds a URL hash to the ZIP file name for uniqueness. If a matching ZIP is already cached there, nest reuses it for checksum validation and installation instead of downloading the ZIP again.
+
 ## Use GitHub API token to fetch Artifact Bundles
 
 Fetching releases sometimes fails due to API limit, so we recommended to pass a GitHub API token.

@@ -1,7 +1,7 @@
 import Foundation
-import ZIPFoundation
-import os
 import NestKit
+import os
+import ZIPFoundation
 
 public final class MockFileSystem: FileSystem, Sendable {
     public var item: FileSystemItem {
@@ -12,12 +12,17 @@ public final class MockFileSystem: FileSystem, Sendable {
         get { lockedSymbolicLink.withLock { $0 } }
         set { lockedSymbolicLink.withLock { $0 = newValue } }
     }
+    public var unzipError: MockFileSystemError? {
+        get { lockedUnzipError.withLock { $0 } }
+        set { lockedUnzipError.withLock { $0 = newValue } }
+    }
 
     public let homeDirectoryForCurrentUser: URL
     public let temporaryDirectory: URL
 
     private let lockedItem = OSAllocatedUnfairLock(initialState: FileSystemItem.directory(children: [:]))
     private let lockedSymbolicLink = OSAllocatedUnfairLock(initialState: [URL: URL]())
+    private let lockedUnzipError = OSAllocatedUnfairLock<MockFileSystemError?>(initialState: nil)
 
     public init(homeDirectoryForCurrentUser: URL, temporaryDirectory: URL) {
         self.homeDirectoryForCurrentUser = homeDirectoryForCurrentUser
@@ -77,6 +82,19 @@ public final class MockFileSystem: FileSystem, Sendable {
         }
     }
 
+    public func replaceItemAtomically(at sourceURL: URL, to destinationURL: URL) throws {
+        try lockedItem.withLock { item in
+            let sourceURL = symbolicLink[sourceURL] ?? sourceURL
+            let destinationURL = symbolicLink[destinationURL] ?? destinationURL
+            guard let sourceItem = item.item(components: sourceURL.pathComponents) else {
+                throw MockFileSystemError.fileNotFound
+            }
+            item.remove(at: destinationURL.pathComponents)
+            item.update(item: sourceItem, at: destinationURL.pathComponents)
+            item.remove(at: sourceURL.pathComponents)
+        }
+    }
+
     public func createSymbolicLink(at url: URL, withDestinationURL destURL: URL) throws {
         symbolicLink[url] = destURL
     }
@@ -105,6 +123,9 @@ public final class MockFileSystem: FileSystem, Sendable {
         progress: Progress?,
         pathEncoding: String.Encoding?
     ) throws {
+        if let unzipError {
+            throw unzipError
+        }
         let sourceURL = symbolicLink[sourceURL] ?? sourceURL
         let destinationURL = symbolicLink[destinationURL] ?? destinationURL
         try createDirectory(at: destinationURL, withIntermediateDirectories: true)
@@ -158,7 +179,8 @@ extension MockFileSystem {
         }
     }
 
-    public enum MockFileSystemError: Error {
+    public enum MockFileSystemError: Error, Equatable, Sendable {
+        case destinationUnavailable
         case fileNotFound
     }
 }

@@ -22,6 +22,9 @@ struct RunCommand: AsyncParsableCommand {
     @Flag(name: [.customLong("skip-checksum-validation"), .customShort("s")], help: .hidden)
     var skipChecksumValidation = false
 
+    @OptionGroup
+    var cacheOptions: CacheOptions
+
     @Option(help: "A path to nestfile", completion: .file(extensions: ["yaml"]))
     var nestfilePath = "nestfile.yaml"
 
@@ -117,7 +120,8 @@ extension RunCommand {
         let configuration = Configuration.make(
             nestPath: nestfile.nestPath ?? ProcessInfo.processInfo.nestPath,
             registryTokenEnvironmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:],
-            logLevel: verbose ? .trace : .info
+            logLevel: verbose ? .trace : .info,
+            enableUserScopeCache: cacheOptions.enableUserScopeCache
         )
 
         let controller = NestfileController(
