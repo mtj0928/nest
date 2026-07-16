@@ -13,8 +13,8 @@ struct BootstrapCommand: AsyncParsableCommand {
     @Argument(help: "A nestfile written in yaml.")
     var nestfilePath: String
 
-    @Option(help: "Checksum validation policy for downloaded artifact bundles: skip, warn, or require.")
-    var checksumPolicy: ChecksumValidationPolicyArgument?
+    @Option(name: .customLong("checksum-policy"), help: "Policy for artifact bundles without a checksum: skip, warn, or require.")
+    var missingChecksumPolicy: MissingChecksumPolicyArgument?
 
     @Flag(name: [.customLong("skip-checksum-validation"), .customShort("s")], help: .hidden)
     var skipChecksumValidation = false
@@ -28,10 +28,10 @@ struct BootstrapCommand: AsyncParsableCommand {
     mutating func run() async throws {
         let nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
         let (executableBinaryPreparer, artifactBundleManager, logger) = setUp(nestfile: nestfile)
-        let checksumValidationPolicy = if skipChecksumValidation {
-            ChecksumValidationPolicy.skip
+        let resolvedMissingChecksumPolicy = if skipChecksumValidation {
+            MissingChecksumPolicy.skip
         } else {
-            checksumPolicy?.policy ?? ProcessInfo.processInfo.checksumValidationPolicy
+            missingChecksumPolicy?.policy ?? ProcessInfo.processInfo.missingChecksumPolicy
         }
 
         if nestfile.targets.contains(where: { $0.isDeprecatedZIP }) {
@@ -45,7 +45,7 @@ struct BootstrapCommand: AsyncParsableCommand {
         for targetInfo in nestfile.targets {
             let target: InstallTarget
             var version: GitVersion
-            let checksumOption = targetInfo.checksumOption(policy: checksumValidationPolicy)
+            let checksumOption = targetInfo.checksumOption(missingChecksumPolicy: resolvedMissingChecksumPolicy)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
             case (.failure(let error), _):

@@ -16,8 +16,8 @@ struct RunCommand: AsyncParsableCommand {
     @Flag(help: "Will not perform installation.")
     var noInstall = false
 
-    @Option(help: "Checksum validation policy for downloaded artifact bundles: skip, warn, or require.")
-    var checksumPolicy: ChecksumValidationPolicyArgument?
+    @Option(name: .customLong("checksum-policy"), help: "Policy for artifact bundles without a checksum: skip, warn, or require.")
+    var missingChecksumPolicy: MissingChecksumPolicyArgument?
 
     @Flag(name: [.customLong("skip-checksum-validation"), .customShort("s")], help: .hidden)
     var skipChecksumValidation = false
@@ -70,10 +70,10 @@ struct RunCommand: AsyncParsableCommand {
 
         let version = GitVersion.tag(expectedVersion)
         let executables: [ExecutableBinary]
-        let checksumValidationPolicy = if skipChecksumValidation {
-            ChecksumValidationPolicy.skip
+        let resolvedMissingChecksumPolicy = if skipChecksumValidation {
+            MissingChecksumPolicy.skip
         } else {
-            checksumPolicy?.policy ?? ProcessInfo.processInfo.checksumValidationPolicy
+            missingChecksumPolicy?.policy ?? ProcessInfo.processInfo.missingChecksumPolicy
         }
         let installedBinaries = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         if !installedBinaries.isEmpty {
@@ -87,7 +87,7 @@ struct RunCommand: AsyncParsableCommand {
                 gitURL: subcommand.repository,
                 version: version,
                 assetName: target.assetName,
-                checksumOption: target.checksumOption(policy: checksumValidationPolicy)
+                checksumOption: target.checksumOption(missingChecksumPolicy: resolvedMissingChecksumPolicy)
             )
             executables = executableBinaryPreparer.resolveInstalledExecutableBinariesFromNestInfo(for: subcommand.repository, version: version)
         }

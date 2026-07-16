@@ -2,11 +2,11 @@ import NestCLI
 import Testing
 
 struct NestfileTargetChecksumOptionTests {
-    @Test
-    func checksumOptionNeedsCheckWhenChecksumExists() {
+    @Test(arguments: [MissingChecksumPolicy.skip, .warn, .require])
+    func checksumOptionNeedsCheckWhenChecksumExists(missingChecksumPolicy: MissingChecksumPolicy) {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: "abc123"))
 
-        switch target.checksumOption(policy: .warn) {
+        switch target.checksumOption(missingChecksumPolicy: missingChecksumPolicy) {
         case .needsCheck(let expected):
             #expect(expected == "abc123")
         default:
@@ -15,10 +15,10 @@ struct NestfileTargetChecksumOptionTests {
     }
 
     @Test
-    func checksumOptionIsUnresolvableWhenChecksumIsMissing() {
+    func checksumOptionWarnsWhenChecksumIsMissing() {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: nil))
 
-        switch target.checksumOption(policy: .warn) {
+        switch target.checksumOption(missingChecksumPolicy: .warn) {
         case .warnOnMissingChecksum(let targetIdentifier):
             #expect(targetIdentifier == "owner/repo")
         default:
@@ -27,10 +27,10 @@ struct NestfileTargetChecksumOptionTests {
     }
 
     @Test
-    func checksumOptionIsUnresolvableWhenChecksumIsMissingInStrictMode() {
+    func checksumOptionIsUnresolvableWhenChecksumIsRequiredButMissing() {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: nil))
 
-        switch target.checksumOption(policy: .require) {
+        switch target.checksumOption(missingChecksumPolicy: .require) {
         case .unresolvable(.missingChecksum(let targetIdentifier)):
             #expect(targetIdentifier == "owner/repo")
         default:
@@ -39,10 +39,10 @@ struct NestfileTargetChecksumOptionTests {
     }
 
     @Test
-    func checksumOptionSkipsWhenValidationIsSkipped() {
+    func checksumOptionSkipsWhenMissingChecksumPolicySkips() {
         let target = Nestfile.Target.repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: nil))
 
-        switch target.checksumOption(policy: .skip) {
+        switch target.checksumOption(missingChecksumPolicy: .skip) {
         case .skip:
             break
         default:

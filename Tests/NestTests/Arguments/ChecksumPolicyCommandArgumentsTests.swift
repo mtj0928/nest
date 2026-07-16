@@ -7,7 +7,7 @@ struct ChecksumPolicyCommandArgumentsTests {
     func runCommandAcceptsChecksumPolicy() throws {
         let command = try RunCommand.parse(["--checksum-policy", "require", "owner/repo"])
 
-        #expect(command.checksumPolicy == .require)
+        #expect(command.missingChecksumPolicy == .require)
     }
 
     @Test
@@ -43,7 +43,7 @@ struct ChecksumPolicyCommandArgumentsTests {
     func installCommandAcceptsChecksumPolicy() throws {
         let command = try InstallCommand.parse(["owner/repo", "--checksum-policy", "warn"])
 
-        #expect(command.checksumPolicy == .warn)
+        #expect(command.missingChecksumPolicy == .warn)
     }
 
     @Test
@@ -54,15 +54,15 @@ struct ChecksumPolicyCommandArgumentsTests {
             "warn"
         ])
 
-        #expect(command.checksumPolicy == .warn)
-        #expect(!command.requiresExplicitChecksumDecision(isChecksumPolicyExplicit: true))
+        #expect(command.missingChecksumPolicy == .warn)
+        #expect(!command.requiresExplicitChecksumDecision(isMissingChecksumPolicyExplicit: true))
     }
 
     @Test
     func installCommandStillRequiresExplicitChecksumDecisionForDirectArtifactBundleURL() throws {
         let command = try InstallCommand.parse(["https://example.com/foo.artifactbundle.zip"])
 
-        #expect(command.requiresExplicitChecksumDecision(isChecksumPolicyExplicit: false))
+        #expect(command.requiresExplicitChecksumDecision(isMissingChecksumPolicyExplicit: false))
     }
 
     @Test
@@ -74,14 +74,66 @@ struct ChecksumPolicyCommandArgumentsTests {
         ])
 
         switch command.checksumOption(
-            checksumValidationPolicy: .require,
-            isChecksumPolicyExplicit: true,
+            missingChecksumPolicy: .require,
+            isMissingChecksumPolicyExplicit: true,
             logger: Logger(label: "test")
         ) {
         case .unresolvable(.missingInstallChecksum(let target)):
             #expect(target == "https://example.com/foo.artifactbundle.zip")
         default:
             Issue.record("Expected .unresolvable(.missingInstallChecksum)")
+        }
+    }
+
+    @Test(arguments: [MissingChecksumPolicyArgument.skip, .warn, .require])
+    func installCommandChecksProvidedChecksumRegardlessOfPolicy(missingChecksumPolicyArgument: MissingChecksumPolicyArgument) throws {
+        let command = try InstallCommand.parse([
+            "owner/repo",
+            "--checksum",
+            "abc123"
+        ])
+
+        switch command.checksumOption(
+            missingChecksumPolicy: missingChecksumPolicyArgument.policy,
+            isMissingChecksumPolicyExplicit: true,
+            logger: Logger(label: "test")
+        ) {
+        case .needsCheck(let expected):
+            #expect(expected == "abc123")
+        default:
+            Issue.record("Expected .needsCheck")
+        }
+    }
+
+    @Test
+    func installCommandSkipsOnlyWhenChecksumIsMissing() throws {
+        let command = try InstallCommand.parse(["owner/repo"])
+
+        switch command.checksumOption(
+            missingChecksumPolicy: .skip,
+            isMissingChecksumPolicyExplicit: true,
+            logger: Logger(label: "test")
+        ) {
+        case .skip:
+            break
+        default:
+            Issue.record("Expected .skip")
+        }
+    }
+
+    @Test
+    func installCommandReportsActualChecksumWhenWarnPolicyAllowsMissingChecksum() throws {
+        let command = try InstallCommand.parse(["owner/repo"])
+
+        switch command.checksumOption(
+            missingChecksumPolicy: .warn,
+            isMissingChecksumPolicyExplicit: true,
+            logger: Logger(label: "test")
+        ) {
+        case .printActual:
+            break
+        default:
+            Issue.record("Expected .printActual")
         }
     }
 
@@ -99,7 +151,7 @@ struct ChecksumPolicyCommandArgumentsTests {
     func runCommandDoesNotRecognizeUnreleasedRequireChecksumFlag() throws {
         let command = try RunCommand.parse(["--require-checksum", "owner/repo"])
 
-        #expect(command.checksumPolicy == nil)
+        #expect(command.missingChecksumPolicy == nil)
         #expect(command.arguments == ["--require-checksum", "owner/repo"])
     }
 

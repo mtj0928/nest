@@ -145,8 +145,8 @@ public struct ArtifactBundleFetcher {
     }
 
     private func downloadZIPFile(from url: URL, to destination: URL, checksum: ChecksumOption) async throws {
-        // Surface checksum flag conflicts before spending bandwidth on a
-        // download whose archive we cannot accept anyway.
+        // Surface an unresolved checksum requirement before spending bandwidth
+        // on a download whose archive we cannot accept anyway.
         if url.needsUnzip, case .unresolvable(let error) = checksum {
             throw error
         }
@@ -320,81 +320,8 @@ private extension Error {
     }
 }
 
-public enum ArtifactBundleFetcherError: LocalizedError {
-    case noCandidates
-    case noTagSpecified
-    case unsupportedTriple
-    case checksumMismatch(expected: String, actual: String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .noCandidates: "No candidates for artifact bundle in the repository, please specify the file name."
-        case .noTagSpecified: "No tag specified, please specify the tag."
-        case .unsupportedTriple: "No binaries corresponding to the current triple."
-        case .checksumMismatch(let expected, let actual):
-            """
-            The checksum of the downloaded file does not match the expected checksum.
-            expected: \(expected)
-            actual:   \(actual)
-            """
-        }
-    }
-}
-
-struct ResolvedAsset {
-    public var zipURL: URL
-    public var fileName: String
-    public var tagName: String
-}
-
-public enum ChecksumOption {
-    case needsCheck(expected: String)
-    case printActual(handler: (String) -> Void)
-    case skip
-    /// A temporary migration path for nestfiles without checksums. The archive is
-    /// accepted, but the actual checksum is printed prominently so users can pin it.
-    case warnOnMissingChecksum(target: String)
-    /// A configuration error that should surface only when an artifact bundle ZIP is actually
-    /// being downloaded. Build-from-source paths never consume the option, so the error is not
-    /// raised in those cases.
-    case unresolvable(ChecksumOptionError)
-
-    public init(isSkip: Bool = false, expectedChecksum: String?, logger: Logger) {
-        if isSkip {
-            self = .skip
-            return
-        }
-        if let expectedChecksum {
-            self = .needsCheck(expected: expectedChecksum)
-            return
-        }
-        self = .printActual { checksum in
-            logger.info("ℹ️ The checksum is \(checksum). Please add it to the nestfile to verify the downloaded file.")
-        }
-    }
-}
-
-public enum ChecksumOptionError: LocalizedError, Equatable, Sendable {
-    case mutuallyExclusiveFlags
-    case missingChecksum(target: String)
-    case missingInstallChecksum(target: String)
-
-    public var errorDescription: String? {
-        switch self {
-        case .mutuallyExclusiveFlags:
-            "--checksum and --checksum-policy skip are mutually exclusive."
-        case .missingChecksum(let target):
-            """
-            Missing checksum for "\(target)" in the nestfile.
-            Run `nest update-nestfile <path>` to populate checksums, \
-            or pass `--checksum-policy skip` to bypass verification.
-            """
-        case .missingInstallChecksum(let target):
-            """
-            Missing checksum for "\(target)".
-            Pass `--checksum <value>` to verify the downloaded file, \
-            or pass `--checksum-policy warn` or `--checksum-policy skip` to continue without verification.
-            """
-        }
-    }
+private struct ResolvedAsset {
+    var zipURL: URL
+    var fileName: String
+    var tagName: String
 }

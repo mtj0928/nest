@@ -190,16 +190,17 @@ extension Nestfile.RegistryConfigs {
 }
 
 extension Nestfile.Target {
-    package func checksumOption(policy: ChecksumValidationPolicy) -> ChecksumOption {
-        if policy == .skip {
-            return .skip
-        }
+    package func checksumOption(missingChecksumPolicy: MissingChecksumPolicy) -> ChecksumOption {
         if let checksum {
             return .needsCheck(expected: checksum)
         }
-        if policy == .require {
-            return .unresolvable(.missingChecksum(target: identifier))
+        return switch missingChecksumPolicy {
+        case .skip:
+            .skip
+        case .warn:
+            .warnOnMissingChecksum(target: identifier)
+        case .require:
+            .unresolvable(.missingChecksum(target: identifier))
         }
-        return .warnOnMissingChecksum(target: identifier)
     }
 }
