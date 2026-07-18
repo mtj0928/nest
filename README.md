@@ -51,11 +51,8 @@ $ nest install https://github.com/realm/SwiftLint 0.55.0
 # Verify the artifact bundle against a known checksum.
 $ nest install realm/SwiftLint 0.55.0 --checksum adcc2e3b...
 
-# When installing a direct artifact bundle URL, --checksum is required.
-# Use --checksum-policy to choose how missing checksums are handled explicitly.
+# Installing a direct artifact bundle URL requires either --checksum.
 $ nest install https://example.com/foo.artifactbundle.zip --checksum abc123...
-$ nest install https://example.com/foo.artifactbundle.zip --checksum-policy warn
-$ nest install https://example.com/foo.artifactbundle.zip --checksum-policy skip
 ```
 
 ### Uninstall package
@@ -111,7 +108,7 @@ $ nest bootstrap nestfile.yaml
 $ nest bootstrap nestfile.yaml --checksum-policy require
 $ NEST_REQUIRE_CHECKSUM=1 nest bootstrap nestfile.yaml
 
-# Pass --checksum-policy skip to bypass verification (not recommended).
+# Allow targets without checksums without a warning. Any checksum present is still verified.
 $ nest bootstrap nestfile.yaml --checksum-policy skip
 ```
 
