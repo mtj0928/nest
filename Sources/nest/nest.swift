@@ -58,6 +58,7 @@ extension Configuration {
                 ? .enableCache(ArtifactBundleZIPCache(directory: fileSystem.defaultUserScopeCachePath.appending(component: "artifact-bundle-zips")))
                 : .disableCache,
             artifactBundleManager: ArtifactBundleManager(fileSystem: fileSystem, directory: nestDirectory),
+            registryTokenEnvironmentVariableNames: githubRegistryConfigs.protectedTokenEnvironmentVariableNames,
             logger: logger
         )
     }

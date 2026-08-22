@@ -22,8 +22,8 @@ struct GitHubURLBuilderTests {
     ])
     func assetURL(parameter: (urlString: String, tag: GitVersion, expect: String)) throws {
         let url = try #require(URL(string: parameter.urlString))
-        let assetURL = try GitHubURLBuilder.assetURL(url, version: parameter.tag)
-        #expect(assetURL == URL(string: parameter.expect))
+        let requestTarget = try GitHubURLBuilder.assetURL(url, version: parameter.tag)
+        #expect(requestTarget.url == URL(string: parameter.expect))
     }
 
     @Test(arguments: [
@@ -38,14 +38,26 @@ struct GitHubURLBuilderTests {
     ])
     func releaseAssetURL(urlString: String, expect: String) throws {
         let url = try #require(URL(string: urlString))
-        let assetURL = try GitHubURLBuilder.releasesAssetURL(url)
-        #expect(assetURL == URL(string: expect))
+        let requestTarget = try GitHubURLBuilder.releasesAssetURL(url)
+        #expect(requestTarget.url == URL(string: expect))
     }
 
     @Test
     func downloadURL() throws {
         let url = try #require(URL(string: "https://github.com/owner/repo"))
-        let assetURL = GitHubURLBuilder.assetDownloadURL(url, version: "0.1.0", fileName: "foo.txt")
+        let assetURL = try GitHubURLBuilder.assetDownloadURL(url, version: "0.1.0", fileName: "foo.txt")
         #expect(assetURL == URL(string: "https://github.com/owner/repo/releases/download/0.1.0/foo.txt"))
+    }
+
+    @Test(arguments: [
+        "http://ghe.example.com/owner/repo",
+        "HTTP://ghe.example.com/owner/repo"
+    ])
+    func rejectsInsecureEnterpriseRepositoryURLBeforeBuildingRequest(urlString: String) throws {
+        let url = try #require(URL(string: urlString))
+
+        #expect(throws: GitHubURLBuilder.InvalidURLError.self) {
+            try GitHubURLBuilder.assetURL(url, version: .latestRelease)
+        }
     }
 }

@@ -46,7 +46,7 @@ struct RunCommand: AsyncParsableCommand {
             return
         }
 
-        let (nestfileController, executableBinaryPreparer, _, logger) = setUp(nestfile: nestfile)
+        let (nestfileController, executableBinaryPreparer, registryTokenEnvironmentVariableNames, logger) = setUp(nestfile: nestfile)
 
         let subcommand: SubCommandOfRunCommand
         do {
@@ -101,8 +101,12 @@ struct RunCommand: AsyncParsableCommand {
         let command = executables[0].binaryPath.path(percentEncoded: false)
         var environment = ProcessInfo.processInfo.environment
         environment["RESOURCE_PATH"] = ""
-        let result = try await NestProcessExecutor(environment: environment, logger: logger, logLevel: .info)
-            .executeInteractively(command: command, subcommand.arguments)
+        let result = try await NestProcessExecutor(
+            environment: environment,
+            removingEnvironmentVariables: registryTokenEnvironmentVariableNames,
+            logger: logger,
+            logLevel: .info
+        ).executeInteractively(command: command, subcommand.arguments)
         if result != 0 {
             Foundation.exit(result)
         }
@@ -113,7 +117,7 @@ extension RunCommand {
     private func setUp(nestfile: Nestfile) -> (
         NestfileController,
         ExecutableBinaryPreparer,
-        NestDirectory,
+        Set<String>,
         Logger
     ) {
         LoggingSystem.bootstrap()
@@ -125,11 +129,7 @@ extension RunCommand {
         )
 
         let controller = NestfileController(
-            assetRegistryClientBuilder: AssetRegistryClientBuilder(
-                httpClient: configuration.httpClient,
-                registryConfigs: RegistryConfigs(github: GitHubRegistryConfigs.resolve(environmentVariableNames: nestfile.registries?.githubServerTokenEnvironmentVariableNames ?? [:])),
-                logger: configuration.logger
-            ),
+            assetRegistryClientBuilder: configuration.assetRegistryClientBuilder,
             fileSystem: configuration.fileSystem,
             fileDownloader: configuration.fileDownloader,
             checksumCalculator: SwiftChecksumCalculator(swift: SwiftCommand(
@@ -140,7 +140,7 @@ extension RunCommand {
         return (
             controller,
             configuration.executableBinaryPreparer,
-            configuration.nestDirectory,
+            configuration.registryTokenEnvironmentVariableNames,
             configuration.logger
         )
     }

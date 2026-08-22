@@ -1,8 +1,10 @@
-@testable import NestKit
-import NestTestHelpers
 import Foundation
 import HTTPTypes
+import Logging
+import NestTestHelpers
+import os
 import Testing
+@testable import NestKit
 
 struct GitHubAssetRegistryClientTests {
     let fileSystem = MockFileSystem(
@@ -45,7 +47,10 @@ struct GitHubAssetRegistryClientTests {
     @Test(arguments: [
         ("https://github.com/owner/repo", "github-com-token"),
         ("https://known-server.example.com/owner/repo", "known-token"),
-        ("https://unknown-server.example.com/owner/repo", nil),
+        ("https://other-server.example.com/owner/repo", "other-token"),
+        ("https://ghe-token-server.example.com/owner/repo", "explicit-enterprise-token"),
+        ("https://gh-token-misconfigured.example.com/owner/repo", nil),
+        ("https://attacker.example/owner/repo", nil),
     ])
     func fetchAssetsCanReceiveValidAuthorization(repositoryURLString: String, expectedAuthorization: String?) async throws {
         let repositoryURL = try #require(URL(string: repositoryURLString))
@@ -70,13 +75,17 @@ struct GitHubAssetRegistryClientTests {
             return (json.data(using: .utf8)!, HTTPResponse(status: .ok))
         }
         let environmentVariables = TestingEnvironmentVariables(environmentVariables: [
-            "GITHUB_COM_TOKEN": "github-com-token",
+            "GH_TOKEN": "github-com-token",
+            "GHE_TOKEN": "explicit-enterprise-token",
             "KNOWN_SERVER_TOKEN": "known-token",
+            "OTHER_SERVER_TOKEN": "other-token"
         ])
         let registryConfigs = GitHubRegistryConfigs.resolve(
             environmentVariableNames: [
-                "github.com": "GITHUB_COM_TOKEN",
                 "known-server.example.com": "KNOWN_SERVER_TOKEN",
+                "other-server.example.com": "OTHER_SERVER_TOKEN",
+                "ghe-token-server.example.com": "GHE_TOKEN",
+                "gh-token-misconfigured.example.com": "GH_TOKEN"
             ],
             environmentVariablesStorage: environmentVariables
         )
@@ -86,6 +95,65 @@ struct GitHubAssetRegistryClientTests {
             logger: .init(label: "Test")
         )
         let _ = try await githubRegistryClient.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
+    }
+
+    @Test
+    func rejectsHTTPEnterpriseURLBeforeNetworkAccess() async throws {
+        let repositoryURL = try #require(URL(string: "http://ghe.example.com/owner/repo"))
+        let didAccessNetwork = OSAllocatedUnfairLock(initialState: false)
+        let httpClient = GitHubMockHTTPClient(fileSystem: fileSystem) { _ in
+            didAccessNetwork.withLock { $0 = true }
+            return (Data(), HTTPResponse(status: .ok))
+        }
+        let client = GitHubAssetRegistryClient(
+            httpClient: httpClient,
+            registryConfigs: GitHubRegistryConfigs.resolve(environmentVariableNames: [:]),
+            logger: Logger(label: "Test")
+        )
+
+        await #expect(throws: GitHubURLBuilder.InvalidURLError.self) {
+            try await client.fetchAssets(repositoryURL: repositoryURL, version: .latestRelease)
+        }
+        #expect(!didAccessNetwork.withLock { $0 })
+    }
+
+    @Test
+    func verboseLogsRedactRequestTokenAndDoNotLogResponseBody() async throws {
+        let token = "bearer-token-that-must-never-be-logged"
+        let signedURL = "https://downloads.example.com/foo.zip?signature=\(token)"
+        let repositoryURL = try #require(URL(string: "https://github.com/owner/repo"))
+        let httpClient = GitHubMockHTTPClient(fileSystem: fileSystem) { request in
+            #expect(request.headerFields[.authorization] == "Bearer \(token)")
+            let json = """
+            {
+                "tag_name": "1.2.3",
+                "assets": [
+                    {
+                        "name": "foo.zip",
+                        "browser_download_url": "\(signedURL)"
+                    }
+                ]
+            }
+            """
+            return (json.data(using: .utf8)!, HTTPResponse(status: .ok))
+        }
+        let registryConfigs = GitHubRegistryConfigs.resolve(
+            environmentVariableNames: [:],
+            environmentVariablesStorage: TestingEnvironmentVariables(environmentVariables: ["GH_TOKEN": token])
+        )
+        let logRecorder = TestLogRecorder()
+        let client = GitHubAssetRegistryClient(
+            httpClient: httpClient,
+            registryConfigs: registryConfigs,
+            logger: logRecorder.makeLogger(logLevel: .trace)
+        )
+
+        _ = try await client.fetchAssets(repositoryURL: repositoryURL, version: .tag("1.2.3"))
+
+        let logs = logRecorder.messages.joined(separator: "\n")
+        #expect(!logs.contains(token))
+        #expect(!logs.contains("signature="))
+        #expect(logs.contains("Authorization: <redacted>"))
     }
 }
 

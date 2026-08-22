@@ -1,6 +1,5 @@
-@testable import NestKit
-import Foundation
 import Testing
+@testable import NestKit
 
 @Suite
 struct GitHubRegistryConfigsTests {
@@ -11,7 +10,13 @@ struct GitHubRegistryConfigsTests {
         let expectedTokens: [String: String?]
         let sourceLocation: SourceLocation
 
-        init(_ testDescription: String, _ registryTokenEnvironmentVariableNames: [String : String], _ environmentVariables: [String : String?], _ expectedTokens: [String : String?], sourceLocation: SourceLocation = #_sourceLocation) {
+        init(
+            _ testDescription: String,
+            _ registryTokenEnvironmentVariableNames: [String: String],
+            _ environmentVariables: [String: String?],
+            _ expectedTokens: [String: String?],
+            sourceLocation: SourceLocation = #_sourceLocation
+        ) {
             self.testDescription = testDescription
             self.registryTokenEnvironmentVariableNames = registryTokenEnvironmentVariableNames
             self.environmentVariables = environmentVariables
@@ -34,16 +39,28 @@ struct GitHubRegistryConfigsTests {
             ["unknown.example.com": nil]
         ),
         .init(
-            "Cannot resolve GitHub.com token",
-            ["ghe.example.com": "MY_GHE_TOKEN"],
-            ["MY_GHE_TOKEN": "my-ghe-token"],
-            ["github.com": nil]
+            "Can resolve GitHub.com token only for GitHub.com",
+            [:],
+            ["GH_TOKEN": "github-com-token"],
+            ["github.com": "github-com-token", "ghe.example.com": nil]
         ),
         .init(
-            "Can resolve any GitHub registry tokens from `GHE_TOKEN`",
+            "Does not implicitly resolve custom host tokens from GHE_TOKEN",
             [:],
             ["GHE_TOKEN": "default-enterprise-token"],
-            ["github.com": nil, "ghe.example.com": "default-enterprise-token"]
+            ["github.com": nil, "ghe.example.com": nil]
+        ),
+        .init(
+            "Can explicitly associate GHE_TOKEN with one custom host",
+            ["ghe.example.com": "GHE_TOKEN"],
+            ["GHE_TOKEN": "enterprise-token"],
+            ["ghe.example.com": "enterprise-token", "other.example.com": nil]
+        ),
+        .init(
+            "Never sends GH_TOKEN to a custom host even when configured",
+            ["ghe.example.com": "GH_TOKEN"],
+            ["GH_TOKEN": "github-com-token"],
+            ["github.com": "github-com-token", "ghe.example.com": nil]
         ),
         .init(
             "Can overwrite GitHub.com token by the configuration",
@@ -61,16 +78,25 @@ struct GitHubRegistryConfigsTests {
             environmentVariablesStorage: environmentVariables
         )
         for (host, expectedToken) in fixture.expectedTokens {
-            let url = try #require(makeURL(from: host))
-            let resolvedToken = configs.config(for: url, environmentVariablesStorage: environmentVariables)?.token
+            let resolvedToken = configs.config(for: GitHubRegistryConfigs.Host(host))?.token
             #expect(resolvedToken == expectedToken, "\(fixture.testDescription)", sourceLocation: fixture.sourceLocation)
         }
     }
 
-    private func makeURL(from host: String) -> URL? {
-        var components = URLComponents()
-        components.scheme = "https"
-        components.host = host
-        return components.url
+    @Test
+    func protectedTokenEnvironmentVariableNamesIncludeGitHubDefaultAndConfiguredNames() {
+        let configs = GitHubRegistryConfigs.resolve(
+            environmentVariableNames: [
+                "github.com": "CUSTOM_GITHUB_TOKEN",
+                "ghe.example.com": "ENTERPRISE_TOKEN"
+            ],
+            environmentVariablesStorage: TestingEnvironmentVariables(environmentVariables: [:])
+        )
+
+        #expect(configs.protectedTokenEnvironmentVariableNames == [
+            "GH_TOKEN",
+            "CUSTOM_GITHUB_TOKEN",
+            "ENTERPRISE_TOKEN"
+        ])
     }
 }

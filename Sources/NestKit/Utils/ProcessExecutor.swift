@@ -35,11 +35,12 @@ public struct NestProcessExecutor: ProcessExecutor {
     public init(
         currentDirectory: URL? = nil,
         environment: [String: String] = ProcessInfo.processInfo.environment,
+        removingEnvironmentVariables: Set<String> = [],
         logger: Logging.Logger,
         logLevel: Logging.Logger.Level = .debug
     ) {
         self.currentDirectoryURL = currentDirectory
-        self.environment = environment
+        self.environment = environment.filter { !removingEnvironmentVariables.contains($0.key) }
         self.logger = logger
         self.logLevel = logLevel
     }
