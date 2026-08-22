@@ -31,16 +31,20 @@ public struct GitHubRegistryConfigs: Sendable {
         case custom(String)
 
         init(_ host: String) {
-            switch host {
-            case "github.com": self = .githubCom
-            default: self = .custom(host)
-            }
+            let normalizedHost = host.lowercased()
+            self = normalizedHost == "github.com" ? .githubCom : .custom(normalizedHost)
         }
 
+        var hostname: String {
+            switch self {
+            case .githubCom: "github.com"
+            case .custom(let hostname): hostname
+            }
+        }
     }
 
     /// A struct to contain the server configuration.
-    struct Config : Sendable {
+    struct Config: Sendable {
         /// Where the token come from.
         var environmentVariable: String
         /// GitHub API token.
@@ -50,57 +54,74 @@ public struct GitHubRegistryConfigs: Sendable {
     public typealias GitHubServerHostName = String
     public typealias EnvironmentVariableName = String
 
+    /// Environment variables that must not be inherited by executables launched through `nest run`.
+    public let protectedTokenEnvironmentVariableNames: Set<String>
+
     /// Resolve server configurations from environment variable names.
-    /// If GH_TOKEN environment variable is set, the token for GitHub.com will be that.
-    /// If other values are set on environmentVariableNames, the value will be overwritten.
-    /// - Parameters environmentVariableNames A dictionary of environment variable names with hostname as key.
-    /// - Parameters environmentVariablesStorage A container of environment variables.
-    /// - Returns A new server configuration.
+    ///
+    /// `GH_TOKEN` is resolved only for GitHub.com. A custom host receives a token only when
+    /// `environmentVariableNames` explicitly associates that host with an environment variable.
+    ///
+    /// - Parameters:
+    ///   - environmentVariableNames: Environment variable names keyed by GitHub server hostname.
+    ///   - environmentVariablesStorage: A container of environment variables.
+    /// - Returns: A new server configuration.
     public static func resolve(
         environmentVariableNames: [GitHubServerHostName: EnvironmentVariableName],
         environmentVariablesStorage: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()
     ) -> GitHubRegistryConfigs {
-        let loadedConfigs: [Host: Config] = environmentVariableNames.reduce(into: [:]) { (registries, pair) in
+        var loadedConfigs = [Host: Config]()
+        if let config = Config(
+            environmentVariableName: githubTokenEnvironmentVariableName,
+            environmentVariablesStorage: environmentVariablesStorage
+        ) {
+            loadedConfigs[.githubCom] = config
+        }
+
+        environmentVariableNames.forEach { pair in
             let (host, environmentVariableName) = pair
-            if let token = environmentVariablesStorage[environmentVariableName] {
-                let host = Host(host)
-                registries[host] = Config(environmentVariable: environmentVariableName, token: token)
+            let registryHost = Host(host)
+            if case .custom = registryHost,
+               environmentVariableName == githubTokenEnvironmentVariableName {
+                return
+            }
+            if let config = Config(
+                environmentVariableName: environmentVariableName,
+                environmentVariablesStorage: environmentVariablesStorage
+            ) {
+                loadedConfigs[registryHost] = config
             }
         }
-        return .init(registries: loadedConfigs)
+
+        let protectedTokenEnvironmentVariableNames = Set(environmentVariableNames.values)
+            .union([githubTokenEnvironmentVariableName])
+        return .init(
+            registries: loadedConfigs,
+            protectedTokenEnvironmentVariableNames: protectedTokenEnvironmentVariableNames
+        )
     }
 
+    private static let githubTokenEnvironmentVariableName = "GH_TOKEN"
     private var registries: [Host: Config]
 
-    private init(registries: [Host: Config]) {
+    private init(registries: [Host: Config], protectedTokenEnvironmentVariableNames: Set<String>) {
         self.registries = registries
+        self.protectedTokenEnvironmentVariableNames = protectedTokenEnvironmentVariableNames
     }
 
-    /// Get the server configuration for URL. It will be resolved from its host.
-    /// - Parameters url An URL.
-    /// - Parameters environmentVariablesStorage A container of environment variables.
-    /// - Returns A config for the host.
-    func config(for url: URL, environmentVariablesStorage: any EnvironmentVariableStorage = SystemEnvironmentVariableStorage()) -> Config? {
-        guard let hostString = url.host() else {
-            return nil
-        }
-        let host = Host(hostString)
-        switch host {
-        case .githubCom:
-            return registries[host] ?? Config(environmentVariableName: "GH_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
-        case .custom:
-            return registries[host] ?? Config(environmentVariableName: "GHE_TOKEN", environmentVariablesStorage: environmentVariablesStorage)
-        }
+    func config(for host: Host) -> Config? {
+        registries[host]
     }
 }
 
 extension GitHubRegistryConfigs.Config {
     fileprivate init?(environmentVariableName: String, environmentVariablesStorage: some EnvironmentVariableStorage) {
-        if let environmentVariableValue = environmentVariablesStorage[environmentVariableName] {
-            self.environmentVariable = environmentVariableName
-            self.token = environmentVariableValue
-        } else {
+        guard let environmentVariableValue = environmentVariablesStorage[environmentVariableName],
+              !environmentVariableValue.isEmpty
+        else {
             return nil
-        }   
+        }
+        self.environmentVariable = environmentVariableName
+        self.token = environmentVariableValue
     }
 }

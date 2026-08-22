@@ -10,6 +10,8 @@ public struct Configuration: Sendable {
     public var nestDirectory: NestDirectory
     public var artifactBundleZIPCacheOption: ArtifactBundleZIPCacheOption
     public var artifactBundleManager: ArtifactBundleManager
+    /// Registry token environment variables that must not be inherited by executed packages.
+    public var registryTokenEnvironmentVariableNames: Set<String>
     public var logger: Logger
 
     public init(
@@ -21,6 +23,7 @@ public struct Configuration: Sendable {
         nestDirectory: NestDirectory,
         artifactBundleZIPCacheOption: ArtifactBundleZIPCacheOption,
         artifactBundleManager: ArtifactBundleManager,
+        registryTokenEnvironmentVariableNames: Set<String> = [],
         logger: Logger
     ) {
         self.httpClient = httpClient
@@ -31,6 +34,7 @@ public struct Configuration: Sendable {
         self.nestDirectory = nestDirectory
         self.artifactBundleZIPCacheOption = artifactBundleZIPCacheOption
         self.artifactBundleManager = artifactBundleManager
+        self.registryTokenEnvironmentVariableNames = registryTokenEnvironmentVariableNames
         self.logger = logger
     }
 }

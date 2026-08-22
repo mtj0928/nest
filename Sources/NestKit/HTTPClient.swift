@@ -8,6 +8,10 @@ public protocol HTTPClient: Sendable {
 }
 
 extension URLSession: HTTPClient {
+    public func data(for request: HTTPRequest) async throws -> (Data, HTTPResponse) {
+        try await data(for: request, delegate: HTTPRedirectDelegate())
+    }
+
     public func download(for request: HTTPRequest) async throws -> (URL, HTTPResponse) {
         try await download(for: request, delegate: nil)
     }

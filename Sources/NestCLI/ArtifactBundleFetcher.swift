@@ -122,7 +122,7 @@ public struct ArtifactBundleFetcher {
         artifactBundleZipFileName fileName: String?
     ) async throws -> ResolvedAsset {
         if let fileName, case .tag(let version) = version {
-            let artifactBundleZipURL = GitHubURLBuilder.assetDownloadURL(url, version: version, fileName: fileName)
+            let artifactBundleZipURL = try GitHubURLBuilder.assetDownloadURL(url, version: version, fileName: fileName)
             logger.debug("Resolved artifact bundle zip URL: \(artifactBundleZipURL.absoluteString).")
             let asset = ResolvedAsset(zipURL: artifactBundleZipURL, fileName: fileName, tagName: version)
             return asset

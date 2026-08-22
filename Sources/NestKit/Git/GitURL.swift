@@ -31,7 +31,10 @@ public enum GitURL: Sendable, Hashable, Codable {
         guard let url = URL(string: string) else { return nil }
 
         // github.com/xxx/yyy or https://github.com/xxx/yyy
-        if url.host() != nil {
+        if let host = url.host() {
+            if host.lowercased() != "github.com", url.scheme?.lowercased() != "https" {
+                return nil
+            }
             let fileNameWithoutPathExtension = url.fileNameWithoutPathExtension
             return .url(url.deletingLastPathComponent().appending(path: fileNameWithoutPathExtension))
         }

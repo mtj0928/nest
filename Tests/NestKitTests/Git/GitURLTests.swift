@@ -30,7 +30,10 @@ struct GitURLTests {
         #expect(gitURL == parameter.expect)
     }
 
-    @Test(arguments:["repo"])
+    @Test(arguments:[
+        "repo",
+        "http://ghe.example.com/owner/repo"
+    ])
     func parseGitURLOnFailureCase(argument: String) throws {
         let repository = GitURL.parse(from: argument)
         #expect(repository == nil)

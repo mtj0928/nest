@@ -15,9 +15,9 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
     }
 
     public func fetchAssets(repositoryURL: URL, version: GitVersion) async throws -> AssetInformation {
-        let assetURL = try GitHubURLBuilder.assetURL(repositoryURL, version: version)
+        let requestTarget = try GitHubURLBuilder.assetURL(repositoryURL, version: version)
 
-        let assetResponse = try await fetchData(GitHubAssetResponse.self, requestURL: assetURL, repositoryURL: repositoryURL)
+        let assetResponse = try await fetchData(GitHubAssetResponse.self, requestTarget: requestTarget)
         let assets = assetResponse.assets.map { asset in
             Asset(fileName: asset.name, url: asset.browserDownloadURL)
         }
@@ -29,8 +29,8 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
         version: GitVersion,
         excludingTargets: [String]
     ) async throws -> AssetInformation {
-        let assetURL = try GitHubURLBuilder.releasesAssetURL(repositoryURL)
-        let assetResponses = try await fetchData([GitHubAssetResponse].self, requestURL: assetURL, repositoryURL: repositoryURL)
+        let requestTarget = try GitHubURLBuilder.releasesAssetURL(repositoryURL)
+        let assetResponses = try await fetchData([GitHubAssetResponse].self, requestTarget: requestTarget)
 
         guard let matchedAssetResponse = assetResponses.first(where: { !excludingTargets.contains($0.tagName) }) else {
             throw AssetRegistryClientError.noMatchApplyingExcludedTarget
@@ -40,25 +40,23 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
         return AssetInformation(tagName: matchedAssetResponse.tagName, assets: assets)
     }
 
-    private func fetchData<T: Decodable>(_: T.Type, requestURL: URL, repositoryURL: URL) async throws -> T {
-        var request = HTTPRequest(url: requestURL)
+    private func fetchData<T: Decodable>(_: T.Type, requestTarget: GitHubURLBuilder.APIRequestTarget) async throws -> T {
+        var request = HTTPRequest(url: requestTarget.url)
         request.headerFields = [
             .accept: "application/vnd.github+json",
             .gitHubAPIVersion: "2022-11-28"
         ]
 
-        guard let repositoryHost = repositoryURL.host() else { fatalError("Unknown host") }
-        if let config = registryConfigs?.config(for: repositoryURL) {
-            logger.debug("GitHub token for \(repositoryHost) is passed from \(config.environmentVariable)")
+        let registryHost = requestTarget.registryHost
+        if let config = registryConfigs?.config(for: registryHost) {
+            logger.debug("GitHub token for \(registryHost.hostname) is passed from \(config.environmentVariable)")
             request.headerFields[.authorization] = "Bearer \(config.token)"
         } else {
-            logger.debug("GitHub token for \(repositoryHost) is not provided.")
+            logger.debug("GitHub token for \(registryHost.hostname) is not provided.")
         }
 
-        logger.debug("Request: \(repositoryURL)")
-        logger.debug("Request: \(request.headerFields)")
+        logger.debug("Request: \(HTTPLogRedactor.redactedDescription(of: request))")
         let (data, response) = try await httpClient.data(for: request)
-        logger.debug("Response: \(data.humanReadableJSONString() ?? "No data")")
         logger.debug("Status: \(response.status)")
 
         if response.status == .notFound {
@@ -70,13 +68,4 @@ public struct GitHubAssetRegistryClient: AssetRegistryClient {
 
 extension HTTPField.Name {
     static let gitHubAPIVersion = HTTPField.Name("X-GitHub-Api-Version")!
-}
-
-extension Data {
-    fileprivate func humanReadableJSONString() -> String? {
-        guard let jsonObject = try? JSONSerialization.jsonObject(with: self, options: []),
-              let prettyPrintedData = try? JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted)
-        else { return nil }
-        return String(data: prettyPrintedData, encoding: .utf8)
-    }
 }

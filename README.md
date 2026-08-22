@@ -171,15 +171,13 @@ When this option is enabled, nest stores the downloaded ZIP file as-is under `~/
 
 Fetching releases sometimes fails due to API limit, so we recommended to pass a GitHub API token.
 
-### Use `GH_TOKEN` environment variable
-
-The simplest way is the passing `GH_TOKEN` or `GHE_TOKEN` environment variable. nest uses the token for GitHub.com or any other GitHub Enterprise servers.
+### Use `GH_TOKEN` for GitHub.com
+Set `GH_TOKEN` to authenticate requests for repositories hosted on `github.com`.
 
 ### Use `registries` in nestfile
 
-If you want to use a token for GitHub Enterprise, you can specify the names of environment variables in the `registries` section in the nestfile.
-
-nest will automatically resolve the environment variables to fetch from each server.
+GitHub Enterprise hosts must use HTTPS and must be explicitly associated with a token environment variable in the `registries` section.
+nest sends the resolved token only to the associated host. `GHE_TOKEN` is not applied implicitly to arbitrary custom hosts, but it can be selected explicitly as shown below.
 
 ```yaml
 registries:
@@ -187,10 +185,13 @@ registries:
     - host: github.com
       tokenEnvironmentVariable: "MY_GH_TOKEN"
     - host: my-github-enterprise.example.com
-      tokenEnvironmentVariable: "MY_GHE_TOKEN"
+      tokenEnvironmentVariable: "GHE_TOKEN"
 ```
 
-If the value is not set, uses `GH_TOKEN` instead if available.
+If the configured variable for `github.com` is unset, nest uses `GH_TOKEN` when available.
+There is no fallback token for a custom host: if its configured variable is unset, the request is sent without Authorization.
+
+When `nest run` launches an installed executable, it preserves ordinary environment variables but removes `GH_TOKEN` and every token environment variable named in `registries`. `GHE_TOKEN` is removed only when it is explicitly selected in `registries`.
 
 ## Why is the name `nest`?
 A nest is place where Swift birds store their crafts🪺
