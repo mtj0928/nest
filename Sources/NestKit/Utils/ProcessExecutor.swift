@@ -56,9 +56,9 @@ public struct NestProcessExecutor: ProcessExecutor {
     }
 
     private func _execute(command: String, _ arguments: [String]) async throws -> [StreamElement] {
-        logger.debug("$ \(command) \(arguments.joined(separator: " "))")
+        let executableURL = URL(fileURLWithPath: command)
+        logger.debug("$ \(executableURL.lastPathComponent) (argument count: \(arguments.count))")
         return try await withCheckedThrowingContinuation { continuous in
-            let executableURL = URL(fileURLWithPath: command)
             do {
                 let results = OSAllocatedUnfairLock(initialState: [StreamElement]())
 
@@ -117,10 +117,11 @@ public struct NestProcessExecutor: ProcessExecutor {
     }
 
     public func executeInteractively(command: String, _ arguments: [String]) async throws -> Int32 {
-        logger.debug("$ \(command) \(arguments.joined(separator: " "))")
+        let executableURL = URL(fileURLWithPath: command)
+        logger.debug("$ \(executableURL.lastPathComponent) (argument count: \(arguments.count))")
 
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: command)
+        process.executableURL = executableURL
         process.arguments = arguments
         process.environment = environment
 

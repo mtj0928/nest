@@ -4,6 +4,75 @@ import NestKit
 import Testing
 
 struct CommandLogTests {
+    @Test(arguments: [false, true])
+    func runHidesArgumentsAndPreservesPassthroughAndExitStatus(verbose: Bool) throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appending(component: "nest-run-log-test-\(UUID().uuidString)")
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+        let directory = NestDirectory(rootDirectory: root)
+        let runnerURL = root.appending(components: "command-directory-secret", "runner")
+        try fileManager.createDirectory(at: runnerURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let capturedArgumentsURL = root.appending(component: "arguments.bin")
+        let script = """
+        #!/bin/sh
+        printf '%s\\000' "$@" > "$ARGUMENT_CAPTURE_PATH"
+        printf 'child-output-preserved'
+        printf 'child-error-preserved' >&2
+        exit 37
+        """
+        try Data(script.utf8).write(to: runnerURL)
+        try fileManager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: runnerURL.path())
+        let repositoryURL = try #require(URL(string: "https://github.com/owner/repo"))
+        let repository = Repository(reference: .url(repositoryURL), version: "1.0.0")
+        let command = NestInfo.Command(
+            version: "1.0.0",
+            binaryPath: directory.relativePath(runnerURL),
+            resourcePaths: [],
+            manufacturer: .localBuild(repository: repository)
+        )
+        let storedData = try JSONEncoder().encode(NestInfo(version: NestInfo.currentVersion, commands: ["runner": [command]]))
+        try storedData.write(to: directory.infoJSON)
+        let nestfileURL = root.appending(component: "nestfile.yaml")
+        try Nestfile(nestPath: nil, targets: [
+            .repository(Nestfile.Repository(reference: "owner/repo", version: "1.0.0", assetName: nil, checksum: nil))
+        ]).write(to: nestfileURL.path(percentEncoded: false), fileSystem: fileManager)
+        let passthrough = ["--token", "token-secret", "--password=password-secret", "positional-secret",
+                           "https://url-user:url-password@example.com/tool.zip?signature=url-secret#fragment-secret", "value with spaces", "\nline-secret", ""]
+        let executableURL = Bundle(for: TestBundleMarker.self).bundleURL
+            .deletingLastPathComponent()
+            .appending(component: "nest")
+        let process = Process()
+        process.executableURL = executableURL
+        process.environment = [
+            "NEST_PATH": root.path(percentEncoded: false),
+            "PATH": "/usr/bin:/bin",
+            "ARGUMENT_CAPTURE_PATH": capturedArgumentsURL.path(percentEncoded: false)
+        ]
+        process.arguments = ["run"] + (verbose ? ["--verbose"] : [])
+            + ["--no-install", "--nestfile-path", nestfileURL.path(percentEncoded: false), "owner/repo"] + passthrough
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+        let inputPipe = Pipe()
+        process.standardInput = inputPipe
+        try inputPipe.fileHandleForWriting.close()
+        try process.run()
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        let output = try #require(String(data: outputData, encoding: .utf8))
+
+        #expect(process.terminationStatus == 37, "\(output)")
+        #expect(output.contains("child-output-preserved"))
+        #expect(output.contains("child-error-preserved"))
+        #expect(output.contains("$ runner (argument count: 8)") == verbose)
+        for secret in ["command-directory-secret", "token-secret", "password-secret", "positional-secret", "url-user", "url-password", "url-secret", "fragment-secret", "value with spaces", "line-secret"] {
+            #expect(!output.contains(secret), "\(output)")
+        }
+        #expect(try Data(contentsOf: capturedArgumentsURL) == Data(passthrough.map { $0 + "\0" }.joined().utf8))
+        #expect(try Data(contentsOf: directory.infoJSON) == storedData)
+    }
+
     @Test(arguments: ["install", "bootstrap"])
     func requiredChecksumErrorsDoNotExposeURLSecrets(command: String) throws {
         let fileManager = FileManager.default
