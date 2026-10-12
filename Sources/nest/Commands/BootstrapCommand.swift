@@ -69,7 +69,7 @@ struct BootstrapCommand: AsyncParsableCommand {
                     checksum: checksumOption
                 )
             case .artifactBundle(let url):
-                logger.info("🔎 Start \(url.absoluteString)")
+                logger.info("🔎 Start \(url.logDescription)")
                 executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url, checksum: checksumOption)
             }
 
