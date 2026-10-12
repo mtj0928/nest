@@ -41,8 +41,11 @@ struct RunCommand: AsyncParsableCommand {
         let nestfile: Nestfile
         do {
             nestfile = try Nestfile.load(from: nestfilePath, fileSystem: FileManager.default)
+        } catch let error as NestfileDecodingError {
+            print(error.localizedDescription.red)
+            return
         } catch {
-            print("Nestfile not found at \(nestfilePath)".red)
+            print("Failed to read nestfile. Check --nestfile-path.".red)
             return
         }
 
@@ -55,7 +58,7 @@ struct RunCommand: AsyncParsableCommand {
             logger.error("`owner/repository` is not specified.", metadata: .color(.red))
             return
         } catch .invalidFormat {
-            logger.error("Invalid format: \"\(arguments[0])\", expected owner/repository", metadata: .color(.red))
+            logger.error("Invalid repository reference. Expected owner/repository or a repository URL.", metadata: .color(.red))
             return
         }
 
@@ -64,7 +67,7 @@ struct RunCommand: AsyncParsableCommand {
         else {
             // While we could execute with the latest version, the bootstrap subcommand serves that purpose.
             // Therefore, we return an error when no version is specified.
-            logger.error("Failed to find an expected version for \"\(arguments[0])\" in nestfile", metadata: .color(.red))
+            logger.error("Failed to find a matching repository with a specified version in nestfile.", metadata: .color(.red))
             return
         }
 

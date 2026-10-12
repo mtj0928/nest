@@ -175,10 +175,19 @@ extension Nestfile {
         try fileSystem.write(data.data(using: .utf8)!, to: url)
     }
 
+    /// Loads a nestfile, reporting parsing failures without echoing the input contents.
     public static func load(from path: String, fileSystem: some FileSystem) throws -> Nestfile {
         let url = URL(fileURLWithPath: path)
         let data = try fileSystem.data(at: url)
-        return try YAMLDecoder().decode(Nestfile.self, from: data)
+        return try decode(data)
+    }
+
+    private static func decode(_ data: Data) throws(NestfileDecodingError) -> Nestfile {
+        do {
+            return try YAMLDecoder().decode(Nestfile.self, from: data)
+        } catch {
+            throw NestfileDecodingError(error)
+        }
     }
 }
 
