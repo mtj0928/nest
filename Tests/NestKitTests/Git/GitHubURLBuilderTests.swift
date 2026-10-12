@@ -3,6 +3,26 @@ import Testing
 @testable import NestKit
 
 struct GitHubURLBuilderTests {
+    @Test(arguments: [
+        "http://url-user:url-password@ghe.example.com/owner/repo?token=url-token#url-fragment",
+        "https://url-user:url-password@ghe.example.com/owner?token=url-token#url-fragment"
+    ])
+    func rejectedURLsRemainAvailableWithoutLeakingThroughDiagnostics(input: String) throws {
+        let url = try #require(URL(string: input))
+
+        do {
+            _ = try GitHubURLBuilder.assetURL(url, version: .latestRelease)
+            Issue.record("Expected an invalid repository URL error")
+        } catch {
+            #expect(error.url == url)
+            #expect(error.localizedDescription.contains(url.logDescription))
+            #expect(error.failureReason == error.errorDescription)
+            for secret in ["url-user", "url-password", "url-token", "url-fragment", "token="] {
+                #expect(!error.localizedDescription.contains(secret))
+            }
+        }
+    }
+
     @Test(arguments:[
         (
             urlString: "https://github.com/owner/repo",

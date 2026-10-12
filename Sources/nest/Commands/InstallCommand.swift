@@ -74,7 +74,10 @@ struct InstallCommand: AsyncParsableCommand {
             for binary in executableBinaries {
                 let executableBinary = binary.executableBinary
                 if binary.isAlreadyInstalled {
-                    logger.info("🪺 Skip to install \(binary.executableBinary) because it's already installed .", metadata: .color(.green))
+                    logger.info(
+                        "🪺 Skip to install \(executableBinary.commandName) version \(executableBinary.version) because it's already installed.",
+                        metadata: .color(.green)
+                    )
                 } else {
                     try artifactBundleManager.install(executableBinary)
                     logger.info("🪺 Success to install \(executableBinary.commandName).", metadata: .color(.green))

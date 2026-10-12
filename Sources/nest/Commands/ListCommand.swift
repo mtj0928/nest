@@ -53,9 +53,9 @@ extension NestInfo.Command {
     var source: String {
         switch manufacturer {
         case .artifactBundle(let sourceInfo):
-            sourceInfo.repository?.reference.stringURL ?? sourceInfo.zipURL.absoluteString
+            sourceInfo.repository?.reference.logDescription ?? sourceInfo.zipURL.logDescription
         case .localBuild(let repository):
-            repository.reference.stringURL
+            repository.reference.logDescription
         }
     }
 }

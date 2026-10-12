@@ -119,7 +119,7 @@ extension GitHubURLBuilder {
 
         /// A description of the validation failure.
         public var errorDescription: String? {
-            "Invalid or insecure GitHub repository URL: \(url). GitHub Enterprise URLs must use HTTPS."
+            "Invalid or insecure GitHub repository URL: \(url.logDescription). GitHub Enterprise URLs must use HTTPS."
         }
 
         /// A description of why URL validation failed.

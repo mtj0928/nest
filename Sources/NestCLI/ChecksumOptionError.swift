@@ -13,13 +13,13 @@ public enum ChecksumOptionError: LocalizedError, Equatable, Sendable {
         switch self {
         case .missingChecksum(let target):
             """
-            Missing checksum for "\(target)" in the nestfile.
+            Missing checksum for "\(TargetLogFormatter.description(of: target))" in the nestfile.
             Run `nest update-nestfile <path>` to populate checksums, \
             or pass `--checksum-policy warn` or `--checksum-policy skip` to continue without verification.
             """
         case .missingInstallChecksum(let target):
             """
-            Missing checksum for "\(target)".
+            Missing checksum for "\(TargetLogFormatter.description(of: target))".
             Pass `--checksum <value>` to verify the downloaded file, \
             or pass `--checksum-policy warn` or `--checksum-policy skip` to continue without verification.
             """

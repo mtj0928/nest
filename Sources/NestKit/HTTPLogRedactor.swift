@@ -2,7 +2,7 @@ import HTTPTypes
 
 enum HTTPLogRedactor {
     static func redactedDescription(of request: HTTPRequest) -> String {
-        let url = request.url?.absoluteString ?? "<unknown URL>"
+        let url = request.url?.logDescription ?? "<unknown URL>"
         let headers = request.headerFields
             .map { field in
                 let value = safeHeaderNames.contains(field.name.canonicalName.lowercased()) ? field.value : "<redacted>"

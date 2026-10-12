@@ -42,14 +42,14 @@ struct BootstrapCommand: AsyncParsableCommand {
             )
         }
 
-        for targetInfo in nestfile.targets {
+        for (index, targetInfo) in nestfile.targets.enumerated() {
             let target: InstallTarget
             var version: GitVersion
             let checksumOption = targetInfo.checksumOption(missingChecksumPolicy: resolvedMissingChecksumPolicy)
 
             switch (targetInfo.resolveInstallTarget(), targetInfo.resolveVersion()) {
-            case (.failure(let error), _):
-                logger.error("Invalid input: \(error.contents)", metadata: .color(.red))
+            case (.failure, _):
+                logger.error("Invalid target at index \(index + 1). Expected a repository reference or an HTTPS ZIP URL.", metadata: .color(.red))
                 return
             case (.success(let installTarget), let resolvedVersion):
                 target = installTarget
@@ -69,7 +69,7 @@ struct BootstrapCommand: AsyncParsableCommand {
                     checksum: checksumOption
                 )
             case .artifactBundle(let url):
-                logger.info("🔎 Start \(url.absoluteString)")
+                logger.info("🔎 Start \(url.logDescription)")
                 executableBinaries = try await executableBinaryPreparer.fetchArtifactBundle(at: url, checksum: checksumOption)
             }
 

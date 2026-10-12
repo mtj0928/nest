@@ -43,11 +43,12 @@ public enum URLValidationError: LocalizedError, Equatable, Sendable {
 
     public var errorDescription: String? {
         switch self {
-        case .invalid(let urlString):
-            "Invalid URL: \(urlString)"
+        case .invalid:
+            return "Invalid URL."
         case .insecureScheme(let urlString):
-            """
-            Insecure URL "\(urlString)". \
+            let description = URL(string: urlString)?.logDescription ?? "<URL>"
+            return """
+            Insecure URL "\(description)". \
             nest only accepts HTTPS URLs for artifact bundle downloads, \
             because plain-text HTTP allows a network attacker to swap both \
             the payload and the checksum.

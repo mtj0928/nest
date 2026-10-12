@@ -123,7 +123,7 @@ public struct ArtifactBundleFetcher {
     ) async throws -> ResolvedAsset {
         if let fileName, case .tag(let version) = version {
             let artifactBundleZipURL = try GitHubURLBuilder.assetDownloadURL(url, version: version, fileName: fileName)
-            logger.debug("Resolved artifact bundle zip URL: \(artifactBundleZipURL.absoluteString).")
+            logger.debug("Resolved artifact bundle zip URL: \(artifactBundleZipURL.logDescription).")
             let asset = ResolvedAsset(zipURL: artifactBundleZipURL, fileName: fileName, tagName: version)
             return asset
         }
@@ -191,7 +191,7 @@ public struct ArtifactBundleFetcher {
             }
         }
 
-        logger.info("🌐 Downloading the artifact bundle ZIP at \(url.absoluteString)...")
+        logger.info("🌐 Downloading the artifact bundle ZIP at \(url.logDescription)...")
         let downloadedZIPFilePath = try await fileDownloader.download(url: url)
         try await prepareZIPFile(
             at: downloadedZIPFilePath,
@@ -227,7 +227,7 @@ public struct ArtifactBundleFetcher {
 
                 🚨🚨🚨  CHECKSUM MISSING - UNVERIFIED ARTIFACT BUNDLE  🚨🚨🚨
 
-                nest is installing "\(target)" without checksum verification.
+                nest is installing "\(TargetLogFormatter.description(of: target))" without checksum verification.
                 This is allowed temporarily for migration, but it will become an error in a future release.
 
                 Add this checksum to the target in your nestfile:
