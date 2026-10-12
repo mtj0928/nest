@@ -231,7 +231,7 @@ public enum NestfileControllerError: LocalizedError, Equatable, Sendable {
         case .checksumChanged(let target, let version, let expected, let actual):
             let versionPart = version.map { " at version \($0)" } ?? ""
             return """
-            Checksum changed for "\(target)"\(versionPart) without a version bump.
+            Checksum changed for "\(TargetLogFormatter.description(of: target))"\(versionPart) without a version bump.
             This may indicate a release re-tag, a compromised release, or a man-in-the-middle attack.
             expected: \(expected)
             actual:   \(actual)

@@ -4,6 +4,45 @@ import NestKit
 import Testing
 
 struct CommandLogTests {
+    @Test(arguments: ["install", "bootstrap"])
+    func requiredChecksumErrorsDoNotExposeURLSecrets(command: String) throws {
+        let fileManager = FileManager.default
+        let root = fileManager.temporaryDirectory.appending(component: "nest-checksum-log-test-\(UUID().uuidString)")
+        try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? fileManager.removeItem(at: root) }
+        let zipURL = try #require(URL(string: "https://zip-user:zip-password@downloads.example.com/foo.artifactbundle.zip?signature=zip-secret#zip-private"))
+        try #require(zipURL.needsUnzip)
+        let nestfileURL = root.appending(component: "nestfile.yaml")
+        try Nestfile(nestPath: nil, targets: [.zip(Nestfile.ZIPURL(zipURL: zipURL.absoluteString, checksum: nil))])
+            .write(to: nestfileURL.path(percentEncoded: false), fileSystem: fileManager)
+        let originalNestfileData = try Data(contentsOf: nestfileURL)
+        let executableURL = Bundle(for: TestBundleMarker.self).bundleURL
+            .deletingLastPathComponent()
+            .appending(component: "nest")
+        let process = Process()
+        process.executableURL = executableURL
+        process.environment = ["NEST_PATH": root.path(percentEncoded: false), "PATH": "/usr/bin:/bin"]
+        process.arguments = if command == "install" {
+            ["install", zipURL.absoluteString, "--checksum-policy", "require"]
+        } else {
+            ["bootstrap", nestfileURL.path(percentEncoded: false), "--checksum-policy", "require"]
+        }
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe
+        try process.run()
+        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        let output = try #require(String(data: outputData, encoding: .utf8))
+
+        #expect(process.terminationStatus == 1, "\(output)")
+        #expect(output.contains("Missing checksum for \"https://downloads.example.com/foo.artifactbundle.zip\""))
+        for secret in ["zip-user", "zip-password", "zip-secret", "zip-private", "signature="] {
+            #expect(!output.contains(secret), "\(output)")
+        }
+        #expect(try Data(contentsOf: nestfileURL) == originalNestfileData)
+    }
+
     @Test(arguments: ["install", "list", "switch", "bootstrap"])
     func installedArtifactCommandsDoNotExposeURLSecrets(command: String) throws {
         let fileManager = FileManager.default

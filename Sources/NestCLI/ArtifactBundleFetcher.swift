@@ -227,7 +227,7 @@ public struct ArtifactBundleFetcher {
 
                 🚨🚨🚨  CHECKSUM MISSING - UNVERIFIED ARTIFACT BUNDLE  🚨🚨🚨
 
-                nest is installing "\(target)" without checksum verification.
+                nest is installing "\(TargetLogFormatter.description(of: target))" without checksum verification.
                 This is allowed temporarily for migration, but it will become an error in a future release.
 
                 Add this checksum to the target in your nestfile:

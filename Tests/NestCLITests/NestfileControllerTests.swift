@@ -1,4 +1,6 @@
 import Foundation
+import HTTPTypes
+import HTTPTypesFoundation
 import Logging
 import NestCLI
 @testable import NestKit
@@ -25,6 +27,36 @@ struct NestfileControllerTests {
                 "tmp": .directory
             ]
         ]
+    }
+
+    @Test
+    func signedZIPChecksumChangeKeepsRawTargetAndFormatsItsError() async throws {
+        let zipURL = try #require(URL(string: "https://zip-user:zip-password@example.com/foo.artifacatbundle.zip?signature=zip-secret#zip-private"))
+        let requestURL = try #require(HTTPRequest(url: zipURL).url)
+        httpClient.dummyData = [requestURL: try Data(contentsOf: artifactBundlePath)]
+        let controller = NestfileController(
+            assetRegistryClientBuilder: AssetRegistryClientBuilder(httpClient: httpClient, registryConfigs: nil, logger: Logger(label: "Test")),
+            fileSystem: fileSystem,
+            fileDownloader: NestFileDownloader(httpClient: httpClient),
+            checksumCalculator: SwiftChecksumCalculator(processExecutor: processExecutor)
+        )
+        let nestfile = Nestfile(nestPath: nil, targets: [
+            .zip(Nestfile.ZIPURL(zipURL: zipURL.absoluteString, checksum: "stale-checksum"))
+        ])
+
+        do {
+            _ = try await controller.resolve(nestfile)
+            Issue.record("Expected a checksum change error")
+        } catch let error as NestfileControllerError {
+            #expect(error == .checksumChanged(target: zipURL.absoluteString, version: nil, expected: "stale-checksum", actual: "aaa"))
+            #expect(error.localizedDescription.contains("Checksum changed for \"https://example.com/foo.artifacatbundle.zip\""))
+            for secret in ["zip-user", "zip-password", "zip-secret", "zip-private", "signature="] {
+                #expect(!error.localizedDescription.contains(secret))
+            }
+        }
+
+        let updated = try await controller.resolve(nestfile, allowChecksumChanges: true)
+        #expect(updated.targets == [.zip(Nestfile.ZIPURL(zipURL: zipURL.absoluteString, checksum: "aaa"))])
     }
     
     @Test

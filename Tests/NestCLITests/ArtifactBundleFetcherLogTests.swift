@@ -10,7 +10,7 @@ import os
 
 struct ArtifactBundleFetcherLogTests {
     @Test(arguments: [Logging.Logger.Level.info, .trace])
-    func directAndAPIResolvedDownloadsKeepSecretsOutOfLogs(logLevel: Logging.Logger.Level) async throws {
+    func directAndAPIResolvedDownloadsAndWarningsKeepSecretsOutOfLogs(logLevel: Logging.Logger.Level) async throws {
         let fileSystem = MockFileSystem(homeDirectoryForCurrentUser: URL(filePath: "/User"), temporaryDirectory: URL(filePath: "/tmp"))
         fileSystem.item = ["/": ["User": [:], "tmp": [:]]]
         let recorder = LogRecorder()
@@ -39,6 +39,10 @@ struct ArtifactBundleFetcherLogTests {
             if command == "/usr/bin/swift", arguments == ["-print-target-info"] {
                 return "{\"target\":{\"unversionedTriple\":\"arm64-apple-macosx\"}}"
             }
+            if command == "/usr/bin/swift", arguments.count == 3,
+               arguments[0] == "package", arguments[1] == "compute-checksum" {
+                return "aaa"
+            }
             Issue.record("Unexpected command: \(command)")
             return ""
         }
@@ -53,13 +57,14 @@ struct ArtifactBundleFetcherLogTests {
             logger: logger
         )
 
-        let directBinaries = try await fetcher.downloadArtifactBundle(url: zipURL, checksum: .skip)
+        let checksumOption = ChecksumOption.warnOnMissingChecksum(target: zipURL.absoluteString)
+        let directBinaries = try await fetcher.downloadArtifactBundle(url: zipURL, checksum: checksumOption)
         let repositoryURL = try #require(URL(string: "https://github.com/owner/repo"))
         let resolvedBinaries = try await fetcher.fetchArtifactBundleFromGitRepository(
             for: repositoryURL,
             version: .tag("1.0.0"),
             artifactBundleZipFileName: nil,
-            checksum: .skip
+            checksum: checksumOption
         )
 
         #expect(directBinaries.count == 1)
@@ -78,6 +83,10 @@ struct ArtifactBundleFetcherLogTests {
         let downloads = recorder.messages.filter { $0.contains("Downloading the artifact bundle ZIP") }
         #expect(downloads.count == 2)
         #expect(downloads.allSatisfy { $0.contains("https://downloads.example.com/foo.artifactbundle.zip") })
+        let warnings = recorder.messages.filter { $0.contains("CHECKSUM MISSING") }
+        #expect(warnings.count == 2)
+        #expect(warnings.allSatisfy { $0.contains("nest is installing \"https://downloads.example.com/foo.artifactbundle.zip\"") })
+        #expect(warnings.allSatisfy { $0.contains("checksum: aaa") })
     }
 }
 
