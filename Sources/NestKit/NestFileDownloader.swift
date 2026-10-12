@@ -31,7 +31,7 @@ enum FileDownloaderError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .notFound(let url):
-            "Not found: \(url.absoluteString)"
+            "Not found: \(url.logDescription)"
         }
     }
 }
