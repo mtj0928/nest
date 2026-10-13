@@ -1,8 +1,10 @@
 import Foundation
 import Logging
-import os
+import Subprocess
 
+/// Runs commands with captured output or interactive standard streams.
 public protocol ProcessExecutor: Sendable {
+    /// Runs a command and returns its standard output, throwing if execution fails.
     func execute(command: String, _ arguments: [String]) async throws -> String
 
     /// Executes the given command with the given arguments.
@@ -13,25 +15,30 @@ public protocol ProcessExecutor: Sendable {
 }
 
 extension ProcessExecutor {
+    /// Runs a command with variadic arguments and returns its standard output.
     public func execute(command: String, _ arguments: String...) async throws -> String {
         try await execute(command: command, arguments)
     }
 
+    /// Runs a command with variadic arguments using interactive standard streams.
     public func executeInteractively(command: String, _ arguments: String...) async throws -> Int32 {
         try await executeInteractively(command: command, arguments)
     }
 
+    /// Finds a command on the executable search path.
     public func which(_ command: String) async throws -> String {
         try await execute(command: "/usr/bin/which", command)
     }
 }
 
+/// Executes commands with Subprocess and logs captured output.
 public struct NestProcessExecutor: ProcessExecutor {
     let currentDirectoryURL: URL?
     let environment: [String: String]
     let logger: Logging.Logger
     let logLevel: Logging.Logger.Level
 
+    /// Creates an executor with the given working directory, filtered environment, and output log level.
     public init(
         currentDirectory: URL? = nil,
         environment: [String: String] = ProcessInfo.processInfo.environment,
@@ -45,113 +52,76 @@ public struct NestProcessExecutor: ProcessExecutor {
         self.logLevel = logLevel
     }
 
+    /// Runs a command, logs both output streams, and returns standard output with surrounding whitespace removed.
+    /// Throws if the command cannot be launched or does not exit successfully.
     public func execute(command: String, _ arguments: [String]) async throws -> String {
-        let elements = try await _execute(command: command, arguments.map { $0 })
-        return elements.compactMap { element in
-            switch element {
-            case .output(let string): string
-            case .error: nil
-            }
-        }.joined()
-    }
-
-    private func _execute(command: String, _ arguments: [String]) async throws -> [StreamElement] {
-        let executableURL = URL(fileURLWithPath: command)
-        logger.debug("$ \(executableURL.lastPathComponent) (argument count: \(arguments.count))")
-        return try await withCheckedThrowingContinuation { continuous in
-            do {
-                let results = OSAllocatedUnfairLock(initialState: [StreamElement]())
-
-                let process = Process()
-                process.currentDirectoryURL = currentDirectoryURL
-                process.executableURL = executableURL
-                process.arguments = arguments
-                process.environment = environment
-
-                let outputPipe = Pipe()
-                process.standardOutput = outputPipe
-
-                outputPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-                    let availableData = fileHandle.availableData
-                    guard availableData.count != 0,
-                          let string = String(data: availableData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-                          !string.isEmpty
-                    else {
-                        return
-                    }
-                    logger.log(level: logLevel, "\(string)")
-                    results.withLock { $0 += [.output(string)] }
-                }
-
-                let errorPipe = Pipe()
-                process.standardError = errorPipe
-                errorPipe.fileHandleForReading.readabilityHandler = { fileHandle in
-                    let availableData = fileHandle.availableData
-                    guard availableData.count != 0,
-                          let string = String(data: availableData, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-                          !string.isEmpty
-                    else {
-                        return
-                    }
-                    logger.log(level: logLevel, "\(string)", metadata: .color(.red))
-                    results.withLock { $0 += [.error(string)] }
-                }
-
-                try process.run()
-                process.waitUntilExit()
-
-                // [Workaround] Sometimes, this code is executes before all events of `readabilityHandler` are addressed.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    let result = process.terminationReason == .exit && process.terminationStatus == 0
-                    if result {
-                        let returnedValue = results.withLock { $0 }
-                        continuous.resume(returning: returnedValue)
-                    } else {
-                        continuous.resume(throwing: ProcessExecutorError.failed)
-                    }
-                }
-            } catch {
-                continuous.resume(throwing: error)
-            }
+        logger.debug("$ \(URL(fileURLWithPath: command).lastPathComponent) (argument count: \(arguments.count))")
+        let result = try await Subprocess.run(
+            configuration(command: command, arguments: arguments),
+            input: .none,
+            output: .sequence,
+            error: .sequence
+        ) { execution in
+            async let output = collectOutput(execution.standardOutput, metadata: nil)
+            async let error = collectOutput(execution.standardError, metadata: .color(.red))
+            let (standardOutput, _) = try await (output, error)
+            return standardOutput
         }
+        guard result.terminationStatus.isSuccess else {
+            throw Error.failed
+        }
+        return result.closureResult
     }
 
+    /// Runs a command using the current standard input, output, and error streams.
+    /// Returns the exit code or the signal that terminated the command.
     public func executeInteractively(command: String, _ arguments: [String]) async throws -> Int32 {
-        let executableURL = URL(fileURLWithPath: command)
-        logger.debug("$ \(executableURL.lastPathComponent) (argument count: \(arguments.count))")
-
-        let process = Process()
-        process.executableURL = executableURL
-        process.arguments = arguments
-        process.environment = environment
-
-        if let currentDirectoryURL {
-            process.currentDirectoryURL = currentDirectoryURL
+        logger.debug("$ \(URL(fileURLWithPath: command).lastPathComponent) (argument count: \(arguments.count))")
+        let result = try await Subprocess.run(
+            configuration(command: command, arguments: arguments),
+            input: .currentStandardInput,
+            output: .currentStandardOutput,
+            error: .currentStandardError
+        )
+        switch result.terminationStatus {
+        case .exited(let code), .signaled(let code):
+            return code
         }
+    }
 
-        try process.run()
+    private func configuration(command: String, arguments: [String]) -> Subprocess.Configuration {
+        let environmentValues = environment.map { (Environment.Key(stringLiteral: $0.key), $0.value) }
+        return Subprocess.Configuration(
+            executable: .path(.init(URL(fileURLWithPath: command).path(percentEncoded: false))),
+            arguments: .init(arguments),
+            environment: .custom(Dictionary(uniqueKeysWithValues: environmentValues)),
+            workingDirectory: currentDirectoryURL.map { .init($0.path(percentEncoded: false)) }
+        )
+    }
 
-        // Need to support standard input
-        // https://forums.swift.org/t/how-to-allow-process-to-receive-user-input-when-run-as-part-of-an-executable-e-g-to-enabled-sudo-commands/34357/7
-        tcsetpgrp(STDIN_FILENO, process.processIdentifier)
-
-        process.waitUntilExit()
-        return process.terminationStatus
+    private func collectOutput(
+        _ sequence: SubprocessOutputSequence,
+        metadata: Logger.Metadata?
+    ) async throws -> String {
+        var output = ""
+        // Split only at LF so CR and Unicode separators inside the command's output are preserved.
+        let lines = sequence.strings(
+            separatedBy: .unicodeScalarSequence("\n".unicodeScalars),
+            bufferingPolicy: .unbounded
+        )
+        for try await line in lines {
+            output += line + "\n"
+            let message = line.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !message.isEmpty {
+                logger.log(level: logLevel, "\(message)", metadata: metadata)
+            }
+        }
+        return output.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
-enum StreamElement {
-    case output(String)
-    case error(String)
-
-    var text: String {
-        switch self {
-        case .output(let text): return text
-        case .error(let text): return text
-        }
+extension NestProcessExecutor {
+    private enum Error: Swift.Error {
+        case failed
     }
-}
-
-enum ProcessExecutorError: Error {
-    case failed
 }

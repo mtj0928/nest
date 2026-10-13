@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 import PackageDescription
 
 let package = Package(
@@ -17,6 +17,7 @@ let package = Package(
         .package(url: "https://github.com/onevcat/Rainbow", from: "4.0.1"),
         .package(url: "https://github.com/jpsim/Yams.git", from: "5.1.3"),
         .package(url: "https://github.com/mtj0928/swift-async-operations", from: "0.2.2"),
+        .package(url: "https://github.com/swiftlang/swift-subprocess.git", from: "1.0.0"),
     ],
     targets: [
         .executableTarget(name: "nest", dependencies: [
@@ -32,13 +33,17 @@ let package = Package(
         .target(name: "NestTestHelpers", dependencies: ["NestKit"]),
         .target(name: "NestKit", dependencies: [
             .product(name: "Logging", package: "swift-log"),
+            .product(name: "Subprocess", package: "swift-subprocess"),
             "Rainbow",
             "ZIPFoundation",
             .product(name: "HTTPTypesFoundation", package: "swift-http-types")
         ]),
 
         // MARK: - Test targets
-        .testTarget(name: "NestTests", dependencies: ["nest"]),
+        .testTarget(name: "NestTests", dependencies: [
+            "nest",
+            .product(name: "Subprocess", package: "swift-subprocess"),
+        ]),
         .testTarget(
             name: "NestCLITests",
             dependencies: ["NestCLI", "NestTestHelpers"],

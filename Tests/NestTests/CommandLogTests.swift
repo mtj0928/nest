@@ -1,11 +1,12 @@
 import Foundation
 import NestCLI
 import NestKit
+import Subprocess
 import Testing
 
 struct CommandLogTests {
     @Test(arguments: [false, true])
-    func runHidesArgumentsAndPreservesPassthroughAndExitStatus(verbose: Bool) throws {
+    func runHidesArgumentsAndPreservesPassthroughAndExitStatus(verbose: Bool) async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory.appending(component: "nest-run-log-test-\(UUID().uuidString)")
         try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
@@ -16,6 +17,8 @@ struct CommandLogTests {
         let capturedArgumentsURL = root.appending(component: "arguments.bin")
         let script = """
         #!/bin/sh
+        read -r input
+        [ "$input" = 'interactive-input' ] || exit 18
         printf '%s\\000' "$@" > "$ARGUMENT_CAPTURE_PATH"
         printf 'child-output-preserved'
         printf 'child-error-preserved' >&2
@@ -42,31 +45,31 @@ struct CommandLogTests {
         let executableURL = Bundle(for: TestBundleMarker.self).bundleURL
             .deletingLastPathComponent()
             .appending(component: "nest")
-        let process = Process()
-        process.executableURL = executableURL
-        process.environment = [
+        let environment = [
             "NEST_PATH": root.path(percentEncoded: false),
             "PATH": "/usr/bin:/bin",
             "ARGUMENT_CAPTURE_PATH": capturedArgumentsURL.path(percentEncoded: false)
         ]
-        process.arguments = ["run"] + (verbose ? ["--verbose"] : [])
+        let arguments = ["run"] + (verbose ? ["--verbose"] : [])
             + ["--no-install", "--nestfile-path", nestfileURL.path(percentEncoded: false), "owner/repo"] + passthrough
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-        let inputPipe = Pipe()
-        process.standardInput = inputPipe
-        try inputPipe.fileHandleForWriting.close()
-        try process.run()
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        let output = try #require(String(data: outputData, encoding: .utf8))
+        let result = try await Subprocess.run(
+            .path(.init(executableURL.path(percentEncoded: false))),
+            arguments: .init(arguments),
+            environment: .custom(environment.subprocessValues),
+            input: .string("interactive-input\n"),
+            output: .string(limit: 1024 * 1024),
+            error: .combinedWithOutput
+        )
+        let output = result.standardOutput
 
-        #expect(process.terminationStatus == 37, "\(output)")
+        #expect(result.terminationStatus == .exited(37), "\(output)")
         #expect(output.contains("child-output-preserved"))
         #expect(output.contains("child-error-preserved"))
         #expect(output.contains("$ runner (argument count: 8)") == verbose)
-        for secret in ["command-directory-secret", "token-secret", "password-secret", "positional-secret", "url-user", "url-password", "url-secret", "fragment-secret", "value with spaces", "line-secret"] {
+        for secret in [
+            "command-directory-secret", "token-secret", "password-secret", "positional-secret", "url-user",
+            "url-password", "url-secret", "fragment-secret", "value with spaces", "line-secret"
+        ] {
             #expect(!output.contains(secret), "\(output)")
         }
         #expect(try Data(contentsOf: capturedArgumentsURL) == Data(passthrough.map { $0 + "\0" }.joined().utf8))
@@ -74,7 +77,7 @@ struct CommandLogTests {
     }
 
     @Test(arguments: ["install", "bootstrap"])
-    func requiredChecksumErrorsDoNotExposeURLSecrets(command: String) throws {
+    func requiredChecksumErrorsDoNotExposeURLSecrets(command: String) async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory.appending(component: "nest-checksum-log-test-\(UUID().uuidString)")
         try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
@@ -88,23 +91,22 @@ struct CommandLogTests {
         let executableURL = Bundle(for: TestBundleMarker.self).bundleURL
             .deletingLastPathComponent()
             .appending(component: "nest")
-        let process = Process()
-        process.executableURL = executableURL
-        process.environment = ["NEST_PATH": root.path(percentEncoded: false), "PATH": "/usr/bin:/bin"]
-        process.arguments = if command == "install" {
+        let environment = ["NEST_PATH": root.path(percentEncoded: false), "PATH": "/usr/bin:/bin"]
+        let arguments = if command == "install" {
             ["install", zipURL.absoluteString, "--checksum-policy", "require"]
         } else {
             ["bootstrap", nestfileURL.path(percentEncoded: false), "--checksum-policy", "require"]
         }
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-        try process.run()
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        let output = try #require(String(data: outputData, encoding: .utf8))
+        let result = try await Subprocess.run(
+            .path(.init(executableURL.path(percentEncoded: false))),
+            arguments: .init(arguments),
+            environment: .custom(environment.subprocessValues),
+            output: .string(limit: 1024 * 1024),
+            error: .combinedWithOutput
+        )
+        let output = result.standardOutput
 
-        #expect(process.terminationStatus == 1, "\(output)")
+        #expect(result.terminationStatus == .exited(1), "\(output)")
         #expect(output.contains("Missing checksum for \"https://downloads.example.com/foo.artifactbundle.zip\""))
         for secret in ["zip-user", "zip-password", "zip-secret", "zip-private", "signature="] {
             #expect(!output.contains(secret), "\(output)")
@@ -113,7 +115,7 @@ struct CommandLogTests {
     }
 
     @Test(arguments: ["install", "list", "switch", "bootstrap"])
-    func installedArtifactCommandsDoNotExposeURLSecrets(command: String) throws {
+    func installedArtifactCommandsDoNotExposeURLSecrets(command: String) async throws {
         let fileManager = FileManager.default
         let root = fileManager.temporaryDirectory.appending(component: "nest-command-log-test-\(UUID().uuidString)")
         try fileManager.createDirectory(at: root, withIntermediateDirectories: true)
@@ -146,31 +148,25 @@ struct CommandLogTests {
             .deletingLastPathComponent()
             .appending(component: "nest")
         #expect(fileManager.fileExists(atPath: executableURL.path()))
-        let process = Process()
-        process.executableURL = executableURL
-        process.environment = ["NEST_PATH": root.path(percentEncoded: false), "PATH": "/usr/bin:/bin"]
-        process.arguments = switch command {
+        let environment = ["NEST_PATH": root.path(percentEncoded: false), "PATH": "/usr/bin:/bin"]
+        let arguments = switch command {
         case "install": ["install", zipURL.absoluteString, "--checksum-policy", "skip"]
         case "list": ["list", "--source"]
         case "switch": ["switch", "audit-tool"]
         case "bootstrap": ["bootstrap", nestfilePath, "--checksum-policy", "skip"]
-        default: []
+        default: [String]()
         }
-        let outputPipe = Pipe()
-        process.standardOutput = outputPipe
-        process.standardError = outputPipe
-        let inputPipe = Pipe()
-        process.standardInput = inputPipe
-        try process.run()
-        if command == "switch" {
-            try inputPipe.fileHandleForWriting.write(contentsOf: Data("1\n".utf8))
-        }
-        try inputPipe.fileHandleForWriting.close()
-        let outputData = outputPipe.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        let output = try #require(String(data: outputData, encoding: .utf8))
+        let result = try await Subprocess.run(
+            .path(.init(executableURL.path(percentEncoded: false))),
+            arguments: .init(arguments),
+            environment: .custom(environment.subprocessValues),
+            input: .string(command == "switch" ? "1\n" : ""),
+            output: .string(limit: 1024 * 1024),
+            error: .combinedWithOutput
+        )
+        let output = result.standardOutput
 
-        #expect(process.terminationStatus == 0, "\(output)")
+        #expect(result.terminationStatus == .exited(0), "\(output)")
         for secret in ["zip-user", "zip-password", "zip-secret", "zip-private", "signature=", "ExecutableBinary("] {
             #expect(!output.contains(secret), "\(output)")
         }
