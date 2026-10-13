@@ -34,6 +34,8 @@ If there is an artifact bundle in GitHub release, nest downloads the artifact bu
 If not, nest clones and builds the package and installs the executable binaries.
 
 ## Installation
+Building nest from source requires Swift 6.2 or later and Xcode 26 or later. The minimum supported macOS version remains macOS 13.
+
 Run this command.
 This script downloads the latest artifact bundle of this repository, and installs nest by using nest in the artifact bundle.
 ```sh
