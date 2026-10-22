@@ -13,24 +13,22 @@ jobs:
     runs-on: macos-15
     env:
       DEVELOPER_DIR: "/Applications/Xcode_26.3.app/Contents/Developer"
+      TAG_NAME: ${{ github.event.release.tag_name }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Build Swift package
         run: swift build -c release --arch arm64 --arch x86_64  
         
-      - name: Get Current Tag
-        run: echo "TAG_NAME=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
-
       - name: Run shell script with tag
-        run: ./Scripts/release-artifactbundle.sh "${{ env.TAG_NAME }}"
+        run: ./Scripts/release-artifactbundle.sh "$TAG_NAME"
 
       - name: Generate installer with release checksum
         run: bash ./Scripts/generate-install-script.sh "$TAG_NAME" nest-macos.artifactbundle.zip install.sh
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           files: |
             nest-macos.artifactbundle.zip

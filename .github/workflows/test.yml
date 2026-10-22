@@ -12,7 +12,7 @@ jobs:
     env:
       DEVELOPER_DIR: "/Applications/Xcode_26.3.app/Contents/Developer"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
     - name: Test release installer
       run: python3 -m unittest discover -s Scripts/tests -v
     - name: Run tests
