@@ -5,6 +5,9 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: macos-15
@@ -23,10 +26,15 @@ jobs:
       - name: Run shell script with tag
         run: ./Scripts/release-artifactbundle.sh "${{ env.TAG_NAME }}"
 
+      - name: Generate installer with release checksum
+        run: bash ./Scripts/generate-install-script.sh "$TAG_NAME" nest-macos.artifactbundle.zip install.sh
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             nest-macos.artifactbundle.zip
+            install.sh
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -37,10 +37,12 @@ If not, nest clones and builds the package and installs the executable binaries.
 Building nest from source requires Swift 6.2 or later and Xcode 26 or later. The minimum supported macOS version remains macOS 13.
 
 Run this command.
-This script downloads the latest artifact bundle of this repository, and installs nest by using nest in the artifact bundle.
+This script downloads the artifact bundle for the release, verifies its SHA-256 checksum before extracting or running it, and installs nest by using nest in the artifact bundle.
+The release workflow embeds the release tag and checksum in the installer attached to each release.
 ```sh
-curl -s https://raw.githubusercontent.com/mtj0928/nest/main/Scripts/install.sh | bash
+curl -fsSL https://github.com/mtj0928/nest/releases/latest/download/install.sh | bash
 ```
+The previous `raw.githubusercontent.com` installer URL still works. It prints a warning and runs the release installer.
 
 ## How to Use
 

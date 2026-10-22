@@ -1,0 +1,36 @@
+#!/bin/bash
+
+set -euo pipefail
+
+# Filled by generate-install-script.sh when publishing a release.
+RELEASE_TAG=__RELEASE_TAG__
+CHECKSUM="__CHECKSUM__"
+
+if [ "$RELEASE_TAG" = "__RELEASE_TAG__" ] || ! [[ "$CHECKSUM" =~ ^[0-9a-f]{64}$ ]]; then
+  echo "Download install.sh from a GitHub release; this template has no release checksum." >&2
+  exit 1
+fi
+
+REPO="mtj0928/nest"
+ASSET_NAME="nest-macos.artifactbundle.zip"
+ASSET_URL="https://github.com/$REPO/releases/download/$RELEASE_TAG/$ASSET_NAME"
+
+WORK_DIRECTORY=$(mktemp -d "${TMPDIR:-/tmp}/nest-install.XXXXXXXX")
+trap 'rm -rf "$WORK_DIRECTORY"' EXIT
+ARCHIVE_PATH="$WORK_DIRECTORY/$ASSET_NAME"
+EXTRACT_DIRECTORY="$WORK_DIRECTORY/extracted_files"
+
+# Download zip file
+curl -fsSL -o "$ARCHIVE_PATH" "$ASSET_URL"
+ACTUAL_CHECKSUM=$(shasum -a 256 "$ARCHIVE_PATH" | awk '{print $1}')
+if [ "$ACTUAL_CHECKSUM" != "$CHECKSUM" ]; then
+  echo "Checksum mismatch: expected $CHECKSUM, got $ACTUAL_CHECKSUM." >&2
+  exit 1
+fi
+
+unzip -qo "$ARCHIVE_PATH" -d "$EXTRACT_DIRECTORY"
+
+"$EXTRACT_DIRECTORY/nest.artifactbundle/nest-$RELEASE_TAG-macos/bin/nest" \
+  install "$REPO" "$RELEASE_TAG" --checksum "$CHECKSUM" > /dev/null
+echo "🪺 nest was installed at ~/.nest/bin"
+echo "🪺 Please add it to \$PATH"

@@ -13,6 +13,8 @@ jobs:
       DEVELOPER_DIR: "/Applications/Xcode_26.3.app/Contents/Developer"
     steps:
     - uses: actions/checkout@v4
+    - name: Test release installer
+      run: python3 -m unittest discover -s Scripts/tests -v
     - name: Run tests
       run: swift test
     - name: Release build
