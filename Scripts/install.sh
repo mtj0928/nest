@@ -1,21 +1,12 @@
 #!/bin/bash
 
-REPO="mtj0928/nest"
-ASSET_NAME="nest-macos.artifactbundle.zip"
-ASSET_URL="https://github.com/$REPO/releases/latest/download/$ASSET_NAME"
+set -euo pipefail
 
-# Download zip file
-curl -sL -o $ASSET_NAME $ASSET_URL
-unzip -qo $ASSET_NAME -d extracted_files
-rm $ASSET_NAME
+INSTALLER_URL="https://github.com/mtj0928/nest/releases/latest/download/install.sh"
 
-VERSION=$(ls ./extracted_files/nest.artifactbundle | sed -n 's/^nest-\([^-]*\)-macos$/\1/p' | head -n 1)
-if [ -z "$VERSION" ]; then
-  echo "Version not found in the directory."
-  exit 1
-fi
+echo "Warning: this installer URL is deprecated. Downloading the release installer instead." >&2
+echo "Use this command next time: curl -fsSL $INSTALLER_URL | bash" >&2
 
-./extracted_files/nest.artifactbundle/nest-$VERSION-macos/bin/nest install mtj0928/nest > /dev/null
-rm -rf extracted_files
-echo "🪺 nest was installed at ~/.nest/bin"
-echo "🪺 Please add it to \$PATH"
+# Finish downloading before running any of the release installer.
+INSTALLER=$(curl -fsSL "$INSTALLER_URL")
+exec bash -c "$INSTALLER"
